@@ -8,7 +8,6 @@ sealed class Routes(val route: String) {
     object Inbound : Routes("inbound")
 
     // Outbound routes (2.5.1 - 2.5.4 spec flow)
-    object OutboundSelect : Routes("outbound_select")
     object PickingList : Routes("picking_list")
     object OutboundEntry : Routes("outbound_entry/{courseId}") {
         fun createRoute(courseId: String) = "outbound_entry/$courseId"

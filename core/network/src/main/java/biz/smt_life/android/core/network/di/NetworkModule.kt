@@ -5,9 +5,11 @@ import biz.smt_life.android.core.domain.repository.InboundRepository
 import biz.smt_life.android.core.domain.repository.MainRepository
 import biz.smt_life.android.core.domain.repository.OutboundRepository
 import biz.smt_life.android.core.domain.repository.OutboundCourseRepository
+import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.domain.repository.ProfileRepository
 import biz.smt_life.android.core.network.BuildConfig
 import biz.smt_life.android.core.network.api.AuthService
+import biz.smt_life.android.core.network.api.PickingApi
 import biz.smt_life.android.core.network.fake.FakeInboundRepository
 import biz.smt_life.android.core.network.fake.FakeMainRepository
 import biz.smt_life.android.core.network.fake.FakeOutboundRepository
@@ -16,6 +18,7 @@ import biz.smt_life.android.core.network.fake.FakeProfileRepository
 import biz.smt_life.android.core.network.interceptor.ApiKeyInterceptor
 import biz.smt_life.android.core.network.interceptor.AuthInterceptor
 import biz.smt_life.android.core.network.repository.AuthRepositoryImpl
+import biz.smt_life.android.core.network.repository.PickingTaskRepositoryImpl
 import biz.smt_life.android.core.ui.HostPreferences
 import biz.smt_life.android.core.ui.TokenManager
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -113,6 +116,18 @@ object NetworkProviderModule {
     fun provideAuthService(retrofit: Retrofit): AuthService {
         return retrofit.create(AuthService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun providePickingApi(retrofit: Retrofit): PickingApi {
+        return retrofit.create(PickingApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideErrorMapper(): biz.smt_life.android.core.network.ErrorMapper {
+        return biz.smt_life.android.core.network.ErrorMapper
+    }
 }
 
 @Module
@@ -154,4 +169,10 @@ abstract class NetworkBindingModule {
     abstract fun bindMainRepository(
         fakeMainRepository: FakeMainRepository
     ): MainRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPickingTaskRepository(
+        pickingTaskRepositoryImpl: PickingTaskRepositoryImpl
+    ): PickingTaskRepository
 }

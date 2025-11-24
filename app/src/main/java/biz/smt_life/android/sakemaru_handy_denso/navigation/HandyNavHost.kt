@@ -11,8 +11,7 @@ import biz.smt_life.android.feature.inbound.InboundScreen
 import biz.smt_life.android.feature.login.LoginScreen
 import biz.smt_life.android.feature.main.MainRoute
 import biz.smt_life.android.feature.outbound.OutboundEntryScreen
-import biz.smt_life.android.feature.outbound.OutboundSelectScreen
-import biz.smt_life.android.feature.outbound.PickingListScreen
+import biz.smt_life.android.feature.outbound.tasks.PickingTasksScreen
 import biz.smt_life.android.feature.outbound.history.OutboundHistoryScreen
 import biz.smt_life.android.feature.settings.SettingsScreen
 
@@ -58,7 +57,11 @@ fun HandyNavHost(
                     navController.navigate(Routes.Inbound.route)
                 },
                 onNavigateToOutbound = {
-                    navController.navigate(Routes.OutboundSelect.route)
+                    // Navigate directly to PickingList (Course Selection)
+                    navController.navigate(Routes.PickingList.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 },
                 onNavigateToMove = {
                     navController.navigate(Routes.Move.route)
@@ -82,27 +85,14 @@ fun HandyNavHost(
         }
 
         // Outbound routes (2.5.1 - 2.5.4 spec flow)
-        composable(Routes.OutboundSelect.route) {
-            OutboundSelectScreen(
-                onNavigateToPickingList = {
-                    navController.navigate(Routes.PickingList.route)
-                },
-                onNavigateToSlipEntry = {
-                    navController.navigate(Routes.SlipEntry.route)
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
         composable(Routes.PickingList.route) {
-            PickingListScreen(
-                onSelectCourse = { courseId ->
-                    navController.navigate(Routes.OutboundEntry.createRoute(courseId))
-                },
+            PickingTasksScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToPickingDetail = { courseCode ->
+                    // Navigate to OutboundEntry using courseCode
+                    navController.navigate(Routes.OutboundEntry.createRoute(courseCode))
                 }
             )
         }
