@@ -22,7 +22,7 @@ import org.junit.Test
 
 /**
  * Unit tests for PickingTasksViewModel.
- * Tests state transitions, tab switching, and error handling.
+ * Tests state transitions and error handling.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PickingTasksViewModelTest {
@@ -46,7 +46,7 @@ class PickingTasksViewModelTest {
     }
 
     @Test
-    fun `initial state loads My Area tasks on init`() = runTest {
+    fun `initial state loads My tasks on init`() = runTest {
         // Given
         coEvery { repository.getMyAreaTasks(TEST_WAREHOUSE_ID, TEST_PICKER_ID) } returns
                 Result.success(listOf(createTestTask()))
@@ -57,31 +57,8 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertEquals(PickingTab.MY_AREA, state.activeTab)
-        assertTrue(state.myAreaState is TaskListState.Success)
-        assertEquals(1, (state.myAreaState as TaskListState.Success).tasks.size)
-    }
-
-    @Test
-    fun `switching to All Courses tab loads tasks lazily`() = runTest {
-        // Given
-        coEvery { repository.getMyAreaTasks(TEST_WAREHOUSE_ID, TEST_PICKER_ID) } returns
-                Result.success(emptyList())
-        coEvery { repository.getAllTasks(TEST_WAREHOUSE_ID) } returns
-                Result.success(listOf(createTestTask(), createTestTask(taskId = 2)))
-
-        viewModel = PickingTasksViewModel(repository, tokenManager)
-        advanceUntilIdle()
-
-        // When
-        viewModel.onTabSelected(PickingTab.ALL_COURSES)
-        advanceUntilIdle()
-
-        // Then
-        val state = viewModel.state.value
-        assertEquals(PickingTab.ALL_COURSES, state.activeTab)
-        assertTrue(state.allCoursesState is TaskListState.Success)
-        assertEquals(2, (state.allCoursesState as TaskListState.Success).tasks.size)
+        assertTrue(state.tasksState is TaskListState.Success)
+        assertEquals(1, (state.tasksState as TaskListState.Success).tasks.size)
     }
 
     @Test
@@ -96,7 +73,7 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertTrue(state.myAreaState is TaskListState.Empty)
+        assertTrue(state.tasksState is TaskListState.Empty)
     }
 
     @Test
@@ -111,8 +88,8 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertTrue(state.myAreaState is TaskListState.Error)
-        assertTrue((state.myAreaState as TaskListState.Error).message.contains("ネットワーク"))
+        assertTrue(state.tasksState is TaskListState.Error)
+        assertTrue((state.tasksState as TaskListState.Error).message.contains("ネットワーク"))
     }
 
     @Test
@@ -127,8 +104,8 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertTrue(state.myAreaState is TaskListState.Error)
-        assertTrue((state.myAreaState as TaskListState.Error).message.contains("再ログイン"))
+        assertTrue(state.tasksState is TaskListState.Error)
+        assertTrue((state.tasksState as TaskListState.Error).message.contains("再ログイン"))
     }
 
     @Test
@@ -147,7 +124,7 @@ class PickingTasksViewModelTest {
     }
 
     @Test
-    fun `missing picker ID shows error for My Area`() = runTest {
+    fun `missing picker ID shows error for My tasks`() = runTest {
         // Given
         every { tokenManager.getPickerId() } returns -1
 
@@ -157,8 +134,8 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertTrue(state.myAreaState is TaskListState.Error)
-        assertTrue((state.myAreaState as TaskListState.Error).message.contains("ピッカー"))
+        assertTrue(state.tasksState is TaskListState.Error)
+        assertTrue((state.tasksState as TaskListState.Error).message.contains("ピッカー"))
     }
 
     @Test
@@ -177,7 +154,7 @@ class PickingTasksViewModelTest {
 
         // Then
         val state = viewModel.state.value
-        assertTrue(state.myAreaState is TaskListState.Success)
+        assertTrue(state.tasksState is TaskListState.Success)
     }
 
     @Test
@@ -191,12 +168,12 @@ class PickingTasksViewModelTest {
 
         viewModel.state.test {
             val initial = awaitItem()
-            assertTrue(initial.myAreaState is TaskListState.Loading)
+            assertTrue(initial.tasksState is TaskListState.Loading)
 
             advanceUntilIdle()
 
             val loaded = expectMostRecentItem()
-            assertTrue(loaded.myAreaState is TaskListState.Success)
+            assertTrue(loaded.tasksState is TaskListState.Success)
         }
     }
 

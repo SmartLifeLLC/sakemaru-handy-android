@@ -78,9 +78,9 @@ class MainViewModel @Inject constructor(
                 }
 
                 val pendingCounts = PendingCounts(
-                    inbound = 5,
-                    outbound = 12,
-                    inventory = 3
+                    inbound = 0,
+                    outbound = 0,
+                    inventory = 0
                 )
                 val currentDate = getCurrentDate()
                 val appVersion = "Ver.1.0" // TODO: Get from BuildConfig

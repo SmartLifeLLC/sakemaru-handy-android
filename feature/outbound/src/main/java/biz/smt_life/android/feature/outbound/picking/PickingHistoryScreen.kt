@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.PickingTask
 import biz.smt_life.android.core.domain.model.PickingTaskItem
+import biz.smt_life.android.core.domain.model.QuantityType
 
 /**
  * Picking History Screen (2.5.3 - 出庫処理＞履歴).
@@ -254,11 +255,17 @@ private fun HistoryItemCard(
                 InfoRow(label = "JAN", value = item.janCode!!)
             }
 
-            // Picked quantity
+            // Get quantity type
             val qtyLabel = when (item.plannedQtyType) {
-                biz.smt_life.android.core.domain.model.QuantityType.CASE -> "ケース"
-                biz.smt_life.android.core.domain.model.QuantityType.PIECE -> "バラ"
+                QuantityType.CASE -> "ケース"
+                QuantityType.PIECE -> "バラ"
             }
+
+            InfoRow(
+                label = "予定数量",
+                value = String.format("%.1f %s", item.plannedQty, qtyLabel)
+            )
+
             InfoRow(
                 label = "出庫数量",
                 value = String.format("%.1f %s", item.pickedQty, qtyLabel)

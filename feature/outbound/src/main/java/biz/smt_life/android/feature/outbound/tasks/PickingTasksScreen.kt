@@ -21,8 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -46,14 +44,14 @@ import kotlinx.coroutines.launch
  * Picking Tasks screen per spec 2.5.1 出庫処理 > ピッキングリスト選択.
  *
  * Features:
- * - Two tabs: My Area (担当エリア) and All Courses (全コース)
+ * - Shows only "My tasks" (私の担当) - tasks assigned to current picker
  * - List of tasks with progress (e.g., "5/10")
  * - Status chip based on completion
  * - Status-based navigation:
  *   - PENDING items → Data Input screen
  *   - Only PICKING items → History screen (editable)
  *   - All COMPLETED/SHORTAGE → History screen (read-only)
- * - Pull-to-refresh for each tab
+ * - Pull-to-refresh
  * - Empty and error states
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,35 +84,17 @@ fun PickingTasksScreen(
         },
         snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Tabs
-            TabRow(selectedTabIndex = state.activeTab.ordinal) {
-                Tab(
-                    selected = state.activeTab == PickingTab.MY_AREA,
-                    onClick = { viewModel.onTabSelected(PickingTab.MY_AREA) },
-                    text = { Text("私の担当") }
-                )
-                Tab(
-                    selected = state.activeTab == PickingTab.ALL_COURSES,
-                    onClick = { viewModel.onTabSelected(PickingTab.ALL_COURSES) },
-                    text = { Text("全体") }
-                )
-            }
-
-            // Tab content
-            when (state.currentTabState) {
+        Box(modifier = Modifier.padding(paddingValues)) {
+            // Content
+            when (state.tasksState) {
                 is TaskListState.Loading -> LoadingContent()
                 is TaskListState.Empty -> EmptyContent()
                 is TaskListState.Error -> ErrorContent(
-                    message = (state.currentTabState as TaskListState.Error).message,
+                    message = (state.tasksState as TaskListState.Error).message,
                     onRetry = { viewModel.refresh() }
                 )
                 is TaskListState.Success -> {
-                    val tasks = (state.currentTabState as TaskListState.Success).tasks
+                    val tasks = (state.tasksState as TaskListState.Success).tasks
                     TaskListContent(
                         tasks = tasks,
                         isRefreshing = false,

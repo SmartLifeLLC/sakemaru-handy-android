@@ -22,12 +22,10 @@ import androidx.navigation.navArgument
 import biz.smt_life.android.feature.inbound.InboundScreen
 import biz.smt_life.android.feature.login.LoginScreen
 import biz.smt_life.android.feature.main.MainRoute
-import biz.smt_life.android.feature.outbound.OutboundEntryScreen
 import biz.smt_life.android.feature.outbound.tasks.PickingTasksScreen
 import biz.smt_life.android.feature.outbound.tasks.PickingTasksViewModel
 import biz.smt_life.android.feature.outbound.picking.OutboundPickingScreen
 import biz.smt_life.android.feature.outbound.picking.PickingHistoryScreen
-import biz.smt_life.android.feature.outbound.history.OutboundHistoryScreen
 import biz.smt_life.android.feature.settings.SettingsScreen
 
 @Composable
@@ -218,44 +216,6 @@ fun HandyNavHost(
                     pickingTasksViewModel.clearSelectedTask()
                     pickingTasksViewModel.refresh()
                     navController.popBackStack()
-                }
-            )
-        }
-
-        // Legacy outbound entry (to be deprecated)
-        composable(
-            route = Routes.OutboundEntry.route
-        ) { backStackEntry ->
-            val courseId = backStackEntry.arguments?.getString("courseId") ?: return@composable
-            OutboundEntryScreen(
-                courseId = courseId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToHistory = { courseId ->
-                    navController.navigate(Routes.OutboundHistory.createRoute(courseId))
-                }
-            )
-        }
-
-        composable(
-            route = Routes.OutboundHistory.route,
-            arguments = listOf(
-                navArgument("courseId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) {
-            OutboundHistoryScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToEntry = { courseId, itemId ->
-                    navController.navigate(Routes.OutboundEntry.createRoute(courseId)) {
-                        popUpTo(Routes.OutboundHistory.route) { inclusive = true }
-                    }
                 }
             )
         }

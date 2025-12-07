@@ -2,6 +2,7 @@ package biz.smt_life.android.feature.outbound.picking
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.PickingTask
@@ -317,7 +320,7 @@ private fun QuantityInputCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "発注数量",
+                        text = "出荷数量",
                         style = MaterialTheme.typography.labelLarge
                     )
                     Text(
@@ -431,17 +434,29 @@ private fun OutboundPickingBottomBar(
         tonalElevation = 3.dp,
         shadowElevation = 8.dp
     ) {
+        val smallShape = RoundedCornerShape(6.dp)
+        val smallTextStyle = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 11.sp,
+            lineHeight = 12.sp
+        )
+        val contentPadding = PaddingValues(horizontal = 2.dp, vertical = 2.dp)
+
         Column(modifier = Modifier.padding(12.dp)) {
             // Top row: Register, Prev, Next
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                val buttonModifier = Modifier
+                    .weight(1f)
+
                 // 登録(F1)
                 Button(
                     onClick = onRegisterClick,
                     enabled = state.canRegister,
-                    modifier = Modifier.weight(2f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
                     if (state.isUpdating) {
                         CircularProgressIndicator(
@@ -450,7 +465,7 @@ private fun OutboundPickingBottomBar(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("登録(F1)")
+                        Text("登録\n(F1)", style = smallTextStyle)
                     }
                 }
 
@@ -458,53 +473,59 @@ private fun OutboundPickingBottomBar(
                 OutlinedButton(
                     onClick = onPrevClick,
                     enabled = state.canMovePrev && !state.isUpdating,
-                    modifier = Modifier.weight(1f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
-                    Text("前へ(F2)")
+                    Text("前へ\n(F2)", style = smallTextStyle)
                 }
 
                 // 次へ(F3)
                 OutlinedButton(
                     onClick = onNextClick,
                     enabled = state.canMoveNext && !state.isUpdating,
-                    modifier = Modifier.weight(1f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
-                    Text("次へ(F3)")
+                    Text("次へ\n(F3)", style = smallTextStyle)
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Bottom row: Image, Course, History
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
                 // 画像(F5) - Show image viewer if images are available
                 OutlinedButton(
                     onClick = onImageClick,
                     enabled = state.hasImages && !state.isUpdating,
-                    modifier = Modifier.weight(1f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
-                    Text("画像(F5)")
+                    Text("画像\n(F5)", style = smallTextStyle)
                 }
 
                 // コース(F6)
                 OutlinedButton(
                     onClick = onCourseClick,
                     enabled = !state.isUpdating,
-                    modifier = Modifier.weight(1f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
-                    Text("コース(F6)")
+                    Text(
+                        "コース\n(F6)",
+                        style = smallTextStyle,
+                        textAlign = TextAlign.Center,
+                    )
                 }
 
                 // 履歴(F7)
                 OutlinedButton(
                     onClick = onHistoryClick,
                     enabled = !state.isUpdating,
-                    modifier = Modifier.weight(1f)
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
                 ) {
-                    Text("履歴(F7)")
+                    Text("履歴\n(F7)", style = smallTextStyle)
                 }
             }
         }

@@ -15,12 +15,11 @@ import javax.inject.Inject
 
 /**
  * ViewModel for Picking Tasks screen per spec 2.5.1 出庫処理.
- * Manages two tabs: My Area (picker-filtered) and All Courses (warehouse-wide).
+ * Shows only "My tasks" (私の担当) - tasks assigned to current picker.
  *
  * Responsibilities:
- * - Load tasks per tab from repository
- * - Handle tab switching with lazy loading
- * - Pull-to-refresh for each tab
+ * - Load tasks from repository (picker-filtered)
+ * - Pull-to-refresh
  * - Cache latest successful data in memory
  * - Handle 401/403 by exposing session error
  */
@@ -46,39 +45,19 @@ class PickingTasksViewModel @Inject constructor(
     private fun observeRepositoryTasks() {
         viewModelScope.launch {
             repository.tasksFlow.collect { tasks ->
-                // Update the appropriate tab state based on which tab has been loaded
+                // Update task state if we've already loaded tasks
                 _state.update { currentState ->
-                    when (currentState.activeTab) {
-                        PickingTab.MY_AREA -> {
-                            // Only update if we've attempted to load My Area tasks
-                            if (currentState.myAreaState is TaskListState.Success ||
-                                currentState.myAreaState is TaskListState.Empty
-                            ) {
-                                val newState = if (tasks.isEmpty()) {
-                                    TaskListState.Empty
-                                } else {
-                                    TaskListState.Success(tasks)
-                                }
-                                currentState.copy(myAreaState = newState)
-                            } else {
-                                currentState
-                            }
+                    if (currentState.tasksState is TaskListState.Success ||
+                        currentState.tasksState is TaskListState.Empty
+                    ) {
+                        val newState = if (tasks.isEmpty()) {
+                            TaskListState.Empty
+                        } else {
+                            TaskListState.Success(tasks)
                         }
-                        PickingTab.ALL_COURSES -> {
-                            // Only update if we've attempted to load All Courses tasks
-                            if (currentState.allCoursesState is TaskListState.Success ||
-                                currentState.allCoursesState is TaskListState.Empty
-                            ) {
-                                val newState = if (tasks.isEmpty()) {
-                                    TaskListState.Empty
-                                } else {
-                                    TaskListState.Success(tasks)
-                                }
-                                currentState.copy(allCoursesState = newState)
-                            } else {
-                                currentState
-                            }
-                        }
+                        currentState.copy(tasksState = newState)
+                    } else {
+                        currentState
                     }
                 }
             }
@@ -97,8 +76,7 @@ class PickingTasksViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     errorMessage = "倉庫情報が見つかりません。再ログインしてください。",
-                    myAreaState = TaskListState.Error("倉庫情報が見つかりません"),
-                    allCoursesState = TaskListState.Error("倉庫情報が見つかりません")
+                    tasksState = TaskListState.Error("倉庫情報が見つかりません")
                 )
             }
             return
@@ -106,44 +84,19 @@ class PickingTasksViewModel @Inject constructor(
 
         _state.update { it.copy(warehouseId = warehouseId, pickerId = pickerId) }
 
-        // Load My Area tasks by default
+        // Load My tasks
         loadMyAreaTasks()
     }
 
     /**
-     * Switch between tabs.
-     * Loads data for the newly active tab if not already loaded.
-     */
-    fun onTabSelected(tab: PickingTab) {
-        _state.update { it.copy(activeTab = tab) }
-
-        // Lazy load: fetch data for tab if not already loaded
-        when (tab) {
-            PickingTab.MY_AREA -> {
-                if (_state.value.myAreaState is TaskListState.Loading) {
-                    loadMyAreaTasks()
-                }
-            }
-            PickingTab.ALL_COURSES -> {
-                if (_state.value.allCoursesState is TaskListState.Loading) {
-                    loadAllCoursesTasks()
-                }
-            }
-        }
-    }
-
-    /**
-     * Refresh tasks for the currently active tab.
+     * Refresh tasks.
      */
     fun refresh() {
-        when (_state.value.activeTab) {
-            PickingTab.MY_AREA -> loadMyAreaTasks()
-            PickingTab.ALL_COURSES -> loadAllCoursesTasks()
-        }
+        loadMyAreaTasks()
     }
 
     /**
-     * Load tasks for "My Area" tab (filtered by picker).
+     * Load tasks for "My tasks" (filtered by picker).
      */
     fun loadMyAreaTasks() {
         val warehouseId = _state.value.warehouseId ?: return
@@ -151,13 +104,13 @@ class PickingTasksViewModel @Inject constructor(
 
         if (pickerId == null || pickerId <= 0) {
             _state.update {
-                it.copy(myAreaState = TaskListState.Error("ピッカー情報が見つかりません"))
+                it.copy(tasksState = TaskListState.Error("ピッカー情報が見つかりません"))
             }
             return
         }
 
         viewModelScope.launch {
-            _state.update { it.copy(myAreaState = TaskListState.Loading) }
+            _state.update { it.copy(tasksState = TaskListState.Loading) }
 
             repository.getMyAreaTasks(warehouseId, pickerId)
                 .onSuccess { tasks ->
@@ -166,36 +119,11 @@ class PickingTasksViewModel @Inject constructor(
                     } else {
                         TaskListState.Success(tasks)
                     }
-                    _state.update { it.copy(myAreaState = newState) }
+                    _state.update { it.copy(tasksState = newState) }
                 }
                 .onFailure { error ->
                     val message = mapErrorMessage(error)
-                    _state.update { it.copy(myAreaState = TaskListState.Error(message)) }
-                }
-        }
-    }
-
-    /**
-     * Load tasks for "All Courses" tab (no picker filter).
-     */
-    fun loadAllCoursesTasks() {
-        val warehouseId = _state.value.warehouseId ?: return
-
-        viewModelScope.launch {
-            _state.update { it.copy(allCoursesState = TaskListState.Loading) }
-
-            repository.getAllTasks(warehouseId)
-                .onSuccess { tasks ->
-                    val newState = if (tasks.isEmpty()) {
-                        TaskListState.Empty
-                    } else {
-                        TaskListState.Success(tasks)
-                    }
-                    _state.update { it.copy(allCoursesState = newState) }
-                }
-                .onFailure { error ->
-                    val message = mapErrorMessage(error)
-                    _state.update { it.copy(allCoursesState = TaskListState.Error(message)) }
+                    _state.update { it.copy(tasksState = TaskListState.Error(message)) }
                 }
         }
     }

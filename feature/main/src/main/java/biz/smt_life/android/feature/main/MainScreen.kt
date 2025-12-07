@@ -201,7 +201,8 @@ private fun ReadyContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "入庫処理(${pendingCounts.inbound.toString().padStart(2, '0')})",
+//                    text = "入庫処理(${pendingCounts.inbound.toString().padStart(2, '0')})",
+                    text = "入庫処理",
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -211,7 +212,8 @@ private fun ReadyContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "出庫処理(${pendingCounts.outbound.toString().padStart(2, '0')})",
+//                    text = "出庫処理(${pendingCounts.outbound.toString().padStart(2, '0')})",
+                    text = "出庫処理",
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
@@ -231,7 +233,8 @@ private fun ReadyContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "棚卸処理(${pendingCounts.inventory.toString().padStart(2, '0')})",
+//                    text = "棚卸処理(${pendingCounts.inventory.toString().padStart(2, '0')})",
+                    text = "棚卸処理",
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
