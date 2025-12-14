@@ -19,7 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "sakemaru-handy-denso"
+rootProject.name = "sakemaru-handy-android"
 include(":app")
 include(":core:domain")
 include(":core:network")
