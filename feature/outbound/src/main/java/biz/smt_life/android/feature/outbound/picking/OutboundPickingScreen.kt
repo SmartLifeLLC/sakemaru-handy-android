@@ -161,39 +161,57 @@ private fun OutboundPickingContent(
     val currentItem = state.currentItem!!
     val task = state.task!!
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    // Split into left and right panes, each with independent scrolling
+    Row(
+        modifier = modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Course Header (use counters from state, not filtered task)
-        CourseHeaderCard(
-            courseName = "${task.courseName}",
-            pickingAreaName = task.pickingAreaName,
-            registeredCount = state.registeredCount, // From originalTask, not filtered
-            totalCount = state.totalCount             // From originalTask, not filtered
-        )
+        // LEFT PANE: Course info, Item info, Product details (read-only)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Course Header (use counters from state, not filtered task)
+            CourseHeaderCard(
+                courseName = "${task.courseName}",
+                pickingAreaName = task.pickingAreaName,
+                registeredCount = state.registeredCount, // From originalTask, not filtered
+                totalCount = state.totalCount             // From originalTask, not filtered
+            )
 
-        // Item Information Card
-        ItemInformationCard(
-            itemName = currentItem.itemName,
-            slipNumber = currentItem.slipNumber.toString()
-        )
+            // Item Information Card
+            ItemInformationCard(
+                itemName = currentItem.itemName,
+                slipNumber = currentItem.slipNumber.toString()
+            )
 
-        // Quantity Input Card
-        QuantityInputCard(
-            plannedQty = currentItem.plannedQty,
-            quantityType = state.quantityTypeLabel,
-            pickedQtyInput = state.pickedQtyInput,
-            onPickedQtyChange = onPickedQtyChange,
-            isUpdating = state.isUpdating,
-            formatQuantity = state::formatQuantity
-        )
+            // Product details card (容量, 入数, JAN)
+            ProductDetailsCard(currentItem)
+        }
 
-        // Product details card (容量, 入数, JAN)
-        ProductDetailsCard(currentItem)
+        // RIGHT PANE: Quantity Input (editable)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Quantity Input Card
+            QuantityInputCard(
+                plannedQty = currentItem.plannedQty,
+                quantityType = state.quantityTypeLabel,
+                pickedQtyInput = state.pickedQtyInput,
+                onPickedQtyChange = onPickedQtyChange,
+                isUpdating = state.isUpdating,
+                formatQuantity = state::formatQuantity
+            )
+        }
     }
 }
 
