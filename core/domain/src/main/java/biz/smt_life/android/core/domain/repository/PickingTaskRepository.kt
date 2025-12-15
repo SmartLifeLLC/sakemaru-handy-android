@@ -88,12 +88,14 @@ interface PickingTaskRepository {
      * @param resultId Picking Item Result ID
      * @param taskId Picking Task ID (for refreshing after cancel)
      * @param warehouseId Warehouse ID (for refreshing after cancel)
+     * @param pickerId Picker ID (for refreshing after cancel)
      * @return Result containing unit on success or error
      */
     suspend fun cancelPickingItem(
         resultId: Int,
         taskId: Int,
-        warehouseId: Int
+        warehouseId: Int,
+        pickerId: Int
     ): Result<Unit>
 
     /**

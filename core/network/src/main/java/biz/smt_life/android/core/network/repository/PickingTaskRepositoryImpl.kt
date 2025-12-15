@@ -176,7 +176,8 @@ class PickingTaskRepositoryImpl @Inject constructor(
     override suspend fun cancelPickingItem(
         resultId: Int,
         taskId: Int,
-        warehouseId: Int
+        warehouseId: Int,
+        pickerId: Int
     ): Result<Unit> {
         return try {
             val response = pickingApi.cancelPickingItem(
@@ -187,7 +188,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
             if (response.isSuccess) {
                 // After successful cancel, refresh the task to update tasksFlow
                 // This ensures all observers (history, data input, course list) see the update
-                refreshTask(taskId, warehouseId)
+                refreshTask(taskId, warehouseId, pickerId)
                 Result.success(Unit)
             } else {
                 val errorMessage = extractErrorMessage(response.result, "出庫履歴のキャンセルに失敗しました")

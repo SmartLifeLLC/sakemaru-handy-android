@@ -85,10 +85,13 @@ class PickingHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isDeleting = true, errorMessage = null, itemToDelete = null) }
 
+            val pickerId = tokenManager.getPickerId()
+
             pickingTaskRepository.cancelPickingItem(
                 resultId = item.id,
                 taskId = currentTaskId,
-                warehouseId = currentWarehouseId
+                warehouseId = currentWarehouseId,
+                pickerId = pickerId
             )
                 .onSuccess {
                     // After successful cancel, the repository has refreshed the task.

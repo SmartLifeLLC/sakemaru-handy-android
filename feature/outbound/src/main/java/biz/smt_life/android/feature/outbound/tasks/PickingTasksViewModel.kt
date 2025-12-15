@@ -82,7 +82,15 @@ class PickingTasksViewModel @Inject constructor(
             return
         }
 
-        _state.update { it.copy(warehouseId = warehouseId, pickerId = pickerId) }
+        if (pickerId <= 0) {
+            _state.update {
+                it.copy(
+                    errorMessage = "ピッカー情報が見つかりません。再ログインしてください。",
+                    tasksState = TaskListState.Error("ピッカー情報が見つかりません")
+                )
+            }
+            return
+        }
 
         // Load My tasks
         loadMyAreaTasks()
@@ -97,12 +105,20 @@ class PickingTasksViewModel @Inject constructor(
 
     /**
      * Load tasks for "My tasks" (filtered by picker).
+     * Gets warehouseId and pickerId from TokenManager (session data).
      */
     fun loadMyAreaTasks() {
-        val warehouseId = _state.value.warehouseId ?: return
-        val pickerId = _state.value.pickerId
+        val warehouseId = tokenManager.getDefaultWarehouseId()
+        val pickerId = tokenManager.getPickerId()
 
-        if (pickerId == null || pickerId <= 0) {
+        if (warehouseId <= 0) {
+            _state.update {
+                it.copy(tasksState = TaskListState.Error("倉庫情報が見つかりません"))
+            }
+            return
+        }
+
+        if (pickerId <= 0) {
             _state.update {
                 it.copy(tasksState = TaskListState.Error("ピッカー情報が見つかりません"))
             }

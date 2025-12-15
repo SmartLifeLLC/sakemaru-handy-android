@@ -176,8 +176,9 @@ class OutboundPickingViewModel @Inject constructor(
      */
     private suspend fun refreshTaskFromServer(taskId: Int) {
         val warehouseId = _state.value.warehouseId
+        val pickerId = tokenManager.getPickerId()
 
-        pickingTaskRepository.refreshTask(taskId, warehouseId)
+        pickingTaskRepository.refreshTask(taskId, warehouseId, pickerId)
             .onSuccess { refreshedTask ->
                 // Update state with refreshed task
                 val newPendingItems = refreshedTask.items.filter { item ->

@@ -193,13 +193,13 @@ private fun HistoryListContent(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Header with course info
         if (state.task != null) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
@@ -288,6 +288,8 @@ private fun HistoryItemCard(
             // JAN code (if available)
             if (item.janCode != null) {
                 InfoRow(label = "JAN", value = item.janCode!!)
+            } else {
+                InfoRow(label = "JAN", value = "-")
             }
 
             // Get quantity type
@@ -684,6 +686,368 @@ private fun PreviewStatusBadges() {
             StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING)
             StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED)
             StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Full Page - Editable Mode (Landscape)",
+    showBackground = true,
+    widthDp = 1280,
+    heightDp = 800
+)
+@Composable
+private fun PreviewFullPageEditableMode() {
+    val mockTask = PickingTask(
+        taskId = 1,
+        courseCode = "A001",
+        courseName = "Aコース（午前便）",
+        pickingAreaName = "1F 冷凍エリア",
+        waveId = 111,
+        pickingAreaCode = "AREA-A",
+        items = listOf(
+            PickingTaskItem(
+                id = 1,
+                itemId = 101,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121501,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 20.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1001,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 2,
+                itemId = 102,
+                itemName = "アサヒスーパードライ 350ml缶",
+                slipNumber = 2023121502,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777234567",
+                plannedQty = 12.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 12.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1002,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 3,
+                itemId = 103,
+                itemName = "キリン一番搾り 500ml缶",
+                slipNumber = 2023121503,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777345678",
+                plannedQty = 10.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 0.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1003,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 4,
+                itemId = 104,
+                itemName = "サントリー ザ・プレミアム・モルツ",
+                slipNumber = 2023121504,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777456789",
+                plannedQty = 15.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 15.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1004,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 5,
+                itemId = 105,
+                itemName = "エビスビール 500ml缶",
+                slipNumber = 2023121505,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = null,
+                plannedQty = 8.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 5.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1005,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 6,
+                itemId = 106,
+                itemName = "アサヒドライゼロ 350ml缶",
+                slipNumber = 2023121506,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777567890",
+                plannedQty = 20.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 20.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 1006,
+                images = emptyList()
+            )
+        )
+    )
+
+    val mockState = PickingHistoryState(
+        task = mockTask,
+        isLoading = false,
+        errorMessage = null
+    )
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫履歴") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                HistoryBottomBar(
+                    onConfirmAllClick = {},
+                    canConfirm = true
+                )
+            }
+        ) { padding ->
+            HistoryListContent(
+                state = mockState,
+                onDeleteClick = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Full Page - Read-Only Mode (Landscape)",
+    showBackground = true,
+    widthDp = 1280,
+    heightDp = 800
+)
+@Composable
+private fun PreviewFullPageReadOnlyMode() {
+    val mockTask = PickingTask(
+        taskId = 2,
+        courseCode = "B002",
+        courseName = "Bコース（午後便）",
+        pickingAreaName = "2F 常温エリア",
+        waveId = 112,
+        pickingAreaCode = "AREA-B",
+        items = listOf(
+            PickingTaskItem(
+                id = 1,
+                itemId = 201,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121601,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 24.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                packaging = "ケース",
+                temperatureType = "常温",
+                walkingOrder = 2001,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 2,
+                itemId = 202,
+                itemName = "アサヒスーパードライ 350ml缶",
+                slipNumber = 2023121602,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777234567",
+                plannedQty = 12.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 12.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                packaging = "ケース",
+                temperatureType = "常温",
+                walkingOrder = 2002,
+                images = emptyList()
+            )
+        )
+    )
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫履歴") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            ReadOnlyModeContent(
+                task = mockTask,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Full Page - Editable Mode with History Items (Landscape)",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 1280
+)
+@Composable
+private fun PreviewFullPageWithPickingItems() {
+    val mockTask = PickingTask(
+        taskId = 3,
+        courseCode = "C003",
+        courseName = "Cコース（深夜便）",
+        pickingAreaName = "3F 冷蔵エリア",
+        waveId = 113,
+        pickingAreaCode = "AREA-C",
+        items = listOf(
+            PickingTaskItem(
+                id = 1,
+                itemId = 301,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121701,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 20.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷蔵",
+                walkingOrder = 3001,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 2,
+                itemId = 302,
+                itemName = "キリン一番搾り 500ml缶",
+                slipNumber = 2023121702,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777345678",
+                plannedQty = 10.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 0.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE,
+                packaging = "ケース",
+                temperatureType = "冷蔵",
+                walkingOrder = 3002,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 3,
+                itemId = 303,
+                itemName = "アサヒスーパードライ 350ml缶",
+                slipNumber = 2023121703,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777234567",
+                plannedQty = 12.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 12.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷蔵",
+                walkingOrder = 3003,
+                images = emptyList()
+            ),
+            PickingTaskItem(
+                id = 4,
+                itemId = 304,
+                itemName = "サントリー ザ・プレミアム・モルツ",
+                slipNumber = 2023121704,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777456789",
+                plannedQty = 15.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 15.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "ケース",
+                temperatureType = "冷蔵",
+                walkingOrder = 3004,
+                images = emptyList()
+            )
+        )
+    )
+
+    val mockState = PickingHistoryState(
+        task = mockTask,
+        isLoading = false,
+        errorMessage = null
+    )
+
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫履歴") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                HistoryBottomBar(
+                    onConfirmAllClick = {},
+                    canConfirm = true
+                )
+            }
+        ) { padding ->
+            HistoryListContent(
+                state = mockState,
+                onDeleteClick = {},
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 }
