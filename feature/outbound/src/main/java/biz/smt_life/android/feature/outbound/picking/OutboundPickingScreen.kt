@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -647,4 +648,130 @@ private fun ImageViewerDialog(
             }
         }
     )
+}
+
+// ========== Preview Section ==========
+
+@Preview(
+    name = "Course Header Card",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewCourseHeaderCard() {
+    MaterialTheme {
+        CourseHeaderCard(
+            courseName = "Aコース（午前便）",
+            pickingAreaName = "1F 冷凍エリア",
+            registeredCount = 5,
+            totalCount = 10
+        )
+    }
+}
+
+@Preview(
+    name = "Item Information Card",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewItemInformationCard() {
+    MaterialTheme {
+        ItemInformationCard(
+            itemName = "サッポロ生ビール黒ラベル 500ml缶",
+            slipNumber = "20231215001"
+        )
+    }
+}
+
+@Preview(
+    name = "Quantity Input Card",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewQuantityInputCard() {
+    MaterialTheme {
+        QuantityInputCard(
+            plannedQty = 24.0,
+            quantityType = "ケース",
+            pickedQtyInput = "20",
+            onPickedQtyChange = {},
+            isUpdating = false,
+            formatQuantity = { qty, type -> String.format("%.1f %s", qty, type) }
+        )
+    }
+}
+
+@Preview(
+    name = "Product Details Card",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewProductDetailsCard() {
+    MaterialTheme {
+        ProductDetailsCard(
+            item = biz.smt_life.android.core.domain.model.PickingTaskItem(
+                id = 1,
+                itemId = 101,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121500,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                pickedQty = 0.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                packaging = "packaging",
+                temperatureType = "temperatureType",
+                walkingOrder = 12234,
+                images = emptyList()
+            )
+        )
+    }
+}
+
+@Preview(
+    name = "Completion Dialog",
+    showBackground = true
+)
+@Composable
+private fun PreviewCompletionConfirmationDialog() {
+    MaterialTheme {
+        CompletionConfirmationDialog(
+            isCompleting = false,
+            onConfirm = {},
+            onCancel = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Image Viewer Dialog - Empty",
+    showBackground = true
+)
+@Composable
+private fun PreviewImageViewerDialogEmpty() {
+    MaterialTheme {
+        ImageViewerDialog(
+            images = emptyList(),
+            onDismiss = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Image Viewer Dialog - With Image",
+    showBackground = true
+)
+@Composable
+private fun PreviewImageViewerDialogWithImage() {
+    MaterialTheme {
+        ImageViewerDialog(
+            images = listOf("https://example.com/image.jpg"),
+            onDismiss = {}
+        )
+    }
 }

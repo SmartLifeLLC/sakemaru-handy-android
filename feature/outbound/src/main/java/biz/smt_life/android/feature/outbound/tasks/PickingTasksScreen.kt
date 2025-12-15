@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -283,5 +284,257 @@ private fun StatusChip(task: PickingTask) {
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
+    }
+}
+
+// ========== Preview Section ==========
+
+@Preview(
+    name = "Picking Task Card - Pending",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewPickingTaskCardPending() {
+    MaterialTheme {
+        PickingTaskCard(
+            task = PickingTask(
+                taskId = 1,
+                courseCode = "A001",
+                courseName = "Aコース（午前便）",
+                pickingAreaName = "1F 冷凍エリア",
+                waveId = 111,
+                pickingAreaCode = "pickingAreaCode",
+                items = List(10) { index ->
+                    biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = index,
+                        itemId = index + 100,
+                        itemName = "商品 $index",
+                        slipNumber = 202312150 + index,
+                        volume = "500ml",
+                        capacityCase = 24,
+                        janCode = null,
+                        plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = 0.0,
+                        status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    )
+                }
+            ),
+            onClick = {},
+            enabled = true
+        )
+    }
+}
+
+@Preview(
+    name = "Picking Task Card - In Progress",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewPickingTaskCardInProgress() {
+    MaterialTheme {
+        PickingTaskCard(
+            task = PickingTask(
+                taskId = 2,
+                courseCode = "B002",
+                courseName = "Bコース（午後便）",
+                pickingAreaName = "2F 常温エリア",
+                waveId = 111,
+                pickingAreaCode = "pickingAreaCode",
+                items = List(10) { index ->
+                    biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = index,
+                        itemId = index + 200,
+                        itemName = "商品 $index",
+                        slipNumber = 2023121500 + index,
+                        volume = "350ml",
+                        capacityCase = 24,
+                        janCode = null,
+                        plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = if (index < 5) 10.0 else 0.0,
+                        status = if (index < 5) biz.smt_life.android.core.domain.model.ItemStatus.PICKING
+                                 else biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    )
+                }
+            ),
+            onClick = {},
+            enabled = true
+        )
+    }
+}
+
+@Preview(
+    name = "Picking Task Card - Completed",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewPickingTaskCardCompleted() {
+    MaterialTheme {
+        PickingTaskCard(
+            task = PickingTask(
+                taskId = 3,
+                courseCode = "C003",
+                courseName = "Cコース（深夜便）",
+                pickingAreaName = "3F 冷蔵エリア",
+                waveId = 111,
+                pickingAreaCode = "pickingAreaCode",
+                items = List(10) { index ->
+                    biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = index,
+                        itemId = index + 300,
+                        itemName = "商品 $index",
+                        slipNumber = 2023121500 + index,
+                        volume = "1000ml",
+                        capacityCase = 12,
+                        janCode = null,
+                        plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = 10.0,
+                        status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    )
+                }
+            ),
+            onClick = {},
+            enabled = true
+        )
+    }
+}
+
+@Preview(
+    name = "Loading Content",
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600
+)
+@Composable
+private fun PreviewLoadingContent() {
+    MaterialTheme {
+        LoadingContent()
+    }
+}
+
+@Preview(
+    name = "Empty Content",
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600
+)
+@Composable
+private fun PreviewEmptyContent() {
+    MaterialTheme {
+        EmptyContent()
+    }
+}
+
+@Preview(
+    name = "Error Content",
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600
+)
+@Composable
+private fun PreviewErrorContent() {
+    MaterialTheme {
+        ErrorContent(
+            message = "ネットワークエラーが発生しました",
+            onRetry = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Status Chip - All States",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewStatusChips() {
+    MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Pending
+            StatusChip(
+                task = PickingTask(
+                    taskId = 1,
+                    courseCode = "A001",
+                    courseName = "未着手コース",
+                    pickingAreaName = "1F",
+                    waveId = 111,
+                    pickingAreaCode = "pickingAreaCode",
+                    items = List(10) { biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = it, itemId = it, itemName = "", slipNumber = 0, volume = null,
+                        capacityCase = null, janCode = null, plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = 0.0, status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    ) }
+                )
+            )
+            // In Progress
+            StatusChip(
+                task = PickingTask(
+                    taskId = 2,
+                    courseCode = "B002",
+                    courseName = "進行中コース",
+                    pickingAreaName = "2F",
+                    waveId = 111,
+                    pickingAreaCode = "pickingAreaCode",
+                    items = List(10) { index -> biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = index, itemId = index, itemName = "", slipNumber = 0, volume = null,
+                        capacityCase = null, janCode = null, plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = if (index < 5) 10.0 else 0.0,
+                        status = if (index < 5) biz.smt_life.android.core.domain.model.ItemStatus.PICKING
+                                 else biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    ) }
+                )
+            )
+            // Completed
+            StatusChip(
+                task = PickingTask(
+                    taskId = 3,
+                    courseCode = "C003",
+                    courseName = "完了コース",
+                    pickingAreaName = "3F",
+                    waveId = 11,
+                    pickingAreaCode = "pickingAreaCode",
+                    items = List(10) { biz.smt_life.android.core.domain.model.PickingTaskItem(
+                        id = it, itemId = it, itemName = "", slipNumber = 0, volume = null,
+                        capacityCase = null, janCode = null, plannedQty = 10.0,
+                        plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                        pickedQty = 10.0, status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                        packaging = "packaging",
+                        temperatureType = "temperatureType",
+                        walkingOrder = 12234,
+                        images = emptyList()
+                    ) }
+                )
+            )
+        }
     }
 }

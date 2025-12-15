@@ -1,11 +1,32 @@
 package biz.smt_life.android.feature.main
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -156,49 +177,46 @@ private fun ReadyContent(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.SpaceBetween,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header with picker info and warehouse
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Picker info
-            if (pickerCode != null && pickerName != null) {
-                Text(
-                    text = "Worker: $pickerCode $pickerName",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
+        val commonWidth = 400.dp
 
-            // Warehouse section with settings icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        // Header with warehouse section and settings icon
+        Box(
+            modifier = Modifier.width(commonWidth),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = warehouse.name,
+                style = MaterialTheme.typography.headlineSmall
+            )
+            IconButton(
+                onClick = onNavigateToWarehouseSettings,
+                modifier = Modifier.align(Alignment.CenterEnd)
             ) {
-                Text(
-                    text = warehouse.name,
-                    style = MaterialTheme.typography.headlineSmall
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "倉庫設定"
                 )
-                IconButton(onClick = onNavigateToWarehouseSettings) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "倉庫設定"
-                    )
-                }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         // Main menu buttons
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val mainButtonModifier = Modifier.width(commonWidth)
+
             Button(
                 onClick = onNavigateToInbound,
-                modifier = Modifier.fillMaxWidth()
+                modifier = mainButtonModifier
             ) {
                 Text(
 //                    text = "入庫処理(${pendingCounts.inbound.toString().padStart(2, '0')})",
@@ -209,7 +227,7 @@ private fun ReadyContent(
 
             Button(
                 onClick = onNavigateToOutbound,
-                modifier = Modifier.fillMaxWidth()
+                modifier = mainButtonModifier
             ) {
                 Text(
 //                    text = "出庫処理(${pendingCounts.outbound.toString().padStart(2, '0')})",
@@ -220,7 +238,7 @@ private fun ReadyContent(
 
             Button(
                 onClick = onNavigateToMove,
-                modifier = Modifier.fillMaxWidth()
+                modifier = mainButtonModifier
             ) {
                 Text(
                     text = "移動処理",
@@ -230,7 +248,7 @@ private fun ReadyContent(
 
             Button(
                 onClick = onNavigateToInventory,
-                modifier = Modifier.fillMaxWidth()
+                modifier = mainButtonModifier
             ) {
                 Text(
 //                    text = "棚卸処理(${pendingCounts.inventory.toString().padStart(2, '0')})",
@@ -241,7 +259,7 @@ private fun ReadyContent(
 
             Button(
                 onClick = onNavigateToLocationSearch,
-                modifier = Modifier.fillMaxWidth()
+                modifier = mainButtonModifier
             ) {
                 Text(
                     text = "ロケ検索",
@@ -254,40 +272,41 @@ private fun ReadyContent(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-            Row(
+            Box(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                contentAlignment = Alignment.Center
             ) {
-                Column {
+                Column(modifier = Modifier.align(Alignment.CenterStart)) {
                     Text(
-                        text = currentDate,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "$pickerName",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = hostUrl,
+                        text = "$appVersion ($hostUrl)",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                IconButton(onClick = { showLogoutDialog = true }) {
+                Text(
+                    text = currentDate,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                IconButton(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
                     Icon(
-                        imageVector = Icons.Default.ExitToApp,
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                         contentDescription = "ログアウト"
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = appVersion,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }

@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -498,4 +499,191 @@ private fun ConfirmAllDialog(
             }
         }
     )
+}
+
+// ========== Preview Section ==========
+
+@Preview(
+    name = "History Item Card - Picking",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewHistoryItemCardPicking() {
+    MaterialTheme {
+        HistoryItemCard(
+            item = PickingTaskItem(
+                id = 1,
+                itemId = 101,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121500,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 20.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "packaging",
+                temperatureType = "temperatureType",
+                walkingOrder = 12234,
+                images = emptyList()
+            ),
+            onDeleteClick = {},
+            showDeleteButton = true
+        )
+    }
+}
+
+@Preview(
+    name = "History Item Card - Completed",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewHistoryItemCardCompleted() {
+    MaterialTheme {
+        HistoryItemCard(
+            item = PickingTaskItem(
+                id = 2,
+                itemId = 102,
+                itemName = "アサヒスーパードライ 350ml缶",
+                slipNumber = 2023121500,
+                volume = "350ml",
+                capacityCase = 24,
+                janCode = "4901777234567",
+                plannedQty = 12.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 12.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                packaging = "packaging",
+                temperatureType = "temperatureType",
+                walkingOrder = 12234,
+                images = emptyList()
+            ),
+            onDeleteClick = {},
+            showDeleteButton = false
+        )
+    }
+}
+
+@Preview(
+    name = "History Item Card - Shortage",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewHistoryItemCardShortage() {
+    MaterialTheme {
+        HistoryItemCard(
+            item = PickingTaskItem(
+                id = 3,
+                itemId = 103,
+                itemName = "キリン一番搾り 500ml缶",
+                slipNumber = 2023121500,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777345678",
+                plannedQty = 10.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 0.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE,
+                packaging = "packaging",
+                temperatureType = "temperatureType",
+                walkingOrder = 12234,
+                images = emptyList()
+            ),
+            onDeleteClick = {},
+            showDeleteButton = true
+        )
+    }
+}
+
+@Preview(
+    name = "Read-Only Mode Content",
+    showBackground = true,
+    widthDp = 400,
+    heightDp = 600
+)
+@Composable
+private fun PreviewReadOnlyModeContent() {
+    MaterialTheme {
+        ReadOnlyModeContent(
+            task = PickingTask(
+                taskId = 1,
+                courseCode = "A001",
+                courseName = "Aコース（午前便）",
+                pickingAreaName = "1F 冷凍エリア",
+                waveId = 11,
+                pickingAreaCode = "pickingAreaCode",
+                items = emptyList()
+            )
+        )
+    }
+}
+
+@Preview(
+    name = "Delete Confirmation Dialog",
+    showBackground = true
+)
+@Composable
+private fun PreviewDeleteConfirmationDialog() {
+    MaterialTheme {
+        DeleteConfirmationDialog(
+            item = PickingTaskItem(
+                id = 1,
+                itemId = 101,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                slipNumber = 2023121500,
+                volume = "500ml",
+                capacityCase = 24,
+                janCode = "4901777123456",
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 20.0,
+                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
+                packaging = "packaging",
+                temperatureType = "temperatureType",
+                walkingOrder = 12234,
+                images = emptyList()
+            ),
+            onConfirm = {},
+            onCancel = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Confirm All Dialog",
+    showBackground = true
+)
+@Composable
+private fun PreviewConfirmAllDialog() {
+    MaterialTheme {
+        ConfirmAllDialog(
+            isConfirming = false,
+            onConfirm = {},
+            onCancel = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Status Badge - All States",
+    showBackground = true,
+    widthDp = 400
+)
+@Composable
+private fun PreviewStatusBadges() {
+    MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING)
+            StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING)
+            StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED)
+            StatusBadge(status = biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE)
+        }
+    }
 }
