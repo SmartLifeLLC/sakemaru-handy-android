@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import biz.smt_life.android.core.ui.ScanKeyHandler
@@ -110,6 +111,58 @@ fun InboundScreen(
                 isConfirming = state.isConfirming,
                 isLoading = state.isLoadingHistory
             )
+        }
+    }
+}
+
+// ========== Preview Section ==========
+// Note: Full InboundScreen preview is complex due to ViewModel and ScanKeyHandler dependencies.
+// Component-level previews are available in:
+// - ItemSearchBar.kt
+// - QtyInputSection.kt
+// - HistoryBottomSheet.kt
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Inbound Screen - Empty State",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640
+)
+@Composable
+private fun PreviewInboundScreenEmpty() {
+    MaterialTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Inbound") },
+                    actions = {
+                        TextButton(onClick = {}) {
+                            Text("History (0)")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Empty Inbound Screen Preview",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+                Text(
+                    text = "• Scan or search for items\n• Enter quantities\n• View history",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }

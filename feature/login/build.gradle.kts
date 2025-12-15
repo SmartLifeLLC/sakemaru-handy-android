@@ -40,6 +40,7 @@ dependencies {
     implementation(project(":core:ui"))
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.ui)
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 

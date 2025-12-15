@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import biz.smt_life.android.core.designsystem.component.HandyTextField
@@ -40,6 +42,26 @@ fun SettingsScreen(
         }
     }
 
+    SettingsContent(
+        state = state,
+        onHostUrlChange = viewModel::onHostUrlChange,
+        onSave = viewModel::saveHostUrl,
+        onNavigateBack = onNavigateBack,
+        focusManager = focusManager,
+        snackbarHostState = snackbarHostState
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsContent(
+    state: SettingsState,
+    onHostUrlChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onNavigateBack: () -> Unit,
+    focusManager: FocusManager = LocalFocusManager.current,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -79,7 +101,7 @@ fun SettingsScreen(
 
             HandyTextField(
                 value = state.hostUrl,
-                onValueChange = viewModel::onHostUrlChange,
+                onValueChange = onHostUrlChange,
                 label = "Host URL",
                 enabled = !state.isLoading,
 //                placeholder = "https://example.com",
@@ -87,7 +109,7 @@ fun SettingsScreen(
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        viewModel.saveHostUrl()
+                        onSave()
                     }
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -106,7 +128,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = viewModel::saveHostUrl,
+                onClick = onSave,
                 enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -149,5 +171,87 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+}
+
+// ========== Preview Section ==========
+
+@Preview(
+    name = "Settings Screen - Empty State",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640
+)
+@Composable
+private fun PreviewSettingsScreenEmpty() {
+    MaterialTheme {
+        SettingsContent(
+            state = SettingsState(),
+            onHostUrlChange = {},
+            onSave = {},
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Settings Screen - Filled State",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640
+)
+@Composable
+private fun PreviewSettingsScreenFilled() {
+    MaterialTheme {
+        SettingsContent(
+            state = SettingsState(
+                hostUrl = "https://api.warehouse.example.com"
+            ),
+            onHostUrlChange = {},
+            onSave = {},
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Settings Screen - Loading State",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640
+)
+@Composable
+private fun PreviewSettingsScreenLoading() {
+    MaterialTheme {
+        SettingsContent(
+            state = SettingsState(
+                hostUrl = "https://api.warehouse.example.com",
+                isLoading = true
+            ),
+            onHostUrlChange = {},
+            onSave = {},
+            onNavigateBack = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Settings Screen - Error State",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640
+)
+@Composable
+private fun PreviewSettingsScreenError() {
+    MaterialTheme {
+        SettingsContent(
+            state = SettingsState(
+                hostUrl = "invalid-url",
+                errorMessage = "Invalid URL format. Please use http:// or https://"
+            ),
+            onHostUrlChange = {},
+            onSave = {},
+            onNavigateBack = {}
+        )
     }
 }
