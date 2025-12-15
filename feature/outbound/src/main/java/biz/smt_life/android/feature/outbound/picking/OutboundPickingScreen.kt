@@ -178,7 +178,7 @@ private fun OutboundPickingContent(
         ) {
             // Course Header (use counters from state, not filtered task)
             CourseHeaderCard(
-                courseName = "${task.courseName}",
+                courseName = task.courseName,
                 pickingAreaName = task.pickingAreaName,
                 registeredCount = state.registeredCount, // From originalTask, not filtered
                 totalCount = state.totalCount             // From originalTask, not filtered

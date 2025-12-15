@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -194,15 +195,18 @@ private fun TaskListContent(
         onRefresh = onRefresh,
         modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(tasks, key = { it.taskId }) { task ->
                 PickingTaskCard(
                     task = task,
                     onClick = { onTaskClick(task) },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = !isStartingTask
                 )
             }
@@ -536,5 +540,189 @@ private fun PreviewStatusChips() {
                 )
             )
         }
+    }
+}
+
+@Preview(
+    name = "Task List - Multiple Items (2 Column Grid)",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewTaskListWithMultipleItems() {
+    MaterialTheme {
+        TaskListContent(
+            tasks = listOf(
+                PickingTask(
+                    taskId = 1,
+                    courseCode = "A001",
+                    courseName = "Aコース（午前便）",
+                    pickingAreaName = "1F 冷凍エリア",
+                    waveId = 111,
+                    pickingAreaCode = "AREA-A",
+                    items = List(10) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index,
+                            itemId = index + 100,
+                            itemName = "商品 $index",
+                            slipNumber = 2023121500 + index,
+                            volume = "500ml",
+                            capacityCase = 24,
+                            janCode = null,
+                            plannedQty = 10.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                            pickedQty = 0.0,
+                            status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                            packaging = "ケース",
+                            temperatureType = "冷凍",
+                            walkingOrder = 1000 + index,
+                            images = emptyList()
+                        )
+                    }
+                ),
+                PickingTask(
+                    taskId = 2,
+                    courseCode = "B002",
+                    courseName = "Bコース（午後便）",
+                    pickingAreaName = "2F 常温エリア",
+                    waveId = 112,
+                    pickingAreaCode = "AREA-B",
+                    items = List(10) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index + 10,
+                            itemId = index + 200,
+                            itemName = "商品 ${index + 10}",
+                            slipNumber = 2023121600 + index,
+                            volume = "350ml",
+                            capacityCase = 24,
+                            janCode = null,
+                            plannedQty = 10.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                            pickedQty = if (index < 5) 10.0 else 0.0,
+                            status = if (index < 5) biz.smt_life.android.core.domain.model.ItemStatus.PICKING
+                                     else biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                            packaging = "ケース",
+                            temperatureType = "常温",
+                            walkingOrder = 2000 + index,
+                            images = emptyList()
+                        )
+                    }
+                ),
+                PickingTask(
+                    taskId = 3,
+                    courseCode = "C003",
+                    courseName = "Cコース（深夜便）",
+                    pickingAreaName = "3F 冷蔵エリア",
+                    waveId = 113,
+                    pickingAreaCode = "AREA-C",
+                    items = List(10) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index + 20,
+                            itemId = index + 300,
+                            itemName = "商品 ${index + 20}",
+                            slipNumber = 2023121700 + index,
+                            volume = "1000ml",
+                            capacityCase = 12,
+                            janCode = null,
+                            plannedQty = 10.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                            pickedQty = 10.0,
+                            status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                            packaging = "ケース",
+                            temperatureType = "冷蔵",
+                            walkingOrder = 3000 + index,
+                            images = emptyList()
+                        )
+                    }
+                ),
+                PickingTask(
+                    taskId = 4,
+                    courseCode = "D004",
+                    courseName = "Dコース（特急便）",
+                    pickingAreaName = "1F 冷凍エリア",
+                    waveId = 114,
+                    pickingAreaCode = "AREA-D",
+                    items = List(5) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index + 30,
+                            itemId = index + 400,
+                            itemName = "商品 ${index + 30}",
+                            slipNumber = 2023121800 + index,
+                            volume = "250ml",
+                            capacityCase = 48,
+                            janCode = null,
+                            plannedQty = 5.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.PIECE,
+                            pickedQty = 0.0,
+                            status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                            packaging = "バラ",
+                            temperatureType = "冷凍",
+                            walkingOrder = 4000 + index,
+                            images = emptyList()
+                        )
+                    }
+                ),
+                PickingTask(
+                    taskId = 5,
+                    courseCode = "E005",
+                    courseName = "Eコース（返品処理）",
+                    pickingAreaName = "4F 返品エリア",
+                    waveId = 115,
+                    pickingAreaCode = "AREA-E",
+                    items = List(8) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index + 40,
+                            itemId = index + 500,
+                            itemName = "商品 ${index + 40}",
+                            slipNumber = 2023121900 + index,
+                            volume = "750ml",
+                            capacityCase = 12,
+                            janCode = null,
+                            plannedQty = 8.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                            pickedQty = if (index < 3) 8.0 else 0.0,
+                            status = if (index < 3) biz.smt_life.android.core.domain.model.ItemStatus.PICKING
+                                     else biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
+                            packaging = "ケース",
+                            temperatureType = "常温",
+                            walkingOrder = 5000 + index,
+                            images = emptyList()
+                        )
+                    }
+                ),
+                PickingTask(
+                    taskId = 6,
+                    courseCode = "F006",
+                    courseName = "Fコース（緊急便）",
+                    pickingAreaName = "2F 常温エリア",
+                    waveId = 116,
+                    pickingAreaCode = "AREA-F",
+                    items = List(10) { index ->
+                        biz.smt_life.android.core.domain.model.PickingTaskItem(
+                            id = index + 50,
+                            itemId = index + 600,
+                            itemName = "商品 ${index + 50}",
+                            slipNumber = 2023122000 + index,
+                            volume = "500ml",
+                            capacityCase = 24,
+                            janCode = null,
+                            plannedQty = 10.0,
+                            plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
+                            pickedQty = 10.0,
+                            status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
+                            packaging = "ケース",
+                            temperatureType = "常温",
+                            walkingOrder = 6000 + index,
+                            images = emptyList()
+                        )
+                    }
+                )
+            ),
+            isRefreshing = false,
+            onRefresh = {},
+            onTaskClick = {},
+            isStartingTask = false
+        )
     }
 }
