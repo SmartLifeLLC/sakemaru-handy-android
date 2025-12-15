@@ -27,13 +27,13 @@ interface PickingApi {
      *
      * Query parameters:
      * - warehouse_id (required): Filter tasks by warehouse
-     * - picker_id (optional): Filter tasks by specific picker (for "My Area" tab)
+     * - picker_id (required): Filter tasks by specific picker (for "My Area" tab)
      * - picking_area_id (optional): Filter tasks by specific area
      */
     @GET("/api/picking/tasks")
     suspend fun getPickingTasks(
         @Query("warehouse_id") warehouseId: Int,
-        @Query("picker_id") pickerId: Int? = null,
+        @Query("picker_id") pickerId: Int,
         @Query("picking_area_id") pickingAreaId: Int? = null
     ): ApiEnvelope<List<PickingTaskResponse>>
 

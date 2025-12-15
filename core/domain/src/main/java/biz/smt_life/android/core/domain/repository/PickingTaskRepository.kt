@@ -105,5 +105,5 @@ interface PickingTaskRepository {
      * @param warehouseId Warehouse ID for filtering
      * @return Result containing the updated task or error
      */
-    suspend fun refreshTask(taskId: Int, warehouseId: Int): Result<PickingTask>
+    suspend fun refreshTask(taskId: Int, warehouseId: Int, pickerId: Int): Result<PickingTask>
 }

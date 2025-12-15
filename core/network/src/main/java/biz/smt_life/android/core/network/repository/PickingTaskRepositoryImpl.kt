@@ -69,7 +69,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
         return try {
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = null // No picker filter for "All Courses"
+                pickerId = 0 // No picker filter for "All Courses"
             )
 
             if (response.isSuccess && response.result?.data != null) {
@@ -199,12 +199,12 @@ class PickingTaskRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun refreshTask(taskId: Int, warehouseId: Int): Result<PickingTask> {
+    override suspend fun refreshTask(taskId: Int, warehouseId: Int, pickerId: Int): Result<PickingTask> {
         return try {
             // Fetch all tasks for the warehouse and find the matching one
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = null
+                pickerId = pickerId
             )
 
             if (response.isSuccess && response.result?.data != null) {

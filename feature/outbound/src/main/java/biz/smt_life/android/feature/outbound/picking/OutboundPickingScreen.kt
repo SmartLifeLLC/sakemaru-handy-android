@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import biz.smt_life.android.core.domain.model.ItemStatus
 import biz.smt_life.android.core.domain.model.PickingTask
+import biz.smt_life.android.core.domain.model.PickingTaskItem
+import biz.smt_life.android.core.domain.model.QuantityType
 
 /**
  * Outbound Picking Screen (2.5.2 - 出庫データ入力).
@@ -165,7 +168,7 @@ private fun OutboundPickingContent(
     // Split into left and right panes, each with independent scrolling
     Row(
         modifier = modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // LEFT PANE: Course info, Item info, Product details (read-only)
         Column(
@@ -173,8 +176,8 @@ private fun OutboundPickingContent(
                 .weight(1f)
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Course Header (use counters from state, not filtered task)
             CourseHeaderCard(
@@ -184,14 +187,11 @@ private fun OutboundPickingContent(
                 totalCount = state.totalCount             // From originalTask, not filtered
             )
 
-            // Item Information Card
+            // Item Information Card (容量, 入数, JAN)
             ItemInformationCard(
-                itemName = currentItem.itemName,
-                slipNumber = currentItem.slipNumber.toString()
+                item = currentItem,
+                slipNumber = currentItem.slipNumber.toString(),
             )
-
-            // Product details card (容量, 入数, JAN)
-            ProductDetailsCard(currentItem)
         }
 
         // RIGHT PANE: Quantity Input (editable)
@@ -200,7 +200,7 @@ private fun OutboundPickingContent(
                 .weight(1f)
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Quantity Input Card
@@ -226,7 +226,7 @@ private fun CourseHeaderCard(
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -269,40 +269,44 @@ private fun CourseHeaderCard(
 
 @Composable
 private fun ItemInformationCard(
-    itemName: String,
+    item: PickingTaskItem,
     slipNumber: String,
     modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "商品",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = itemName,
+                text = item.itemName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "伝票番号",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = slipNumber,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
+
+            // slipNumber (伝票番号)
+            InfoRow(label = "伝票番号", value = slipNumber)
+
+            // Volume (容量)
+            if (item.volume != null) {
+                InfoRow(label = "容量", value = item.volume!!)
+            } else {
+                InfoRow(label = "容量", value = "—")
+            }
+
+            // Capacity per case (入数)
+            if (item.capacityCase != null) {
+                InfoRow(label = "入数", value = "${item.capacityCase} 個/ケース")
+            } else {
+                InfoRow(label = "入数", value = "—")
+            }
+
+            // JAN code
+            if (item.janCode != null) {
+                InfoRow(label = "JAN", value = item.janCode!!)
+            } else {
+                InfoRow(label = "JAN", value = "—")
             }
         }
     }
@@ -377,48 +381,6 @@ private fun QuantityInputCard(
 }
 
 @Composable
-private fun ProductDetailsCard(
-    item: biz.smt_life.android.core.domain.model.PickingTaskItem,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "商品情報",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            HorizontalDivider()
-
-            // Volume (容量)
-            if (item.volume != null) {
-                InfoRow(label = "容量", value = item.volume!!)
-            } else {
-                InfoRow(label = "容量", value = "—")
-            }
-
-            // Capacity per case (入数)
-            if (item.capacityCase != null) {
-                InfoRow(label = "入数", value = "${item.capacityCase} 個/ケース")
-            } else {
-                InfoRow(label = "入数", value = "—")
-            }
-
-            // JAN code
-            if (item.janCode != null) {
-                InfoRow(label = "JAN", value = item.janCode!!)
-            } else {
-                InfoRow(label = "JAN", value = "—")
-            }
-        }
-    }
-}
-
-@Composable
 private fun InfoRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -469,6 +431,54 @@ private fun OutboundPickingBottomBar(
                 val buttonModifier = Modifier
                     .weight(1f)
 
+                // 画像(F5) - Show image viewer if images are available
+                OutlinedButton(
+                    onClick = onImageClick,
+                    enabled = state.hasImages && !state.isUpdating,
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
+                ) {
+                    Text("商品の画像", style = smallTextStyle)
+                }
+
+                // コース(F6)
+                OutlinedButton(
+                    onClick = onCourseClick,
+                    enabled = !state.isUpdating,
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
+                ) {
+                    Text(
+                        "コース変更",
+                        style = smallTextStyle,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+
+                // 履歴(F7)
+                OutlinedButton(
+                    onClick = onHistoryClick,
+                    enabled = !state.isUpdating,
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
+                ) {
+                    Text("履歴", style = smallTextStyle)
+                }
+
+                // 前へ(F2)
+                OutlinedButton(
+                    onClick = onPrevClick,
+                    enabled = state.canMovePrev && !state.isUpdating,
+                    shape = smallShape,
+                    contentPadding = contentPadding,
+                    modifier = buttonModifier
+                ) {
+                    Text("前へ", style = smallTextStyle)
+                }
+
                 // 登録(F1)
                 Button(
                     onClick = onRegisterClick,
@@ -484,19 +494,8 @@ private fun OutboundPickingBottomBar(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("登録\n(F1)", style = smallTextStyle)
+                        Text("登録", style = smallTextStyle)
                     }
-                }
-
-                // 前へ(F2)
-                OutlinedButton(
-                    onClick = onPrevClick,
-                    enabled = state.canMovePrev && !state.isUpdating,
-                    shape = smallShape,
-                    contentPadding = contentPadding,
-                    modifier = buttonModifier
-                ) {
-                    Text("前へ\n(F2)", style = smallTextStyle)
                 }
 
                 // 次へ(F3)
@@ -507,44 +506,7 @@ private fun OutboundPickingBottomBar(
                     contentPadding = contentPadding,
                     modifier = buttonModifier
                 ) {
-                    Text("次へ\n(F3)", style = smallTextStyle)
-                }
-
-                // 画像(F5) - Show image viewer if images are available
-                OutlinedButton(
-                    onClick = onImageClick,
-                    enabled = state.hasImages && !state.isUpdating,
-                    shape = smallShape,
-                    contentPadding = contentPadding,
-                    modifier = buttonModifier
-                ) {
-                    Text("画像\n(F5)", style = smallTextStyle)
-                }
-
-                // コース(F6)
-                OutlinedButton(
-                    onClick = onCourseClick,
-                    enabled = !state.isUpdating,
-                    shape = smallShape,
-                    contentPadding = contentPadding,
-                    modifier = buttonModifier
-                ) {
-                    Text(
-                        "コース\n(F6)",
-                        style = smallTextStyle,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-
-                // 履歴(F7)
-                OutlinedButton(
-                    onClick = onHistoryClick,
-                    enabled = !state.isUpdating,
-                    shape = smallShape,
-                    contentPadding = contentPadding,
-                    modifier = buttonModifier
-                ) {
-                    Text("履歴\n(F7)", style = smallTextStyle)
+                    Text("次へ", style = smallTextStyle)
                 }
             }
         }
@@ -678,7 +640,23 @@ private fun PreviewCourseHeaderCard() {
 private fun PreviewItemInformationCard() {
     MaterialTheme {
         ItemInformationCard(
-            itemName = "サッポロ生ビール黒ラベル 500ml缶",
+            item = PickingTaskItem(
+                id = 1,
+                itemId = 101,
+                itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                janCode = "4901777123456",
+                volume = "500ml",
+                capacityCase = 24,
+                plannedQty = 24.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = 0.0,
+                status = ItemStatus.PENDING,
+                packaging = "ケース",
+                temperatureType = "冷凍",
+                walkingOrder = 12234,
+                images = emptyList(),
+                slipNumber = 2023121500
+            ),
             slipNumber = "20231215001"
         )
     }
@@ -699,36 +677,6 @@ private fun PreviewQuantityInputCard() {
             onPickedQtyChange = {},
             isUpdating = false,
             formatQuantity = { qty, type -> String.format("%.1f %s", qty, type) }
-        )
-    }
-}
-
-@Preview(
-    name = "Product Details Card",
-    showBackground = true,
-    widthDp = 400
-)
-@Composable
-private fun PreviewProductDetailsCard() {
-    MaterialTheme {
-        ProductDetailsCard(
-            item = biz.smt_life.android.core.domain.model.PickingTaskItem(
-                id = 1,
-                itemId = 101,
-                itemName = "サッポロ生ビール黒ラベル 500ml缶",
-                slipNumber = 2023121500,
-                volume = "500ml",
-                capacityCase = 24,
-                janCode = "4901777123456",
-                plannedQty = 24.0,
-                plannedQtyType = biz.smt_life.android.core.domain.model.QuantityType.CASE,
-                pickedQty = 0.0,
-                status = biz.smt_life.android.core.domain.model.ItemStatus.PENDING,
-                packaging = "packaging",
-                temperatureType = "temperatureType",
-                walkingOrder = 12234,
-                images = emptyList()
-            )
         )
     }
 }
@@ -773,5 +721,408 @@ private fun PreviewImageViewerDialogWithImage() {
             images = listOf("https://example.com/image.jpg"),
             onDismiss = {}
         )
+    }
+}
+
+// ========== Full Screen Previews ==========
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Outbound Picking Screen - Normal State",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewOutboundPickingScreenNormal() {
+    MaterialTheme {
+        val sampleTask = PickingTask(
+            taskId = 1,
+            courseCode = "A001",
+            courseName = "Aコース（午前便）",
+            pickingAreaName = "1F 冷凍エリア",
+            waveId = 111,
+            pickingAreaCode = "AREA-A",
+            items = listOf(
+                PickingTaskItem(
+                    id = 1,
+                    itemId = 101,
+                    itemName = "サッポロ生ビール黒ラベル 500ml缶",
+                    slipNumber = 2023121500,
+                    volume = "500ml",
+                    capacityCase = 24,
+                    janCode = "4901777123456",
+                    plannedQty = 24.0,
+                    plannedQtyType = QuantityType.CASE,
+                    pickedQty = 0.0,
+                    status = ItemStatus.PENDING,
+                    packaging = "ケース",
+                    temperatureType = "冷凍",
+                    walkingOrder = 1000,
+                    images = emptyList()
+                ),
+                PickingTaskItem(
+                    id = 2,
+                    itemId = 102,
+                    itemName = "アサヒスーパードライ 350ml缶",
+                    slipNumber = 2023121501,
+                    volume = "350ml",
+                    capacityCase = 24,
+                    janCode = "4901777234567",
+                    plannedQty = 12.0,
+                    plannedQtyType = QuantityType.CASE,
+                    pickedQty = 12.0,
+                    status = ItemStatus.PICKING,
+                    packaging = "ケース",
+                    temperatureType = "冷凍",
+                    walkingOrder = 1001,
+                    images = emptyList()
+                ),
+                PickingTaskItem(
+                    id = 3,
+                    itemId = 103,
+                    itemName = "キリン一番搾り 500ml缶",
+                    slipNumber = 2023121502,
+                    volume = "500ml",
+                    capacityCase = 24,
+                    janCode = "4901777345678",
+                    plannedQty = 10.0,
+                    plannedQtyType = QuantityType.CASE,
+                    pickedQty = 10.0,
+                    status = ItemStatus.COMPLETED,
+                    packaging = "ケース",
+                    temperatureType = "冷凍",
+                    walkingOrder = 1002,
+                    images = emptyList()
+                )
+            )
+        )
+
+        val state = OutboundPickingState(
+            originalTask = sampleTask,
+            pendingItems = listOf(sampleTask.items[0]), // Only PENDING items
+            currentIndex = 0,
+            pickedQtyInput = "",
+            isLoading = false,
+            warehouseId = 1
+        )
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫データ入力") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る(F4)"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "ホーム(F8)"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                OutboundPickingBottomBar(
+                    state = state,
+                    onPrevClick = {},
+                    onNextClick = {},
+                    onRegisterClick = {},
+                    onImageClick = {},
+                    onCourseClick = {},
+                    onHistoryClick = {}
+                )
+            }
+        ) { padding ->
+            OutboundPickingContent(
+                state = state,
+                onPickedQtyChange = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Outbound Picking Screen - With Input",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewOutboundPickingScreenWithInput() {
+    MaterialTheme {
+        val sampleTask = PickingTask(
+            taskId = 1,
+            courseCode = "B002",
+            courseName = "Bコース（午後便）",
+            pickingAreaName = "2F 常温エリア",
+            waveId = 112,
+            pickingAreaCode = "AREA-B",
+            items = listOf(
+                PickingTaskItem(
+                    id = 1,
+                    itemId = 201,
+                    itemName = "コカ・コーラ 500mlペットボトル",
+                    slipNumber = 2023121600,
+                    volume = "500ml",
+                    capacityCase = 24,
+                    janCode = "4902102123456",
+                    plannedQty = 48.0,
+                    plannedQtyType = QuantityType.CASE,
+                    pickedQty = 0.0,
+                    status = ItemStatus.PENDING,
+                    packaging = "ケース",
+                    temperatureType = "常温",
+                    walkingOrder = 2000,
+                    images = listOf("https://example.com/cola.jpg")
+                )
+            )
+        )
+
+        val state = OutboundPickingState(
+            originalTask = sampleTask,
+            pendingItems = sampleTask.items,
+            currentIndex = 0,
+            pickedQtyInput = "45",
+            isLoading = false,
+            warehouseId = 1
+        )
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫データ入力") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る(F4)"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "ホーム(F8)"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                OutboundPickingBottomBar(
+                    state = state,
+                    onPrevClick = {},
+                    onNextClick = {},
+                    onRegisterClick = {},
+                    onImageClick = {},
+                    onCourseClick = {},
+                    onHistoryClick = {}
+                )
+            }
+        ) { padding ->
+            OutboundPickingContent(
+                state = state,
+                onPickedQtyChange = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Outbound Picking Screen - In Progress (5/10)",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewOutboundPickingScreenInProgress() {
+    MaterialTheme {
+        val items = List(10) { index ->
+            PickingTaskItem(
+                id = index,
+                itemId = 300 + index,
+                itemName = "商品 ${index + 1}",
+                slipNumber = 2023121700 + index,
+                volume = "1000ml",
+                capacityCase = 12,
+                janCode = null,
+                plannedQty = 10.0,
+                plannedQtyType = QuantityType.CASE,
+                pickedQty = if (index < 5) 10.0 else 0.0,
+                status = if (index < 5) ItemStatus.PICKING
+                         else ItemStatus.PENDING,
+                packaging = "ケース",
+                temperatureType = "冷蔵",
+                walkingOrder = 3000 + index,
+                images = emptyList()
+            )
+        }
+
+        val sampleTask = PickingTask(
+            taskId = 1,
+            courseCode = "C003",
+            courseName = "Cコース（深夜便）",
+            pickingAreaName = "3F 冷蔵エリア",
+            waveId = 113,
+            pickingAreaCode = "AREA-C",
+            items = items
+        )
+
+        val pendingItems = items.filter {
+            it.status == ItemStatus.PENDING
+        }
+
+        val state = OutboundPickingState(
+            originalTask = sampleTask,
+            pendingItems = pendingItems,
+            currentIndex = 0,
+            pickedQtyInput = "10",
+            isLoading = false,
+            warehouseId = 1
+        )
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫データ入力") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る(F4)"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "ホーム(F8)"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                OutboundPickingBottomBar(
+                    state = state,
+                    onPrevClick = {},
+                    onNextClick = {},
+                    onRegisterClick = {},
+                    onImageClick = {},
+                    onCourseClick = {},
+                    onHistoryClick = {}
+                )
+            }
+        ) { padding ->
+            OutboundPickingContent(
+                state = state,
+                onPickedQtyChange = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "Outbound Picking Screen - Piece Type",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewOutboundPickingScreenPieceType() {
+    MaterialTheme {
+        val sampleTask = PickingTask(
+            taskId = 1,
+            courseCode = "D004",
+            courseName = "Dコース（特急便）",
+            pickingAreaName = "1F 冷凍エリア",
+            waveId = 114,
+            pickingAreaCode = "AREA-D",
+            items = listOf(
+                PickingTaskItem(
+                    id = 1,
+                    itemId = 401,
+                    itemName = "ハーゲンダッツ バニラ 120ml",
+                    slipNumber = 2023121800,
+                    volume = "120ml",
+                    capacityCase = 24,
+                    janCode = "4901234567890",
+                    plannedQty = 36.0,
+                    plannedQtyType = QuantityType.PIECE,
+                    pickedQty = 0.0,
+                    status = ItemStatus.PENDING,
+                    packaging = "バラ",
+                    temperatureType = "冷凍",
+                    walkingOrder = 4000,
+                    images = emptyList()
+                )
+            )
+        )
+
+        val state = OutboundPickingState(
+            originalTask = sampleTask,
+            pendingItems = sampleTask.items,
+            currentIndex = 0,
+            pickedQtyInput = "30",
+            isLoading = false,
+            warehouseId = 1
+        )
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("出庫データ入力") },
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る(F4)"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "ホーム(F8)"
+                            )
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                OutboundPickingBottomBar(
+                    state = state,
+                    onPrevClick = {},
+                    onNextClick = {},
+                    onRegisterClick = {},
+                    onImageClick = {},
+                    onCourseClick = {},
+                    onHistoryClick = {}
+                )
+            }
+        ) { padding ->
+            OutboundPickingContent(
+                state = state,
+                onPickedQtyChange = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
     }
 }
