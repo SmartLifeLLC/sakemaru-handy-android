@@ -37,9 +37,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import biz.smt_life.android.core.designsystem.component.HandyTextField
-import biz.smt_life.android.core.ui.HostPreferences
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -57,10 +56,8 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val hostUrl by viewModel.hostUrl.collectAsState()
     val focusManager = LocalFocusManager.current
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val hostPreferences = remember { HostPreferences(context) }
-    val hostUrl by hostPreferences.baseUrl.collectAsState(initial = HostPreferences.DEFAULT_BASE_URL)
 
     // Get today's date in Asia/Tokyo timezone
     val today = remember {
@@ -109,10 +106,10 @@ private fun LoginContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Android Handy") },
+                title = { Text("倉庫管理ハンディ") },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = "設定")
                     }
                 }
             )
@@ -135,13 +132,13 @@ private fun LoginContent(
             ) {
                 val commonWidth = 400.dp
                 Text(
-                    text = "Warehouse Management",
+                    text = "倉庫管理システム",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 Text(
-                    text = "Please sign in to continue",
+                    text = "ログインしてください",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -149,7 +146,7 @@ private fun LoginContent(
                 HandyTextField(
                     value = state.staffCode,
                     onValueChange = onStaffCodeChange,
-                    label = "Staff Code",
+                    label = "スタッフコード",
                     enabled = !state.isLoading,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
@@ -163,7 +160,7 @@ private fun LoginContent(
                 HandyTextField(
                     value = state.password,
                     onValueChange = onPasswordChange,
-                    label = "Password",
+                    label = "パスワード",
                     enabled = !state.isLoading,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -201,7 +198,7 @@ private fun LoginContent(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Login")
+                        Text("ログイン")
                     }
                 }
             }

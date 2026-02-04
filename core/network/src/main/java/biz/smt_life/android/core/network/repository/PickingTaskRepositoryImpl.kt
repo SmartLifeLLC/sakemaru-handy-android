@@ -45,10 +45,12 @@ class PickingTaskRepositoryImpl @Inject constructor(
 
     override suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int): Result<List<PickingTask>> {
         return try {
+            android.util.Log.d("PickingTaskRepository", "getMyAreaTasks called with warehouseId=$warehouseId, pickerId=$pickerId")
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
                 pickerId = pickerId
             )
+            android.util.Log.d("PickingTaskRepository", "API response: isSuccess=${response.isSuccess}, code=${response.code}, data=${response.result?.data?.size ?: 0} items, errorMessage=${response.result?.errorMessage}")
 
             if (response.isSuccess && response.result?.data != null) {
                 val tasks = response.result.data.map { it.toDomainModel() }
@@ -89,10 +91,13 @@ class PickingTaskRepositoryImpl @Inject constructor(
 
     override suspend fun startTask(taskId: Int): Result<Unit> {
         return try {
+            val idempotencyKey = UUID.randomUUID().toString()
+            android.util.Log.d("PickingTaskRepository", "startTask: POST /api/picking/tasks/$taskId/start, idempotencyKey=$idempotencyKey")
             val response = pickingApi.startPickingTask(
                 id = taskId,
-                idempotencyKey = UUID.randomUUID().toString()
+                idempotencyKey = idempotencyKey
             )
+            android.util.Log.d("PickingTaskRepository", "startTask response: isSuccess=${response.isSuccess}, code=${response.code}")
 
             if (response.isSuccess) {
                 Result.success(Unit)
@@ -101,6 +106,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {
+            android.util.Log.e("PickingTaskRepository", "startTask exception: ${e.message}", e)
             val mappedException = errorMapper.mapException(e)
             Result.failure(mappedException)
         }
@@ -116,12 +122,15 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 pickedQty = pickedQty.toString(),
                 pickedQtyType = pickedQtyType
             )
+            val idempotencyKey = UUID.randomUUID().toString()
+            android.util.Log.d("PickingTaskRepository", "updatePickingItem: POST /api/picking/tasks/$resultId/update, pickedQty=$pickedQty, pickedQtyType=$pickedQtyType, idempotencyKey=$idempotencyKey")
 
             val response = pickingApi.updatePickingResult(
                 resultId = resultId,
-                idempotencyKey = UUID.randomUUID().toString(),
+                idempotencyKey = idempotencyKey,
                 request = request
             )
+            android.util.Log.d("PickingTaskRepository", "updatePickingItem response: isSuccess=${response.isSuccess}, code=${response.code}, data=${response.result?.data}")
 
             if (response.isSuccess && response.result?.data != null) {
                 // API returns only minimal fields (id, picked_qty, status).
@@ -156,10 +165,13 @@ class PickingTaskRepositoryImpl @Inject constructor(
 
     override suspend fun completeTask(taskId: Int): Result<Unit> {
         return try {
+            val idempotencyKey = UUID.randomUUID().toString()
+            android.util.Log.d("PickingTaskRepository", "completeTask: POST /api/picking/tasks/$taskId/complete, idempotencyKey=$idempotencyKey")
             val response = pickingApi.completePickingTask(
                 id = taskId,
-                idempotencyKey = UUID.randomUUID().toString()
+                idempotencyKey = idempotencyKey
             )
+            android.util.Log.d("PickingTaskRepository", "completeTask response: isSuccess=${response.isSuccess}, code=${response.code}, errorMessage=${response.result?.errorMessage}")
 
             if (response.isSuccess) {
                 Result.success(Unit)
@@ -168,6 +180,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {
+            android.util.Log.e("PickingTaskRepository", "completeTask exception: ${e.message}", e)
             val mappedException = errorMapper.mapException(e)
             Result.failure(mappedException)
         }

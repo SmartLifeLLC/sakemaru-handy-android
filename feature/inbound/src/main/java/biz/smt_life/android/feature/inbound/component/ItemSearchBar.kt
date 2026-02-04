@@ -31,12 +31,12 @@ fun ItemSearchBar(
             HandyTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                label = "Search item by name or code",
+                label = "商品名またはコードで検索",
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 trailingIcon = {
                     IconButton(onClick = onSearch) {
-                        Icon(Icons.Default.Search, "Search")
+                        Icon(Icons.Default.Search, "検索")
                     }
                 }
             )
@@ -90,7 +90,7 @@ private fun ItemResultRow(
             style = MaterialTheme.typography.bodyLarge
         )
         Text(
-            text = "Code: ${item.code} | Pack: ${item.packSize}",
+            text = "コード: ${item.code} | 入数: ${item.packSize}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -37,7 +37,7 @@ fun QtyInputSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Selected Item",
+                        text = "選択商品",
                         style = MaterialTheme.typography.labelLarge
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -46,7 +46,7 @@ fun QtyInputSection(
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
-                        text = "Code: ${selectedItem.code} | Pack: ${selectedItem.packSize}",
+                        text = "コード: ${selectedItem.code} | 入数: ${selectedItem.packSize}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -60,7 +60,7 @@ fun QtyInputSection(
                 HandyTextField(
                     value = qtyCase,
                     onValueChange = onQtyCaseChange,
-                    label = "Qty Case",
+                    label = "ケース数",
                     enabled = !isAdding,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = fieldErrors.containsKey("qty"),
@@ -71,7 +71,7 @@ fun QtyInputSection(
                 HandyTextField(
                     value = qtyEach,
                     onValueChange = onQtyEachChange,
-                    label = "Qty Each",
+                    label = "バラ数",
                     enabled = !isAdding,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = fieldErrors.containsKey("qty"),
@@ -83,7 +83,7 @@ fun QtyInputSection(
             OutlinedTextField(
                 value = expirationDate,
                 onValueChange = onExpirationDateChange,
-                label = { Text("Expiration Date (yyyy.mm.dd)") },
+                label = { Text("賞味期限 (yyyy.mm.dd)") },
                 enabled = !isAdding,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
@@ -93,7 +93,7 @@ fun QtyInputSection(
             HandyTextField(
                 value = labelCount,
                 onValueChange = onLabelCountChange,
-                label = "Label Count (0-99)",
+                label = "ラベル枚数 (0-99)",
                 enabled = !isAdding,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = fieldErrors.containsKey("labelCount"),
@@ -114,7 +114,7 @@ fun QtyInputSection(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Add Entry")
+                    Text("追加")
                 }
             }
         }

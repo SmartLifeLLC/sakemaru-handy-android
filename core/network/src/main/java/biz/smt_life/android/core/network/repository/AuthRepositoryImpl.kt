@@ -35,6 +35,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             if (response.isSuccess && response.result?.data != null) {
                 val loginData = response.result.data
+                android.util.Log.d("AuthRepository", "Login success: pickerId=${loginData.picker.id}, pickerCode=${loginData.picker.code}, defaultWarehouseId=${loginData.picker.defaultWarehouseId}")
                 val authResult = AuthResult(
                     token = loginData.token,
                     pickerId = loginData.picker.id,

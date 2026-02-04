@@ -65,12 +65,12 @@ private fun SettingsContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("設定") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "戻る"
                         )
                     }
                 }
@@ -87,13 +87,13 @@ private fun SettingsContent(
             verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = "API Server Configuration",
+                text = "APIサーバー設定",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Text(
-                text = "Configure the base URL for the WMS API server. This will be used for all API requests.",
+                text = "WMS APIサーバーのベースURLを設定します。すべてのAPI通信に使用されます。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -102,7 +102,7 @@ private fun SettingsContent(
             HandyTextField(
                 value = state.hostUrl,
                 onValueChange = onHostUrlChange,
-                label = "Host URL",
+                label = "ホストURL",
                 enabled = !state.isLoading,
 //                placeholder = "https://example.com",
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -140,7 +140,7 @@ private fun SettingsContent(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Save")
+                    Text("保存")
                 }
             }
 
@@ -157,14 +157,14 @@ private fun SettingsContent(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Note",
+                        text = "注意事項",
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = "• URL must start with http:// or https://\n" +
-                                "• Changes take effect immediately\n" +
-                                "• Ensure the server is accessible before saving",
+                        text = "• URLはhttp://またはhttps://で始まる必要があります\n" +
+                                "• 変更は即座に反映されます\n" +
+                                "• 保存前にサーバーへのアクセスを確認してください",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

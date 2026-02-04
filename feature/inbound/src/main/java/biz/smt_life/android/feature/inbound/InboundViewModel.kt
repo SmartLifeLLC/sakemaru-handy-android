@@ -44,7 +44,7 @@ class InboundViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     _state.update {
-                        it.copy(isSearching = false, errorMessage = error.message ?: "Search failed")
+                        it.copy(isSearching = false, errorMessage = error.message ?: "検索に失敗しました")
                     }
                 }
         }
@@ -67,14 +67,14 @@ class InboundViewModel @Inject constructor(
                         _state.update {
                             it.copy(
                                 isSearching = false,
-                                errorMessage = "Item not found for barcode: $barcode"
+                                errorMessage = "バーコード: $barcode の商品が見つかりません"
                             )
                         }
                     }
                 }
                 .onFailure { error ->
                     _state.update {
-                        it.copy(isSearching = false, errorMessage = error.message ?: "Scan failed")
+                        it.copy(isSearching = false, errorMessage = error.message ?: "スキャンに失敗しました")
                     }
                 }
         }
@@ -162,7 +162,7 @@ class InboundViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isAdding = false,
-                            successMessage = "Entry added successfully",
+                            successMessage = "入庫を追加しました",
                             selectedItem = null,
                             qtyCase = "0",
                             qtyEach = "0",
@@ -174,8 +174,8 @@ class InboundViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     val (message, fieldErrors) = when (error) {
-                        is NetworkException.Validation -> "Validation failed" to error.errors
-                        else -> (error.message ?: "Failed to add entry") to emptyMap()
+                        is NetworkException.Validation -> "入力内容を確認してください" to error.errors
+                        else -> (error.message ?: "追加に失敗しました") to emptyMap()
                     }
                     _state.update { it.copy(isAdding = false, errorMessage = message, fieldErrors = fieldErrors) }
                 }
@@ -193,7 +193,7 @@ class InboundViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isLoadingHistory = false,
-                            errorMessage = error.message ?: "Failed to load history"
+                            errorMessage = error.message ?: "履歴の読み込みに失敗しました"
                         )
                     }
                 }
@@ -230,14 +230,14 @@ class InboundViewModel @Inject constructor(
                         it.copy(
                             isConfirming = false,
                             selectedEntries = emptySet(),
-                            successMessage = "${ids.size} entries confirmed"
+                            successMessage = "${ids.size}件を確定しました"
                         )
                     }
                     loadHistory()
                 }
                 .onFailure { error ->
                     _state.update {
-                        it.copy(isConfirming = false, errorMessage = error.message ?: "Failed to confirm")
+                        it.copy(isConfirming = false, errorMessage = error.message ?: "確定に失敗しました")
                     }
                 }
         }

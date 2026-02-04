@@ -61,6 +61,15 @@ fun HandyNavHost(
             )
         }
 
+        // WarehouseSettings route - reuses SettingsScreen for now
+        composable(Routes.WarehouseSettings.route) {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable(Routes.Main.route) {
             MainRoute(
                 onNavigateToWarehouseSettings = {

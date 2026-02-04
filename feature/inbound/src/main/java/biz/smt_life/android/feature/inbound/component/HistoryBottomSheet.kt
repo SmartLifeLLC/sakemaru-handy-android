@@ -37,7 +37,7 @@ fun HistoryBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Inbound History",
+                    text = "入庫履歴",
                     style = MaterialTheme.typography.titleMedium
                 )
 
@@ -52,7 +52,7 @@ fun HistoryBottomSheet(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text("Confirm (${selectedEntries.size})")
+                            Text("確定 (${selectedEntries.size})")
                         }
                     }
                 }
@@ -76,7 +76,7 @@ fun HistoryBottomSheet(
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No entries yet", style = MaterialTheme.typography.bodyMedium)
+                    Text("履歴がありません", style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
                 LazyColumn(
@@ -127,19 +127,19 @@ private fun HistoryEntryCard(
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = "Case: ${entry.qtyCase} | Each: ${entry.qtyEach}",
+                    text = "ケース: ${entry.qtyCase} | バラ: ${entry.qtyEach}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (entry.expDate != null) {
                     Text(
-                        text = "Exp: ${entry.expDate}",
+                        text = "賞味期限: ${entry.expDate}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Text(
-                    text = "Labels: ${entry.labelCount} | ${entry.status}",
+                    text = "ラベル: ${entry.labelCount} | ${entry.status}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

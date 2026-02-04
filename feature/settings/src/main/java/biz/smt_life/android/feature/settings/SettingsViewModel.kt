@@ -45,12 +45,12 @@ class SettingsViewModel @Inject constructor(
 
         // Validation
         if (hostUrl.isBlank()) {
-            _state.update { it.copy(errorMessage = "Host URL cannot be empty") }
+            _state.update { it.copy(errorMessage = "ホストURLを入力してください") }
             return
         }
 
         if (!hostUrl.startsWith("http://") && !hostUrl.startsWith("https://")) {
-            _state.update { it.copy(errorMessage = "Host URL must start with http:// or https://") }
+            _state.update { it.copy(errorMessage = "ホストURLはhttp://またはhttps://で始まる必要があります") }
             return
         }
 
@@ -62,7 +62,7 @@ class SettingsViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        successMessage = "Host URL saved successfully",
+                        successMessage = "ホストURLを保存しました",
                         errorMessage = null
                     )
                 }
@@ -70,7 +70,7 @@ class SettingsViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Failed to save: ${e.message}",
+                        errorMessage = "保存に失敗しました: ${e.message}",
                         successMessage = null
                     )
                 }

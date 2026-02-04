@@ -35,10 +35,10 @@ fun InboundScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Inbound") },
+                title = { Text("入庫") },
                 actions = {
                     TextButton(onClick = viewModel::toggleHistorySheet) {
-                        Text("History (${state.history.size})")
+                        Text("履歴 (${state.history.size})")
                     }
                 }
             )
@@ -96,7 +96,7 @@ fun InboundScreen(
                     onClick = viewModel::clearSelection,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Clear Selection")
+                    Text("選択解除")
                 }
             }
         }
