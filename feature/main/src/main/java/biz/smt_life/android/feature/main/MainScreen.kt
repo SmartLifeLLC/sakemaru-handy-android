@@ -1,14 +1,20 @@
 package biz.smt_life.android.feature.main
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
@@ -19,8 +25,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -153,8 +163,8 @@ private fun ReadyContent(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout") },
-            text = { Text("Are you sure you want to logout?") },
+            title = { Text("ログアウト") },
+            text = { Text("ログアウトしますか？") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -162,12 +172,12 @@ private fun ReadyContent(
                         onLogoutClick()
                     }
                 ) {
-                    Text("Logout")
+                    Text("ログアウト")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel")
+                    Text("キャンセル")
                 }
             }
         )
@@ -202,68 +212,61 @@ private fun ReadyContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Main menu buttons
+        // Main menu buttons - 2x2 grid + 1 centered
         Column(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val mainButtonModifier = Modifier.width(commonWidth)
-
-            Button(
-                onClick = onNavigateToInbound,
-                modifier = mainButtonModifier
+            // Row 1: 入庫, 出庫, 移動
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
-                Text(
-//                    text = "入庫処理(${pendingCounts.inbound.toString().padStart(2, '0')})",
-                    text = "入庫処理",
-                    modifier = Modifier.padding(vertical = 8.dp)
+                MenuButton(
+                    label = "入庫",
+                    topBorderColor = Color(0xFF2196F3), // Blue
+                    onClick = onNavigateToInbound,
+                    modifier = Modifier.size(200.dp, 100.dp)
+                )
+
+                MenuButton(
+                    label = "出庫",
+                    topBorderColor = Color(0xFFE91E63), // Pink/Red
+                    onClick = onNavigateToOutbound,
+                    modifier = Modifier.size(200.dp, 100.dp)
+                )
+
+                MenuButton(
+                    label = "移動",
+                    topBorderColor = Color(0xFF9C27B0), // Purple
+                    onClick = onNavigateToMove,
+                    modifier = Modifier.size(200.dp, 100.dp)
                 )
             }
 
-            Button(
-                onClick = onNavigateToOutbound,
-                modifier = mainButtonModifier
+            // Row 2: 棚卸, ロケ検索
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
-                Text(
-//                    text = "出庫処理(${pendingCounts.outbound.toString().padStart(2, '0')})",
-                    text = "出庫処理",
-                    modifier = Modifier.padding(vertical = 8.dp)
+                MenuButton(
+                    label = "棚卸",
+                    topBorderColor = Color(0xFFFF9800), // Orange
+                    onClick = onNavigateToInventory,
+                    modifier = Modifier.size(200.dp, 100.dp)
                 )
-            }
 
-            Button(
-                onClick = onNavigateToMove,
-                modifier = mainButtonModifier
-            ) {
-                Text(
-                    text = "移動処理",
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-            Button(
-                onClick = onNavigateToInventory,
-                modifier = mainButtonModifier
-            ) {
-                Text(
-//                    text = "棚卸処理(${pendingCounts.inventory.toString().padStart(2, '0')})",
-                    text = "棚卸処理",
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
-            Button(
-                onClick = onNavigateToLocationSearch,
-                modifier = mainButtonModifier
-            ) {
-                Text(
-                    text = "ロケ検索",
-                    modifier = Modifier.padding(vertical = 8.dp)
+                MenuButton(
+                    label = "ロケ検索",
+                    topBorderColor = Color(0xFF607D8B), // Blue Grey
+                    onClick = onNavigateToLocationSearch,
+                    modifier = Modifier.size(200.dp, 100.dp)
                 )
             }
         }
@@ -323,7 +326,7 @@ private fun ErrorContent(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Error: $message",
+            text = "エラー: $message",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
@@ -331,7 +334,55 @@ private fun ErrorContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onRetry) {
-            Text("Retry")
+            Text("再試行")
+        }
+    }
+}
+
+/**
+ * Menu button with colored top border accent.
+ */
+@Composable
+private fun MenuButton(
+    label: String,
+    topBorderColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(8.dp)
+
+    Surface(
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .border(1.dp, Color.LightGray, shape),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        shape = shape
+    ) {
+        Column {
+            // Top colored border
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .background(topBorderColor)
+            )
+
+            // Content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
         }
     }
 }
