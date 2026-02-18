@@ -9,7 +9,10 @@ import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.domain.repository.ProfileRepository
 import biz.smt_life.android.core.network.BuildConfig
 import biz.smt_life.android.core.network.api.AuthService
+import biz.smt_life.android.core.domain.repository.IncomingRepository
+import biz.smt_life.android.core.network.api.IncomingApi
 import biz.smt_life.android.core.network.api.PickingApi
+import biz.smt_life.android.core.network.repository.IncomingRepositoryImpl
 import biz.smt_life.android.core.network.fake.FakeInboundRepository
 import biz.smt_life.android.core.network.fake.FakeMainRepository
 import biz.smt_life.android.core.network.fake.FakeOutboundRepository
@@ -125,6 +128,12 @@ object NetworkProviderModule {
 
     @Provides
     @Singleton
+    fun provideIncomingApi(retrofit: Retrofit): IncomingApi {
+        return retrofit.create(IncomingApi::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun provideErrorMapper(): biz.smt_life.android.core.network.ErrorMapper {
         return biz.smt_life.android.core.network.ErrorMapper
     }
@@ -175,4 +184,10 @@ abstract class NetworkBindingModule {
     abstract fun bindPickingTaskRepository(
         pickingTaskRepositoryImpl: PickingTaskRepositoryImpl
     ): PickingTaskRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIncomingRepository(
+        incomingRepositoryImpl: IncomingRepositoryImpl
+    ): IncomingRepository
 }

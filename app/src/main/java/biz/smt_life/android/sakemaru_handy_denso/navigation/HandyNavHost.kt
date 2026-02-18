@@ -19,7 +19,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import biz.smt_life.android.feature.inbound.InboundScreen
+import biz.smt_life.android.feature.inbound.incoming.HistoryScreen
+import biz.smt_life.android.feature.inbound.incoming.IncomingInputScreen
+import biz.smt_life.android.feature.inbound.incoming.IncomingViewModel
+import biz.smt_life.android.feature.inbound.incoming.ProductListScreen
+import biz.smt_life.android.feature.inbound.incoming.ScheduleListScreen
+import biz.smt_life.android.feature.inbound.incoming.WarehouseSelectionScreen
 import biz.smt_life.android.feature.login.LoginScreen
 import biz.smt_life.android.feature.main.MainRoute
 import biz.smt_life.android.feature.outbound.tasks.PickingTasksScreen
@@ -76,7 +81,7 @@ fun HandyNavHost(
                     navController.navigate(Routes.WarehouseSettings.route)
                 },
                 onNavigateToInbound = {
-                    navController.navigate(Routes.Inbound.route)
+                    navController.navigate(Routes.IncomingWarehouseSelection.route)
                 },
                 onNavigateToOutbound = {
                     // Navigate directly to PickingList (Course Selection)
@@ -102,8 +107,101 @@ fun HandyNavHost(
             )
         }
 
-        composable(Routes.Inbound.route) {
-            InboundScreen()
+        // ─── Incoming routes (P10-P14) ───
+
+        // P10: Warehouse Selection
+        composable(Routes.IncomingWarehouseSelection.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+            }
+            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
+
+            WarehouseSelectionScreen(
+                viewModel = incomingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onWarehouseSelected = {
+                    navController.navigate(Routes.IncomingProductList.route)
+                },
+                onLogout = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // P11: Product List
+        composable(Routes.IncomingProductList.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+            }
+            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
+
+            ProductListScreen(
+                viewModel = incomingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onProductSelected = {
+                    navController.navigate(Routes.IncomingScheduleList.route)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Routes.IncomingHistory.route)
+                }
+            )
+        }
+
+        // P12: Schedule List
+        composable(Routes.IncomingScheduleList.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+            }
+            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
+
+            ScheduleListScreen(
+                viewModel = incomingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onScheduleSelected = {
+                    navController.navigate(Routes.IncomingInput.route)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Routes.IncomingHistory.route)
+                }
+            )
+        }
+
+        // P13: Incoming Input
+        composable(Routes.IncomingInput.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+            }
+            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
+
+            IncomingInputScreen(
+                viewModel = incomingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onSubmitSuccess = {
+                    // Pop back to schedule list (P12)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // P14: History
+        composable(Routes.IncomingHistory.route) { backStackEntry ->
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+            }
+            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
+
+            HistoryScreen(
+                viewModel = incomingViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToProductList = {
+                    navController.popBackStack(Routes.IncomingProductList.route, false)
+                },
+                onNavigateToInput = {
+                    navController.navigate(Routes.IncomingInput.route)
+                }
+            )
         }
 
         // Outbound routes (2.5.1 - 2.5.4 spec flow)
