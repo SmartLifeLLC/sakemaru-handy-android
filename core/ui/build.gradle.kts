@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.library)
@@ -8,12 +10,23 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
 android {
     namespace = "biz.smt_life.android.core.ui"
     compileSdk = 36
 
     defaultConfig {
         minSdk = 26
+    }
+
+    buildTypes.forEach {
+        val apiHost = localProperties.getProperty("api.host") ?: "10.0.2.2"
+        it.buildConfigField("String", "API_HOST", "\"$apiHost\"")
     }
 
     compileOptions {
@@ -29,6 +42,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

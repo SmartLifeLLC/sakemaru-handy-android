@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,6 +8,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
 }
 
 android {
@@ -30,6 +38,11 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+
+    buildTypes.forEach {
+        val apiHost = localProperties.getProperty("api.host") ?: "10.0.2.2"
+        it.buildConfigField("String", "API_HOST", "\"$apiHost\"")
     }
 
     compileOptions {
