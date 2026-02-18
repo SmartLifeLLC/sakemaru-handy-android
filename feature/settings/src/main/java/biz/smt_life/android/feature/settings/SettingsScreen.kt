@@ -1,6 +1,8 @@
 package biz.smt_life.android.feature.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -11,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,6 +48,8 @@ fun SettingsScreen(
     SettingsContent(
         state = state,
         onHostUrlChange = viewModel::onHostUrlChange,
+        onPresetUrlSelected = viewModel::onPresetUrlSelected,
+        onCustomUrlSelected = viewModel::onCustomUrlSelected,
         onSave = viewModel::saveHostUrl,
         onNavigateBack = onNavigateBack,
         focusManager = focusManager,
@@ -57,6 +62,8 @@ fun SettingsScreen(
 private fun SettingsContent(
     state: SettingsState,
     onHostUrlChange: (String) -> Unit,
+    onPresetUrlSelected: (String) -> Unit,
+    onCustomUrlSelected: () -> Unit,
     onSave: () -> Unit,
     onNavigateBack: () -> Unit,
     focusManager: FocusManager = LocalFocusManager.current,
@@ -96,24 +103,82 @@ private fun SettingsContent(
                 text = "WMS APIサーバーのベースURLを設定します。すべてのAPI通信に使用されます。",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            HandyTextField(
-                value = state.hostUrl,
-                onValueChange = onHostUrlChange,
-                label = "ホストURL",
-                enabled = !state.isLoading,
-//                placeholder = "https://example.com",
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                        onSave()
+            // Preset URL radio buttons
+            Column(modifier = Modifier.selectableGroup()) {
+                state.presetUrls.forEach { url ->
+                    val isSelected = !state.isCustomUrl && state.hostUrl == url
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = isSelected,
+                                onClick = { onPresetUrlSelected(url) },
+                                role = Role.RadioButton,
+                                enabled = !state.isLoading
+                            )
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = null,
+                            enabled = !state.isLoading
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = url,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+                }
+
+                // Custom URL option
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = state.isCustomUrl,
+                            onClick = onCustomUrlSelected,
+                            role = Role.RadioButton,
+                            enabled = !state.isLoading
+                        )
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = state.isCustomUrl,
+                        onClick = null,
+                        enabled = !state.isLoading
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "カスタムURL",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            // Custom URL text field (only shown when custom is selected)
+            if (state.isCustomUrl) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HandyTextField(
+                    value = state.hostUrl,
+                    onValueChange = onHostUrlChange,
+                    label = "カスタムURL",
+                    enabled = !state.isLoading,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            onSave()
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             if (state.errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -177,17 +242,22 @@ private fun SettingsContent(
 // ========== Preview Section ==========
 
 @Preview(
-    name = "Settings Screen - Empty State",
+    name = "Settings Screen - Preset Selected",
     showBackground = true,
     widthDp = 360,
     heightDp = 640
 )
 @Composable
-private fun PreviewSettingsScreenEmpty() {
+private fun PreviewSettingsScreenPreset() {
     MaterialTheme {
         SettingsContent(
-            state = SettingsState(),
+            state = SettingsState(
+                hostUrl = "https://wms.lw-hana.net",
+                isCustomUrl = false
+            ),
             onHostUrlChange = {},
+            onPresetUrlSelected = {},
+            onCustomUrlSelected = {},
             onSave = {},
             onNavigateBack = {}
         )
@@ -195,19 +265,22 @@ private fun PreviewSettingsScreenEmpty() {
 }
 
 @Preview(
-    name = "Settings Screen - Filled State",
+    name = "Settings Screen - Custom URL",
     showBackground = true,
     widthDp = 360,
     heightDp = 640
 )
 @Composable
-private fun PreviewSettingsScreenFilled() {
+private fun PreviewSettingsScreenCustom() {
     MaterialTheme {
         SettingsContent(
             state = SettingsState(
-                hostUrl = "https://api.warehouse.example.com"
+                hostUrl = "https://custom-api.example.com",
+                isCustomUrl = true
             ),
             onHostUrlChange = {},
+            onPresetUrlSelected = {},
+            onCustomUrlSelected = {},
             onSave = {},
             onNavigateBack = {}
         )
@@ -225,10 +298,12 @@ private fun PreviewSettingsScreenLoading() {
     MaterialTheme {
         SettingsContent(
             state = SettingsState(
-                hostUrl = "https://api.warehouse.example.com",
+                hostUrl = "https://wms.sakemaru.click",
                 isLoading = true
             ),
             onHostUrlChange = {},
+            onPresetUrlSelected = {},
+            onCustomUrlSelected = {},
             onSave = {},
             onNavigateBack = {}
         )
@@ -247,9 +322,12 @@ private fun PreviewSettingsScreenError() {
         SettingsContent(
             state = SettingsState(
                 hostUrl = "invalid-url",
-                errorMessage = "Invalid URL format. Please use http:// or https://"
+                isCustomUrl = true,
+                errorMessage = "ホストURLはhttp://またはhttps://で始まる必要があります"
             ),
             onHostUrlChange = {},
+            onPresetUrlSelected = {},
+            onCustomUrlSelected = {},
             onSave = {},
             onNavigateBack = {}
         )

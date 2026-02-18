@@ -30,8 +30,21 @@ class SettingsViewModel @Inject constructor(
     private fun loadCurrentHost() {
         viewModelScope.launch {
             hostPreferences.baseUrl.collect { url ->
-                _state.update { it.copy(hostUrl = url) }
+                val isCustom = url !in PresetUrls.list
+                _state.update { it.copy(hostUrl = url, isCustomUrl = isCustom) }
             }
+        }
+    }
+
+    fun onPresetUrlSelected(url: String) {
+        _state.update {
+            it.copy(hostUrl = url, isCustomUrl = false, errorMessage = null, successMessage = null)
+        }
+    }
+
+    fun onCustomUrlSelected() {
+        _state.update {
+            it.copy(isCustomUrl = true, hostUrl = "", errorMessage = null, successMessage = null)
         }
     }
 
