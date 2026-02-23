@@ -27,8 +27,29 @@ class LoginViewModel @Inject constructor(
     private val hostPreferences: HostPreferences
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(LoginState())
+    private val _state = MutableStateFlow(LoginState(isLoading = true))
     val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    init {
+        checkExistingSession()
+    }
+
+    private fun checkExistingSession() {
+        if (!tokenManager.isLoggedIn()) {
+            _state.update { it.copy(isLoading = false) }
+            return
+        }
+        viewModelScope.launch {
+            authRepository.validateSession()
+                .onSuccess {
+                    _state.update { it.copy(isLoading = false, isSuccess = true) }
+                }
+                .onFailure {
+                    tokenManager.clearAuth()
+                    _state.update { it.copy(isLoading = false) }
+                }
+        }
+    }
 
     val hostUrl: StateFlow<String> = hostPreferences.baseUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HostPreferences.DEFAULT_BASE_URL)

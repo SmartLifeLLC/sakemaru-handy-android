@@ -1,7 +1,9 @@
 package biz.smt_life.android.feature.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -85,11 +87,13 @@ private fun SettingsContent(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
                 .padding(padding)
-                .padding(24.dp),
+                .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
         ) {
@@ -196,8 +200,9 @@ private fun SettingsContent(
                 onClick = onSave,
                 enabled = !state.isLoading,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(0.5f)
                     .height(56.dp)
+                    .align(Alignment.CenterHorizontally)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(

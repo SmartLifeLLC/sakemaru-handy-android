@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -105,8 +106,8 @@ private fun LoginContent(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("倉庫管理ハンディ") },
+            CenterAlignedTopAppBar(
+                title = { Text("倉庫管理システム") },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "設定")
@@ -131,12 +132,6 @@ private fun LoginContent(
                 modifier = Modifier.weight(1f)
             ) {
                 val commonWidth = 400.dp
-                Text(
-                    text = "倉庫管理システム",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
                 Text(
                     text = "ログインしてください",
                     style = MaterialTheme.typography.bodyMedium,
