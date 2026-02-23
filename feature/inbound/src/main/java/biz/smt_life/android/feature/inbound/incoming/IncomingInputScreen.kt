@@ -1,17 +1,21 @@
 package biz.smt_life.android.feature.inbound.incoming
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -19,6 +23,16 @@ import androidx.compose.ui.unit.sp
 import biz.smt_life.android.core.domain.model.Location
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+// ─── Color definitions ────────────────────────────────────────────────────────
+private val AccentGreen  = Color(0xFF27AE60)
+private val DarkGreen    = Color(0xFF1A7A4A)
+private val BodyBg       = Color.White
+private val HeaderBg     = Color(0xFFF0FFF4)
+private val DividerGreen = Color(0xFFD5F5E3)
+private val CardBorder   = Color(0xFFB2DFDB)
+private val TextPrimary  = Color(0xFF212529)
+private val TextSecond   = Color(0xFF555555)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,21 +69,47 @@ fun IncomingInputScreen(
     }
 
     Scaffold(
+        containerColor = BodyBg,
         topBar = {
-            TopAppBar(
-                title = { Text("${state.selectedWarehouse?.name ?: ""} 入庫処理") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
-                    }
-                }
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Inventory2,
+                                contentDescription = null,
+                                tint = AccentGreen,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "入庫処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentGreen
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る",
+                                tint = AccentGreen
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                )
+                HorizontalDivider(thickness = 1.dp, color = DividerGreen)
+            }
         },
         bottomBar = {
             FunctionKeyBar(
                 f1 = FunctionKeyAction("賞味") { showDatePicker = true },
                 f2 = FunctionKeyAction("戻る", onNavigateBack),
-                f3 = FunctionKeyAction("登録") { viewModel.submitIncoming() }
+                f3 = FunctionKeyAction("登録") { viewModel.submitIncoming() },
+                centerAligned = true
             )
         }
     ) { padding ->
@@ -86,15 +126,17 @@ fun IncomingInputScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Product info header
-                Card(
+                OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, CardBorder)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
                             text = itemName,
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
                         )
                         if (!state.isFromHistory) {
                             val product = state.selectedProduct
@@ -102,7 +144,7 @@ fun IncomingInputScreen(
                                 Text(
                                     text = "JAN: ${product.janCodes.firstOrNull() ?: "-"}  Code: ${product.itemCode}",
                                     fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = TextSecond
                                 )
                             }
                         }
@@ -110,14 +152,15 @@ fun IncomingInputScreen(
                 }
 
                 // Arrival date
-                Text("入荷日: $today", fontSize = 14.sp)
+                Text("入荷日: $today", fontSize = 14.sp, color = TextSecond)
 
                 // Quantity input
                 Column {
                     Text(
                         text = "入庫数量  入庫予定: $expectedQty",
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
                     )
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
@@ -125,7 +168,11 @@ fun IncomingInputScreen(
                         onValueChange = { viewModel.onQuantityChange(it) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentGreen,
+                            unfocusedBorderColor = CardBorder
+                        )
                     )
                 }
 
@@ -134,7 +181,8 @@ fun IncomingInputScreen(
                     Text(
                         text = "賞味期限（任意）",
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
                     )
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
@@ -144,10 +192,18 @@ fun IncomingInputScreen(
                         placeholder = { Text("YYYY-MM-DD") },
                         trailingIcon = {
                             IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.DateRange, contentDescription = "カレンダー")
+                                Icon(
+                                    Icons.Default.DateRange,
+                                    contentDescription = "カレンダー",
+                                    tint = AccentGreen
+                                )
                             }
                         },
-                        singleLine = true
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentGreen,
+                            unfocusedBorderColor = CardBorder
+                        )
                     )
                 }
 
@@ -156,7 +212,8 @@ fun IncomingInputScreen(
                     Text(
                         text = "ロケーション",
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
                     )
                     Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
@@ -164,14 +221,20 @@ fun IncomingInputScreen(
                         onValueChange = { viewModel.onLocationSearchChange(it) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("ロケーション検索") },
-                        singleLine = true
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentGreen,
+                            unfocusedBorderColor = CardBorder
+                        )
                     )
 
                     // Location suggestions
                     if (state.locationSuggestions.isNotEmpty()) {
-                        Card(
+                        OutlinedCard(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, CardBorder),
+                            elevation = CardDefaults.outlinedCardElevation(defaultElevation = 4.dp)
                         ) {
                             Column {
                                 state.locationSuggestions.forEach { location ->
@@ -190,8 +253,8 @@ fun IncomingInputScreen(
             state.successMessage?.let { message ->
                 Surface(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.large,
+                    color = AccentGreen,
+                    shape = RoundedCornerShape(16.dp),
                     shadowElevation = 8.dp
                 ) {
                     Text(
@@ -199,7 +262,7 @@ fun IncomingInputScreen(
                         modifier = Modifier.padding(24.dp),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = Color.White
                     )
                 }
             }
@@ -208,16 +271,16 @@ fun IncomingInputScreen(
             if (state.isSubmitting) {
                 Surface(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                    shape = MaterialTheme.shapes.large
+                    color = Color.White.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = AccentGreen)
                         Spacer(Modifier.height(8.dp))
-                        Text("登録中...")
+                        Text("登録中...", color = TextPrimary)
                     }
                 }
             }
@@ -230,7 +293,7 @@ fun IncomingInputScreen(
                         .padding(16.dp),
                     action = {
                         TextButton(onClick = { viewModel.clearError() }) {
-                            Text("閉じる")
+                            Text("閉じる", color = AccentGreen)
                         }
                     }
                 ) {
@@ -254,13 +317,25 @@ fun IncomingInputScreen(
                         viewModel.onExpirationDateChange(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text("OK", color = AccentGreen) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("キャンセル") }
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("キャンセル", color = TextSecond)
+                }
             }
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(
+                state = datePickerState,
+                headline = {
+                    Text(
+                        text = "賞味期限選択",
+                        modifier = androidx.compose.ui.Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        fontSize = 14.sp,
+                        color = AccentGreen
+                    )
+                }
+            )
         }
     }
 }
@@ -276,7 +351,8 @@ private fun LocationSuggestionItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(12.dp),
-        fontSize = 14.sp
+        fontSize = 14.sp,
+        color = DarkGreen
     )
-    HorizontalDivider()
+    HorizontalDivider(color = Color(0xFFEEEEEE))
 }

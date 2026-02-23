@@ -1,29 +1,57 @@
 package biz.smt_life.android.feature.outbound.picking
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import biz.smt_life.android.core.domain.model.ItemStatus
 import biz.smt_life.android.core.domain.model.PickingTask
 import biz.smt_life.android.core.domain.model.PickingTaskItem
 import biz.smt_life.android.core.domain.model.QuantityType
+
+// ===== P20/P21 共通カラー =====
+private val TitleRed     = Color(0xFFC0392B)
+private val AccentOrange = Color(0xFFE67E22)
+private val DividerGold  = Color(0xFFF9A825)
+private val BodyBg       = Color.White
+private val HeaderBg     = Color(0xFFFDFBF2)
+private val TextPrimary  = Color(0xFF212529)
+private val TextSecond   = Color(0xFF555555)
+private val BorderGray   = Color(0xFFCCCCCC)
+private val ReadonlyBg   = Color(0xFFF5F5F5)
+private val ReadonlyText = Color(0xFF888888)
+private val BadgeGreen   = Color(0xFF27AE60)
 
 /**
  * Outbound Picking Screen (2.5.2 - 出庫データ入力).
@@ -90,26 +118,88 @@ fun OutboundPickingScreen(
     }
 
     Scaffold(
+        containerColor = BodyBg,
         topBar = {
-            TopAppBar(
-                title = { Text("出庫データ入力") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "戻る(F4)"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToMain) {
-                        Icon(
-                            imageVector = Icons.Default.Home,
-                            contentDescription = "ホーム(F8)"
-                        )
-                    }
-                }
-            )
+            Column {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Inventory2,
+                                contentDescription = null,
+                                tint = AccentOrange,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "出庫",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TitleRed
+                            )
+                            val courseName = state.originalTask?.courseName
+                            if (!courseName.isNullOrBlank()) {
+                                Spacer(Modifier.width(8.dp))
+                                Surface(
+                                    color = BadgeGreen,
+                                    shape = RoundedCornerShape(20.dp)
+                                ) {
+                                    Text(
+                                        text = courseName,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Surface(
+                                color = AccentOrange,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "${state.registeredCount} / ${state.totalCount}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                )
+                            }
+                            if (state.warehouseName.isNotBlank()) {
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "｜${state.warehouseName}",
+                                    fontSize = 14.sp,
+                                    color = AccentOrange
+                                )
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る(F4)",
+                                tint = TitleRed
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onNavigateToMain) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "ホーム(F8)",
+                                tint = TitleRed
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = HeaderBg
+                    )
+                )
+                HorizontalDivider(thickness = 2.dp, color = DividerGold)
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
@@ -135,10 +225,11 @@ fun OutboundPickingScreen(
                     CircularProgressIndicator()
                 }
             }
-            state.currentItem != null && state.task != null -> {
+            state.currentItem != null && state.originalTask != null -> {
                 OutboundPickingContent(
                     state = state,
                     onPickedQtyChange = viewModel::onPickedQtyChange,
+                    onImageClick = { viewModel.showImageDialog() },
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -160,37 +251,31 @@ fun OutboundPickingScreen(
 private fun OutboundPickingContent(
     state: OutboundPickingState,
     onPickedQtyChange: (String) -> Unit,
+    onImageClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentItem = state.currentItem!!
-    val task = state.task!!
+    val originalTask = state.originalTask!!
 
-    // Split into left and right panes, each with independent scrolling
     Row(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .background(BodyBg),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // LEFT PANE: Course info, Item info, Product details (read-only)
+        // LEFT PANE: Item info (read-only)
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // Course Header (use counters from state, not filtered task)
-            CourseHeaderCard(
-                courseName = task.courseName,
-                pickingAreaName = task.pickingAreaName,
-                registeredCount = state.registeredCount, // From originalTask, not filtered
-                totalCount = state.totalCount             // From originalTask, not filtered
-            )
-
-            // Item Information Card (容量, 入数, JAN)
             ItemInformationCard(
                 item = currentItem,
                 slipNumber = currentItem.slipNumber.toString(),
+                pickingAreaName = originalTask.pickingAreaName,
+                onImageClick = onImageClick,
+                modifier = Modifier.fillMaxHeight()
             )
         }
 
@@ -199,69 +284,15 @@ private fun OutboundPickingContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // Quantity Input Card
             QuantityInputCard(
                 plannedQty = currentItem.plannedQty,
                 quantityType = state.quantityTypeLabel,
                 pickedQtyInput = state.pickedQtyInput,
                 onPickedQtyChange = onPickedQtyChange,
                 isUpdating = state.isUpdating,
-                formatQuantity = state::formatQuantity
-            )
-        }
-    }
-}
-
-@Composable
-private fun CourseHeaderCard(
-    courseName: String,
-    pickingAreaName: String,
-    registeredCount: Int,  // Changed from processedCount
-    totalCount: Int,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "コース",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "$registeredCount / $totalCount",  // Use registeredCount
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Text(
-                text = courseName,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = "フロア: $pickingAreaName",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            LinearProgressIndicator(
-                progress = { if (totalCount > 0) registeredCount.toFloat() / totalCount.toFloat() else 0f },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxHeight()
             )
         }
     }
@@ -271,43 +302,66 @@ private fun CourseHeaderCard(
 private fun ItemInformationCard(
     item: PickingTaskItem,
     slipNumber: String,
+    pickingAreaName: String,
+    onImageClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    val hasImages = item.images.isNotEmpty()
+
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        border = BorderStroke(1.dp, BorderGray),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+    ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = item.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.itemName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = { if (hasImages) onImageClick() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Image,
+                        contentDescription = "商品画像",
+                        tint = if (hasImages) AccentOrange else Color(0xFFCCCCCC),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+            HorizontalDivider(
+                color = Color(0xFFEEEEEE),
+                modifier = Modifier.padding(vertical = 2.dp)
             )
-            HorizontalDivider()
-
-            // slipNumber (伝票番号)
             InfoRow(label = "伝票番号", value = slipNumber)
-
-            // Volume (容量)
             if (item.volume != null) {
                 InfoRow(label = "容量", value = item.volume!!)
             } else {
                 InfoRow(label = "容量", value = "—")
             }
-
-            // Capacity per case (入数)
             if (item.capacityCase != null) {
                 InfoRow(label = "入数", value = "${item.capacityCase} 個/ケース")
             } else {
                 InfoRow(label = "入数", value = "—")
             }
-
-            // JAN code
             if (item.janCode != null) {
                 InfoRow(label = "JAN", value = item.janCode!!)
             } else {
                 InfoRow(label = "JAN", value = "—")
             }
+            InfoRow(label = "ロケ", value = pickingAreaName.ifBlank { "—" })
         }
     }
 }
@@ -319,63 +373,88 @@ private fun QuantityInputCard(
     pickedQtyInput: String,
     onPickedQtyChange: (String) -> Unit,
     isUpdating: Boolean,
-    formatQuantity: (Double, String) -> String,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        border = BorderStroke(2.dp, AccentOrange),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "数量",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = TitleRed
             )
 
-            // Planned Quantity (Read-only)
-            OutlinedCard {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "出荷数量",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        text = String.format("%.1f %s", plannedQty, quantityType),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+            HorizontalDivider(color = Color(0xFFEEEEEE))
+
+            // ラベル行（同じ高さに固定）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "出荷数量（受注）",
+                    fontSize = 12.sp,
+                    color = TextSecond,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "出庫数量",
+                    fontSize = 12.sp,
+                    color = AccentOrange,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
-            HorizontalDivider()
-
-            // Picked Quantity (Editable)
-            Text(
-                text = "出庫数量",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            OutlinedTextField(
-                value = pickedQtyInput,
-                onValueChange = onPickedQtyChange,
-                label = { Text("出庫数量 ($quantityType)") },
-                enabled = !isUpdating,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
+            // ボックス行（完全同一サイズ）
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = {
-                    Text("数量を入力してください。不足の場合は0を入力。")
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 左: 出荷数量（読み取り専用）
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .background(ReadonlyBg, RoundedCornerShape(6.dp))
+                        .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(6.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = String.format("%.1f %s", plannedQty, quantityType),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ReadonlyText
+                    )
                 }
-            )
+
+                // 右: 出庫数量（入力）
+                OutlinedTextField(
+                    value = pickedQtyInput,
+                    onValueChange = onPickedQtyChange,
+                    placeholder = { Text("0", fontSize = 16.sp) },
+                    enabled = !isUpdating,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(56.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentOrange,
+                        unfocusedBorderColor = BorderGray
+                    )
+                )
+            }
         }
     }
 }
@@ -388,13 +467,14 @@ private fun InfoRow(label: String, value: String) {
     ) {
         Text(
             text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 13.sp,
+            color = TextSecond
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary
         )
     }
 }
@@ -423,15 +503,13 @@ private fun OutboundPickingBottomBar(
         val contentPadding = PaddingValues(horizontal = 2.dp, vertical = 2.dp)
 
         Column(modifier = Modifier.padding(12.dp)) {
-            // Top row: Register, Prev, Next
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val buttonModifier = Modifier
-                    .weight(1f)
+                val buttonModifier = Modifier.weight(1f)
 
-                // 画像(F5) - Show image viewer if images are available
+                // 画像(F5)
                 OutlinedButton(
                     onClick = onImageClick,
                     enabled = state.hasImages && !state.isUpdating,
@@ -442,7 +520,7 @@ private fun OutboundPickingBottomBar(
                     Text("商品の画像", style = smallTextStyle)
                 }
 
-                // コース(F6)
+                // コース変更(F6)
                 OutlinedButton(
                     onClick = onCourseClick,
                     enabled = !state.isUpdating,
@@ -453,7 +531,7 @@ private fun OutboundPickingBottomBar(
                     Text(
                         "コース変更",
                         style = smallTextStyle,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Center
                     )
                 }
 
@@ -485,13 +563,14 @@ private fun OutboundPickingBottomBar(
                     enabled = state.canRegister,
                     shape = smallShape,
                     contentPadding = contentPadding,
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
                     modifier = buttonModifier
                 ) {
                     if (state.isUpdating) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = Color.White
                         )
                     } else {
                         Text("登録", style = smallTextStyle)
@@ -515,8 +594,6 @@ private fun OutboundPickingBottomBar(
 
 /**
  * Completion Confirmation Dialog (per spec 2.5.2).
- * Message: すべての商品登録を完了しました。確定しますか？
- * Buttons: 確定 (complete task) / キャンセル (navigate to history)
  */
 @Composable
 private fun CompletionConfirmationDialog(
@@ -531,13 +608,14 @@ private fun CompletionConfirmationDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = !isCompleting
+                enabled = !isCompleting,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)
             ) {
                 if (isCompleting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.White
                     )
                 } else {
                     Text("確定")
@@ -557,79 +635,199 @@ private fun CompletionConfirmationDialog(
 
 /**
  * Image Viewer Dialog (画像 F5).
- * Shows product images from the server in a simple dialog.
- * For now, displays the first image. Can be enhanced to show thumbnails/carousel.
+ * Displays product images with HorizontalPager for multi-image support.
+ * Uses Coil for async image loading with loading/error states.
  */
 @Composable
 private fun ImageViewerDialog(
     images: List<String>,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("商品画像") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+    val pagerState = rememberPagerState(pageCount = { images.size.coerceAtLeast(1) })
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Column {
+                // ===== ヘッダー =====
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(HeaderBg)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Image,
+                        contentDescription = null,
+                        tint = AccentOrange,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "商品画像",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TitleRed
+                    )
+                    if (images.size > 1) {
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            color = AccentOrange,
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "${pagerState.currentPage + 1} / ${images.size}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "閉じる",
+                            tint = TitleRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = DividerGold, thickness = 2.dp)
+
+                // ===== 画像エリア =====
                 if (images.isEmpty()) {
-                    Text(
-                        text = "画像が登録されていません",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Image,
+                                contentDescription = null,
+                                tint = Color(0xFFCCCCCC),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                text = "画像が登録されていません",
+                                fontSize = 14.sp,
+                                color = ReadonlyText
+                            )
+                        }
+                    }
                 } else {
-                    // Display first image
-                    // Note: In production, use Coil or Glide to load images from URL
-                    Text(
-                        text = "画像URL: ${images.first()}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "画像の表示にはCoilまたはGlideの実装が必要です。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    // TODO: Implement image loading with Coil
-                    // AsyncImage(
-                    //     model = images.first(),
-                    //     contentDescription = "商品画像",
-                    //     modifier = Modifier
-                    //         .fillMaxWidth()
-                    //         .heightIn(max = 400.dp)
-                    // )
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    ) { page ->
+                        SubcomposeAsyncImage(
+                            model = images[page],
+                            contentDescription = "商品画像 ${page + 1}",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        ) {
+                            when (painter.state) {
+                                is AsyncImagePainter.State.Loading -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = AccentOrange,
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+                                }
+                                is AsyncImagePainter.State.Error -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(ReadonlyBg),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Image,
+                                                contentDescription = null,
+                                                tint = Color(0xFFCCCCCC),
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                            Text(
+                                                text = "画像を読み込めません",
+                                                fontSize = 13.sp,
+                                                color = ReadonlyText
+                                            )
+                                        }
+                                    }
+                                }
+                                else -> SubcomposeAsyncImageContent()
+                            }
+                        }
+                    }
+
+                    // ページドット（複数画像の場合）
+                    if (images.size > 1) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(images.size) { index ->
+                                val isSelected = index == pagerState.currentPage
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 3.dp)
+                                        .size(if (isSelected) 10.dp else 7.dp)
+                                        .background(
+                                            color = if (isSelected) AccentOrange else BorderGray,
+                                            shape = CircleShape
+                                        )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ===== フッター =====
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("閉じる", color = AccentOrange, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("閉じる")
-            }
         }
-    )
+    }
 }
 
 // ========== Preview Section ==========
-
-@Preview(
-    name = "Course Header Card",
-    showBackground = true,
-    widthDp = 400
-)
-@Composable
-private fun PreviewCourseHeaderCard() {
-    MaterialTheme {
-        CourseHeaderCard(
-            courseName = "Aコース（午前便）",
-            pickingAreaName = "1F 冷凍エリア",
-            registeredCount = 5,
-            totalCount = 10
-        )
-    }
-}
 
 @Preview(
     name = "Item Information Card",
@@ -657,7 +855,9 @@ private fun PreviewItemInformationCard() {
                 images = emptyList(),
                 slipNumber = 2023121500
             ),
-            slipNumber = "20231215001"
+            slipNumber = "20231215001",
+            pickingAreaName = "1F 冷凍エリア",
+            onImageClick = {}
         )
     }
 }
@@ -675,8 +875,7 @@ private fun PreviewQuantityInputCard() {
             quantityType = "ケース",
             pickedQtyInput = "20",
             onPickedQtyChange = {},
-            isUpdating = false,
-            formatQuantity = { qty, type -> String.format("%.1f %s", qty, type) }
+            isUpdating = false
         )
     }
 }
@@ -777,30 +976,13 @@ private fun PreviewOutboundPickingScreenNormal() {
                     temperatureType = "冷凍",
                     walkingOrder = 1001,
                     images = emptyList()
-                ),
-                PickingTaskItem(
-                    id = 3,
-                    itemId = 103,
-                    itemName = "キリン一番搾り 500ml缶",
-                    slipNumber = 2023121502,
-                    volume = "500ml",
-                    capacityCase = 24,
-                    janCode = "4901777345678",
-                    plannedQty = 10.0,
-                    plannedQtyType = QuantityType.CASE,
-                    pickedQty = 10.0,
-                    status = ItemStatus.COMPLETED,
-                    packaging = "ケース",
-                    temperatureType = "冷凍",
-                    walkingOrder = 1002,
-                    images = emptyList()
                 )
             )
         )
 
         val state = OutboundPickingState(
             originalTask = sampleTask,
-            pendingItems = listOf(sampleTask.items[0]), // Only PENDING items
+            pendingItems = listOf(sampleTask.items[0]),
             currentIndex = 0,
             pickedQtyInput = "",
             isLoading = false,
@@ -808,26 +990,49 @@ private fun PreviewOutboundPickingScreenNormal() {
         )
 
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫データ入力") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る(F4)"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "ホーム(F8)"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る(F4)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "ホーム(F8)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 OutboundPickingBottomBar(
@@ -844,6 +1049,7 @@ private fun PreviewOutboundPickingScreenNormal() {
             OutboundPickingContent(
                 state = state,
                 onPickedQtyChange = {},
+                onImageClick = {},
                 modifier = Modifier.padding(padding)
             )
         }
@@ -898,26 +1104,49 @@ private fun PreviewOutboundPickingScreenWithInput() {
         )
 
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫データ入力") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る(F4)"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "ホーム(F8)"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る(F4)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "ホーム(F8)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 OutboundPickingBottomBar(
@@ -934,6 +1163,7 @@ private fun PreviewOutboundPickingScreenWithInput() {
             OutboundPickingContent(
                 state = state,
                 onPickedQtyChange = {},
+                onImageClick = {},
                 modifier = Modifier.padding(padding)
             )
         }
@@ -962,8 +1192,7 @@ private fun PreviewOutboundPickingScreenInProgress() {
                 plannedQty = 10.0,
                 plannedQtyType = QuantityType.CASE,
                 pickedQty = if (index < 5) 10.0 else 0.0,
-                status = if (index < 5) ItemStatus.PICKING
-                         else ItemStatus.PENDING,
+                status = if (index < 5) ItemStatus.PICKING else ItemStatus.PENDING,
                 packaging = "ケース",
                 temperatureType = "冷蔵",
                 walkingOrder = 3000 + index,
@@ -981,9 +1210,7 @@ private fun PreviewOutboundPickingScreenInProgress() {
             items = items
         )
 
-        val pendingItems = items.filter {
-            it.status == ItemStatus.PENDING
-        }
+        val pendingItems = items.filter { it.status == ItemStatus.PENDING }
 
         val state = OutboundPickingState(
             originalTask = sampleTask,
@@ -995,26 +1222,49 @@ private fun PreviewOutboundPickingScreenInProgress() {
         )
 
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫データ入力") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る(F4)"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "ホーム(F8)"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る(F4)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "ホーム(F8)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 OutboundPickingBottomBar(
@@ -1031,6 +1281,7 @@ private fun PreviewOutboundPickingScreenInProgress() {
             OutboundPickingContent(
                 state = state,
                 onPickedQtyChange = {},
+                onImageClick = {},
                 modifier = Modifier.padding(padding)
             )
         }
@@ -1085,26 +1336,49 @@ private fun PreviewOutboundPickingScreenPieceType() {
         )
 
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫データ入力") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る(F4)"
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "ホーム(F8)"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る(F4)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.Default.Home,
+                                    contentDescription = "ホーム(F8)",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 OutboundPickingBottomBar(
@@ -1121,6 +1395,7 @@ private fun PreviewOutboundPickingScreenPieceType() {
             OutboundPickingContent(
                 state = state,
                 onPickedQtyChange = {},
+                onImageClick = {},
                 modifier = Modifier.padding(padding)
             )
         }

@@ -17,7 +17,8 @@ data class PickingHistoryState(
     val isConfirming: Boolean = false,
     val errorMessage: String? = null,
     val showConfirmDialog: Boolean = false,
-    val itemToDelete: PickingTaskItem? = null
+    val itemToDelete: PickingTaskItem? = null,
+    val warehouseName: String = ""
 ) {
     /**
      * Items to show in history (status == PICKING).
