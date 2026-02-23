@@ -2,6 +2,7 @@ package biz.smt_life.android.feature.outbound.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.network.NetworkException
 import biz.smt_life.android.core.ui.TokenManager
@@ -26,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PickingTasksViewModel @Inject constructor(
     private val repository: PickingTaskRepository,
+    private val incomingRepository: IncomingRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
@@ -92,8 +94,23 @@ class PickingTasksViewModel @Inject constructor(
             return
         }
 
-        // Load My tasks
+        // Load warehouse name and tasks concurrently
+        loadWarehouseName(warehouseId)
         loadMyAreaTasks()
+    }
+
+    /**
+     * Load warehouse name from master data and store in state.
+     */
+    private fun loadWarehouseName(warehouseId: Int) {
+        viewModelScope.launch {
+            incomingRepository.getWarehouses()
+                .onSuccess { warehouses ->
+                    val name = warehouses.firstOrNull { it.id == warehouseId }?.name ?: ""
+                    _state.update { it.copy(warehouseName = name) }
+                }
+                // Silently ignore errors — warehouse name is optional display info
+        }
     }
 
     /**
@@ -182,8 +199,8 @@ class PickingTasksViewModel @Inject constructor(
                             onNavigateToHistory(task)
                         }
                         task.isFullyProcessed -> {
-                            // All COMPLETED/SHORTAGE → navigate to History (read-only)
-                            onNavigateToHistory(task)
+                            // All COMPLETED/SHORTAGE → navigate to Data Input (show completed message)
+                            onNavigateToDataInput(task)
                         }
                         else -> {
                             // Fallback: navigate to Data Input

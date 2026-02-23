@@ -1,5 +1,6 @@
 package biz.smt_life.android.feature.outbound.picking
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,16 +11,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -36,20 +42,35 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.PickingTask
 import biz.smt_life.android.core.domain.model.PickingTaskItem
 import biz.smt_life.android.core.domain.model.QuantityType
+
+// ===== P21/P22 共通カラー =====
+private val TitleRed     = Color(0xFFC0392B)
+private val AccentOrange = Color(0xFFE67E22)
+private val DividerGold  = Color(0xFFF9A825)
+private val BodyBg       = Color.White
+private val HeaderBg     = Color(0xFFFDFBF2)
+private val TextPrimary  = Color(0xFF212529)
+private val TextSecond   = Color(0xFF555555)
+private val BorderGray   = Color(0xFFCCCCCC)
+private val ReadonlyText = Color(0xFF888888)
+private val BadgeGreen   = Color(0xFF27AE60)
 
 /**
  * Picking History Screen (2.5.3 - 出庫処理＞履歴).
@@ -116,18 +137,93 @@ fun PickingHistoryScreen(
     }
 
     Scaffold(
+        containerColor = BodyBg,
         topBar = {
-            TopAppBar(
-                title = { Text("出庫履歴") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "戻る"
-                        )
-                    }
-                }
-            )
+            Column {
+                TopAppBar(
+                    modifier = Modifier.height(60.dp),
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Inventory2,
+                                contentDescription = null,
+                                tint = AccentOrange,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "出庫履歴",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TitleRed
+                            )
+                            val courseName = state.task?.courseName
+                            if (!courseName.isNullOrBlank()) {
+                                Spacer(Modifier.width(8.dp))
+                                Surface(
+                                    color = BadgeGreen,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
+                                    ) {
+                                        Text(
+                                            text = courseName,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 9.sp,
+                                            color = Color.White,
+                                            lineHeight = 10.sp
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Surface(
+                                color = AccentOrange,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = "${state.task?.registeredCount ?: 0} / ${state.task?.totalItems ?: 0}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    lineHeight = 12.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
+                                )
+                            }
+                            if (state.warehouseName.isNotBlank()) {
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "｜${state.warehouseName}",
+                                    fontSize = 14.sp,
+                                    color = AccentOrange
+                                )
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る",
+                                tint = TitleRed
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = HeaderBg
+                    )
+                )
+                HorizontalDivider(thickness = 2.dp, color = DividerGold)
+            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
@@ -147,7 +243,7 @@ fun PickingHistoryScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = AccentOrange)
                 }
             }
             state.historyItems.isEmpty() && state.isReadOnlyMode -> {
@@ -167,8 +263,8 @@ fun PickingHistoryScreen(
                 ) {
                     Text(
                         text = "出庫履歴がありません",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontSize = 16.sp,
+                        color = ReadonlyText
                     )
                 }
             }
@@ -195,40 +291,6 @@ private fun HistoryListContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Header with course info
-        if (state.task != null) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = state.task.courseName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "フロア: ${state.task.pickingAreaName}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (state.isReadOnlyMode) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = "確定済み（参照のみ）",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // List of history items (2 columns grid)
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -253,22 +315,47 @@ private fun HistoryItemCard(
     showDeleteButton: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    OutlinedCard(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = BorderStroke(1.dp, BorderGray),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Item name
-            Text(
-                text = item.itemName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            // Item name + delete icon
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.itemName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                if (showDeleteButton) {
+                    IconButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "削除",
+                            tint = TitleRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
 
-            HorizontalDivider()
+            HorizontalDivider(
+                color = Color(0xFFEEEEEE),
+                modifier = Modifier.padding(vertical = 2.dp)
+            )
 
             // Slip number
             InfoRow(label = "伝票番号", value = item.slipNumber.toString())
@@ -307,20 +394,6 @@ private fun HistoryItemCard(
                 label = "出庫数量",
                 value = String.format("%.1f %s", item.pickedQty, qtyLabel)
             )
-
-            // Status badge
-            StatusBadge(status = item.status)
-
-            // Delete button (only in editable mode)
-            if (showDeleteButton) {
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("削除(F3)")
-                }
-            }
         }
     }
 }
@@ -343,22 +416,23 @@ private fun ReadOnlyModeContent(
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = AccentOrange
             )
             Text(
                 text = "すべての商品が確定済みです",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
             Text(
                 text = task.courseName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontSize = 16.sp,
+                color = TextSecond
             )
             Text(
                 text = "履歴は参照のみ可能です。変更はできません。",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontSize = 14.sp,
+                color = ReadonlyText
             )
         }
     }
@@ -372,13 +446,14 @@ private fun InfoRow(label: String, value: String) {
     ) {
         Text(
             text = "$label:",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 13.sp,
+            color = TextSecond
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary
         )
     }
 }
@@ -386,19 +461,19 @@ private fun InfoRow(label: String, value: String) {
 @Composable
 private fun StatusBadge(status: biz.smt_life.android.core.domain.model.ItemStatus) {
     val (text, color) = when (status) {
-        biz.smt_life.android.core.domain.model.ItemStatus.PENDING -> "未登録" to MaterialTheme.colorScheme.error
-        biz.smt_life.android.core.domain.model.ItemStatus.PICKING -> "登録済み" to MaterialTheme.colorScheme.tertiary
-        biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED -> "完了" to MaterialTheme.colorScheme.primary
-        biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE -> "欠品" to MaterialTheme.colorScheme.error
+        biz.smt_life.android.core.domain.model.ItemStatus.PENDING   -> "未登録" to TitleRed
+        biz.smt_life.android.core.domain.model.ItemStatus.PICKING   -> "登録済み" to AccentOrange
+        biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED -> "完了" to BadgeGreen
+        biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE  -> "欠品" to TitleRed
     }
 
     Surface(
         color = color.copy(alpha = 0.15f),
-        shape = MaterialTheme.shapes.small
+        shape = RoundedCornerShape(12.dp)
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
+            fontSize = 12.sp,
             color = color,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -426,9 +501,11 @@ private fun HistoryBottomBar(
             Button(
                 onClick = onConfirmAllClick,
                 enabled = canConfirm,
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
                 modifier = Modifier.widthIn(min = 200.dp)
             ) {
-                Text("確定(F4)")
+                Text("確定")
             }
         }
     }
@@ -454,7 +531,10 @@ private fun DeleteConfirmationDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = TitleRed)
+            ) {
                 Text("削除")
             }
         },
@@ -479,13 +559,14 @@ private fun ConfirmAllDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                enabled = !isConfirming
+                enabled = !isConfirming,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)
             ) {
                 if (isConfirming) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.White
                     )
                 } else {
                     Text("確定")
@@ -820,18 +901,42 @@ private fun PreviewFullPageEditableMode() {
 
     MaterialTheme {
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫履歴") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫履歴",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = HeaderBg
+                        )
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 HistoryBottomBar(
@@ -905,18 +1010,42 @@ private fun PreviewFullPageReadOnlyMode() {
 
     MaterialTheme {
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫履歴") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫履歴",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = HeaderBg
+                        )
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             }
         ) { padding ->
             ReadOnlyModeContent(
@@ -1023,18 +1152,42 @@ private fun PreviewFullPageWithPickingItems() {
 
     MaterialTheme {
         Scaffold(
+            containerColor = BodyBg,
             topBar = {
-                TopAppBar(
-                    title = { Text("出庫履歴") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る"
-                            )
-                        }
-                    }
-                )
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory2,
+                                    contentDescription = null,
+                                    tint = AccentOrange,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = "出庫履歴",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TitleRed
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "戻る",
+                                    tint = TitleRed
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = HeaderBg
+                        )
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
             },
             bottomBar = {
                 HistoryBottomBar(

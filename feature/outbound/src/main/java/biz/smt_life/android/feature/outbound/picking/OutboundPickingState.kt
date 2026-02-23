@@ -23,7 +23,8 @@ data class OutboundPickingState(
     val showCompletionDialog: Boolean = false,
     val isCompleting: Boolean = false,
     val showImageDialog: Boolean = false,
-    val warehouseId: Int = 0                    // Warehouse ID for refreshing task
+    val warehouseId: Int = 0,                   // Warehouse ID for refreshing task
+    val warehouseName: String = ""              // Warehouse name for header display
 ) {
     /**
      * Backward compatibility: task property returns filtered task for existing code.
