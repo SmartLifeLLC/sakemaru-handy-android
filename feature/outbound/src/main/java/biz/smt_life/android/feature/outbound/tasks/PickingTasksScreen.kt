@@ -185,10 +185,6 @@ fun PickingTasksScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            HorizontalDivider(
-                thickness = 2.dp,
-                color = Color(0xFFF9A825)
-            )
             Box(modifier = Modifier.weight(1f)) {
                 when (state.tasksState) {
                     is TaskListState.Loading -> LoadingContent()
@@ -406,7 +402,7 @@ private fun PickingTaskCard(
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         Text(
-                            text = "作業済",
+                            text = "作業中",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,

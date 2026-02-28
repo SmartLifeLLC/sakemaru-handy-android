@@ -52,10 +52,12 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        val newState = if (tasks.isEmpty()) {
+                        // Filter out fully processed (confirmed) tasks
+                        val activeTasks = tasks.filter { !it.isFullyProcessed }
+                        val newState = if (activeTasks.isEmpty()) {
                             TaskListState.Empty
                         } else {
-                            TaskListState.Success(tasks)
+                            TaskListState.Success(activeTasks)
                         }
                         currentState.copy(tasksState = newState)
                     } else {
@@ -147,10 +149,12 @@ class PickingTasksViewModel @Inject constructor(
 
             repository.getMyAreaTasks(warehouseId, pickerId)
                 .onSuccess { tasks ->
-                    val newState = if (tasks.isEmpty()) {
+                    // Filter out fully processed (confirmed) tasks
+                    val activeTasks = tasks.filter { !it.isFullyProcessed }
+                    val newState = if (activeTasks.isEmpty()) {
                         TaskListState.Empty
                     } else {
-                        TaskListState.Success(tasks)
+                        TaskListState.Success(activeTasks)
                     }
                     _state.update { it.copy(tasksState = newState) }
                 }

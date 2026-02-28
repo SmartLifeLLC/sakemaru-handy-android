@@ -21,11 +21,13 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,19 +102,6 @@ fun OutboundPickingScreen(
             )
             viewModel.clearError()
         }
-    }
-
-    if (state.showCompletionDialog) {
-        CompletionConfirmationDialog(
-            isCompleting = state.isCompleting,
-            onConfirm = {
-                viewModel.completeTask(onSuccess = onTaskCompleted)
-            },
-            onCancel = {
-                viewModel.dismissCompletionDialog()
-                onNavigateToHistory()
-            }
-        )
     }
 
     if (state.showImageDialog && state.currentItem != null) {
@@ -241,9 +230,8 @@ fun OutboundPickingScreen(
                     state = state,
                     onPickedQtyChange = viewModel::onPickedQtyChange,
                     onImageClick = { viewModel.showImageDialog() },
-                    onPrevClick = viewModel::moveToPrevItem,
-                    onNextClick = viewModel::moveToNextItem,
                     onRegisterClick = viewModel::registerCurrentItem,
+                    onHistoryClick = onNavigateToHistory,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -293,19 +281,47 @@ fun OutboundPickingScreen(
                                     color = Neutral500
                                 )
                                 Spacer(Modifier.height(12.dp))
-                                Button(
-                                    onClick = { viewModel.showCompletionDialog() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier
-                                        .height(40.dp)
-                                        .widthIn(min = 120.dp)
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = "確定",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    OutlinedButton(
+                                        onClick = onNavigateToHistory,
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier
+                                            .height(40.dp)
+                                            .widthIn(min = 120.dp),
+                                        border = BorderStroke(1.dp, Neutral300)
+                                    ) {
+                                        Text(
+                                            text = "キャンセル",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Neutral700
+                                        )
+                                    }
+                                    Button(
+                                        onClick = { viewModel.completeTask(onSuccess = onTaskCompleted) },
+                                        enabled = !state.isCompleting,
+                                        colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier
+                                            .height(40.dp)
+                                            .widthIn(min = 120.dp)
+                                    ) {
+                                        if (state.isCompleting) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                                color = Color.White
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "確定",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -323,18 +339,12 @@ private fun OutboundPickingBody(
     state: OutboundPickingState,
     onPickedQtyChange: (String) -> Unit,
     onImageClick: () -> Unit,
-    onPrevClick: () -> Unit,
-    onNextClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onHistoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentItem = state.currentItem!!
     val originalTask = state.originalTask!!
-
-    // History items: all non-PENDING items from original task
-    val historyItems = remember(originalTask) {
-        originalTask.items.filter { it.status != ItemStatus.PENDING }
-    }
 
     Row(
         modifier = modifier
@@ -367,10 +377,13 @@ private fun OutboundPickingBody(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = currentItem.itemName,
-                            fontSize = 16.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            style = androidx.compose.ui.text.TextStyle(
+                                platformStyle = PlatformTextStyle(includeFontPadding = false)
+                            )
                         )
                         val specLine = buildString {
                             if (currentItem.janCode != null) append(currentItem.janCode)
@@ -386,19 +399,19 @@ private fun OutboundPickingBody(
                         if (specLine.isNotEmpty()) {
                             Text(
                                 text = specLine,
-                                fontSize = 14.sp,
+                                fontSize = 16.sp,
                                 color = Neutral500,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
                         }
                         Text(
                             text = "得意先名: ${currentItem.customerName ?: ""}",
-                            fontSize = 14.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Neutral500,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 2.dp)
+                            modifier = Modifier.padding(top = 6.dp)
                         )
                     }
                     // Image button
@@ -409,7 +422,7 @@ private fun OutboundPickingBody(
                         shape = RoundedCornerShape(8.dp),
                         color = Amber50,
                         border = BorderStroke(1.dp, Amber200),
-                        onClick = { if (state.hasImages) onImageClick() }
+                        onClick = { onImageClick() }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -422,321 +435,171 @@ private fun OutboundPickingBody(
                     }
                 }
 
-                // (b) Location & Slip number (2 columns)
+                // (b) Location & Slip number (2 rows)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "ロケーション",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Neutral500,
+                        modifier = Modifier.width(100.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(30.dp)
+                            .background(Amber50, RoundedCornerShape(6.dp))
+                            .border(1.dp, Amber300, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
                         Text(
-                            text = "ロケーション",
-                            fontSize = 14.sp,
+                            text = originalTask.pickingAreaName.ifBlank { "未設定" },
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Neutral500,
-                            modifier = Modifier.padding(bottom = 2.dp)
+                            color = if (originalTask.pickingAreaName.isBlank()) Neutral400 else Color.Black
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp)
-                                .background(Amber50, RoundedCornerShape(6.dp))
-                                .border(1.dp, Amber300, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = originalTask.pickingAreaName.ifBlank { "未設定" },
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (originalTask.pickingAreaName.isBlank()) Neutral400 else Color.Black
-                            )
-                        }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "伝票番号",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Neutral500,
+                        modifier = Modifier.width(100.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(30.dp)
+                            .background(Amber50, RoundedCornerShape(6.dp))
+                            .border(1.dp, Amber300, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
                         Text(
-                            text = "伝票番号",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Neutral500,
-                            modifier = Modifier.padding(bottom = 2.dp)
+                            text = currentItem.slipNumber.toString(),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp)
-                                .background(Amber50, RoundedCornerShape(6.dp))
-                                .border(1.dp, Amber300, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = currentItem.slipNumber.toString(),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
                     }
                 }
 
-                // (c) 受注数 (Order qty - readonly) & (d) 出庫数 (Ship qty - editable)
+            }
+        }
+
+        // ===== RIGHT PANE: Order qty + Ship qty + Buttons =====
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color.White,
+            shadowElevation = 1.dp,
+            border = BorderStroke(1.dp, Neutral200)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // (c) ケース & バラ with 受注数 inline (2 columns)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // 受注数 (readonly)
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Neutral50,
-                        border = BorderStroke(1.dp, Neutral200)
-                    ) {
-                        Column(modifier = Modifier.padding(6.dp)) {
-                            Text(
-                                text = "受注数",
-                                fontSize = 14.sp,
+                    val caseQty = if (state.quantityTypeLabel == "ケース")
+                        String.format("%.0f", currentItem.plannedQty) else "0"
+                    val pieceQty = if (state.quantityTypeLabel == "バラ")
+                        String.format("%.0f", currentItem.plannedQty) else "0"
+
+                    // ケース column
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "ケース（受注数：$caseQty）",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Neutral500,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        OutlinedTextField(
+                            value = if (state.quantityTypeLabel == "ケース")
+                                state.pickedQtyInput.removeSuffix(".0") else "",
+                            onValueChange = onPickedQtyChange,
+                            enabled = !state.isUpdating,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Neutral400,
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Amber600,
+                                unfocusedBorderColor = Neutral300
                             )
-                            // ケース row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(bottom = 2.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(44.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral200, RoundedCornerShape(4.dp))
-                                        .padding(vertical = 2.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "ケース",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral400
-                                    )
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .width(80.dp)
-                                        .height(24.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral200, RoundedCornerShape(4.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val caseQty = if (state.quantityTypeLabel == "ケース")
-                                        String.format("%.0f", currentItem.plannedQty) else "0"
-                                    Text(
-                                        text = caseQty,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral400
-                                    )
-                                }
-                            }
-                            // バラ row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(44.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral200, RoundedCornerShape(4.dp))
-                                        .padding(vertical = 2.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "バラ",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral400
-                                    )
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .width(80.dp)
-                                        .height(24.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral200, RoundedCornerShape(4.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val pieceQty = if (state.quantityTypeLabel == "バラ")
-                                        String.format("%.0f", currentItem.plannedQty) else "0"
-                                    Text(
-                                        text = pieceQty,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral400
-                                    )
-                                }
-                            }
-                        }
+                        )
                     }
 
-                    // 出庫数 (editable)
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color.White,
-                        border = BorderStroke(1.dp, Neutral300)
-                    ) {
-                        Column(modifier = Modifier.padding(6.dp)) {
-                            Text(
-                                text = "出庫数",
-                                fontSize = 14.sp,
+                    // バラ column
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "バラ（受注数：$pieceQty）",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Neutral500,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        OutlinedTextField(
+                            value = if (state.quantityTypeLabel == "バラ")
+                                state.pickedQtyInput.removeSuffix(".0") else "",
+                            onValueChange = onPickedQtyChange,
+                            enabled = !state.isUpdating,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Neutral500,
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Amber600,
+                                unfocusedBorderColor = Neutral300
                             )
-                            // ケース row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(bottom = 2.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(44.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral300, RoundedCornerShape(4.dp))
-                                        .padding(vertical = 2.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "ケース",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral600
-                                    )
-                                }
-                                if (state.quantityTypeLabel == "ケース") {
-                                    OutlinedTextField(
-                                        value = state.pickedQtyInput,
-                                        onValueChange = onPickedQtyChange,
-                                        enabled = !state.isUpdating,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                        singleLine = true,
-                                        modifier = Modifier
-                                            .width(80.dp)
-                                            .height(32.dp),
-                                        textStyle = androidx.compose.ui.text.TextStyle(
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                        ),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Amber600,
-                                            unfocusedBorderColor = Neutral300
-                                        )
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(80.dp)
-                                            .height(24.dp)
-                                            .background(Color.White, RoundedCornerShape(4.dp))
-                                            .border(1.dp, Neutral300, RoundedCornerShape(4.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("0", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                            // バラ row
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(44.dp)
-                                        .background(Neutral100, RoundedCornerShape(4.dp))
-                                        .border(1.dp, Neutral300, RoundedCornerShape(4.dp))
-                                        .padding(vertical = 2.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "バラ",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Neutral600
-                                    )
-                                }
-                                if (state.quantityTypeLabel == "バラ") {
-                                    OutlinedTextField(
-                                        value = state.pickedQtyInput,
-                                        onValueChange = onPickedQtyChange,
-                                        enabled = !state.isUpdating,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                        singleLine = true,
-                                        modifier = Modifier
-                                            .width(80.dp)
-                                            .height(32.dp),
-                                        textStyle = androidx.compose.ui.text.TextStyle(
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                        ),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Amber600,
-                                            unfocusedBorderColor = Neutral300
-                                        )
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .width(80.dp)
-                                            .height(24.dp)
-                                            .background(Color.White, RoundedCornerShape(4.dp))
-                                            .border(1.dp, Neutral300, RoundedCornerShape(4.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("0", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // (e) Action buttons (前へ / 登録 / 次へ)
+                // (e) Action buttons (登録 / 履歴)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 前へ
-                    Button(
-                        onClick = onPrevClick,
-                        enabled = state.canMovePrev && !state.isUpdating,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(32.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Neutral100,
-                            contentColor = Neutral700,
-                            disabledContainerColor = Neutral100,
-                            disabledContentColor = Neutral300
-                        ),
-                        border = BorderStroke(1.dp, Neutral200)
-                    ) {
-                        Text("前へ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
                     // 登録/確定
                     Button(
                         onClick = onRegisterClick,
                         enabled = state.canRegister,
                         modifier = Modifier
                             .weight(1f)
-                            .height(32.dp),
+                            .height(48.dp),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -752,134 +615,30 @@ private fun OutboundPickingBody(
                             )
                         } else {
                             Text(
-                                text = if (!state.canMoveNext) "確定" else "登録",
-                                fontSize = 12.sp,
+                                text = "登録",
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
-                    // 次へ
+                    // 履歴
                     Button(
-                        onClick = onNextClick,
-                        enabled = state.canMoveNext && !state.isUpdating,
+                        onClick = onHistoryClick,
                         modifier = Modifier
                             .weight(1f)
-                            .height(32.dp),
+                            .height(48.dp),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Amber50,
-                            contentColor = Amber700,
-                            disabledContainerColor = Neutral100,
-                            disabledContentColor = Neutral300
+                            contentColor = Amber700
                         ),
                         border = BorderStroke(1.dp, Amber300)
                     ) {
-                        Text("次へ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("履歴", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
-        }
-
-        // ===== RIGHT PANE: History list =====
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        ) {
-            // History label
-            Text(
-                text = "履歴",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Neutral700,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            // History card
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White,
-                shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, Neutral200)
-            ) {
-                if (historyItems.isEmpty()) {
-                    // Empty state
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Inventory2,
-                                contentDescription = null,
-                                tint = Neutral400.copy(alpha = 0.4f),
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "履歴はありません",
-                                fontSize = 12.sp,
-                                color = Neutral400
-                            )
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        items(historyItems, key = { it.id }) { item ->
-                            HistoryItemRow(item = item)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryItemRow(
-    item: PickingTaskItem
-) {
-    val qtyLabel = when (item.plannedQtyType) {
-        QuantityType.CASE -> "ケース"
-        QuantityType.PIECE -> "バラ"
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = Amber50,
-        border = BorderStroke(1.dp, Amber200)
-    ) {
-        Column(modifier = Modifier.padding(4.dp)) {
-            Text(
-                text = item.itemName,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = buildString {
-                    if (item.janCode != null) append(item.janCode)
-                    else append(item.slipNumber)
-                },
-                fontSize = 11.sp,
-                color = Neutral600
-            )
-            Text(
-                text = "出庫: ${String.format("%.0f", item.pickedQty)} $qtyLabel / 受注: ${String.format("%.0f", item.plannedQty)} $qtyLabel",
-                fontSize = 11.sp,
-                color = Neutral500
-            )
         }
     }
 }
@@ -1202,9 +961,8 @@ private fun PreviewOutboundPickingBody() {
                 state = state,
                 onPickedQtyChange = {},
                 onImageClick = {},
-                onPrevClick = {},
-                onNextClick = {},
                 onRegisterClick = {},
+                onHistoryClick = {},
                 modifier = Modifier.padding(padding)
             )
         }
