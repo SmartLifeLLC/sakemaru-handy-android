@@ -98,7 +98,8 @@ data class PickingTaskItem(
     val pickedQty: Double,
     val status: ItemStatus, // Server-controlled status
     val walkingOrder: Int,
-    val slipNumber: Int
+    val slipNumber: Int,
+    val customerName: String? = null
 ) {
     val isCompleted: Boolean
         get() = status == ItemStatus.COMPLETED || status == ItemStatus.SHORTAGE

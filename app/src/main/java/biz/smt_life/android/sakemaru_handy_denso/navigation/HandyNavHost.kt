@@ -323,6 +323,10 @@ fun HandyNavHost(
                     pickingTasksViewModel.clearSelectedTask()
                     pickingTasksViewModel.refresh()
                     navController.popBackStack()
+                },
+                onItemClick = { item ->
+                    // Navigate to P21 (edit mode) for this item
+                    navController.navigate(Routes.OutboundPicking.createRoute(taskId))
                 }
             )
         }

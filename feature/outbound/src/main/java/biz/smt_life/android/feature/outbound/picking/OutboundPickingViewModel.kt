@@ -228,8 +228,11 @@ class OutboundPickingViewModel @Inject constructor(
         val currentState = _state.value
 
         if (currentState.pendingItems.isEmpty()) {
-            // All PENDING items processed, show completion dialog
-            _state.update { it.copy(showCompletionDialog = true) }
+            // All PENDING items processed.
+            // UI will show the completion card via the `else` branch naturally
+            // (currentItem == null → else → CheckCircle + 確定 button).
+            // Don't auto-show dialog — let user see the completion message first.
+            return
         } else {
             // Stay at current index (or adjust if out of bounds)
             val newIndex = if (currentState.currentIndex >= currentState.pendingItems.size) {

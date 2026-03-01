@@ -48,6 +48,7 @@ fun ScheduleListScreen(
         topBar = {
             Column {
                 TopAppBar(
+                    modifier = Modifier.height(60.dp),
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(

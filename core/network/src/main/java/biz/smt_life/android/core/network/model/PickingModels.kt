@@ -50,7 +50,8 @@ data class PickingItem(
     @SerialName("picked_qty") val pickedQty: String,
     val status: String = "PENDING", // "PENDING", "PICKING", "COMPLETED", "SHORTAGE"
     @SerialName("walking_order") val walkingOrder: Int = 0,
-    @SerialName("slip_number") val slipNumber: Int
+    @SerialName("slip_number") val slipNumber: Int,
+    @SerialName("customer_name") val customerName: String? = null
 )
 
 /**

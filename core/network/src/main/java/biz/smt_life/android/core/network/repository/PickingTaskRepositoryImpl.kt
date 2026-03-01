@@ -307,7 +307,8 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 pickedQty = item.pickedQty.toDoubleOrNull() ?: 0.0,
                 status = biz.smt_life.android.core.domain.model.ItemStatus.fromString(item.status),
                 walkingOrder = item.walkingOrder,
-                slipNumber = item.slipNumber
+                slipNumber = item.slipNumber,
+                customerName = item.customerName
             )
         }
 

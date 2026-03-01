@@ -13,14 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -54,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.PickingTask
@@ -90,6 +89,7 @@ fun PickingHistoryScreen(
     taskId: Int,
     onNavigateBack: () -> Unit,
     onHistoryConfirmed: () -> Unit,
+    onItemClick: (PickingTaskItem) -> Unit = { _ -> },
     viewModel: PickingHistoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -141,6 +141,7 @@ fun PickingHistoryScreen(
         topBar = {
             Column {
                 TopAppBar(
+                    modifier = Modifier.height(60.dp),
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -161,28 +162,41 @@ fun PickingHistoryScreen(
                                 Spacer(Modifier.width(8.dp))
                                 Surface(
                                     color = BadgeGreen,
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Text(
-                                        text = courseName,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
+                                    ) {
+                                        Text(
+                                            text = courseName,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            lineHeight = 12.sp
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Text(
+                                            text = "▼",
+                                            fontSize = 9.sp,
+                                            color = Color.White,
+                                            lineHeight = 10.sp
+                                        )
+                                    }
                                 }
                             }
                             Spacer(Modifier.width(6.dp))
                             Surface(
                                 color = AccentOrange,
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 Text(
                                     text = "${state.task?.registeredCount ?: 0} / ${state.task?.totalItems ?: 0}",
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                                    lineHeight = 12.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
                                 )
                             }
                             if (state.warehouseName.isNotBlank()) {
@@ -257,7 +271,7 @@ fun PickingHistoryScreen(
             else -> {
                 HistoryListContent(
                     state = state,
-                    onDeleteClick = { viewModel.showDeleteDialog(it) },
+                    onItemClick = onItemClick,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -268,28 +282,20 @@ fun PickingHistoryScreen(
 @Composable
 private fun HistoryListContent(
     state: PickingHistoryState,
-    onDeleteClick: (PickingTaskItem) -> Unit,
+    onItemClick: (PickingTaskItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // List of history items (2 columns grid)
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(state.historyItems, key = { it.id }) { item ->
-                HistoryItemCard(
-                    item = item,
-                    onDeleteClick = { onDeleteClick(item) },
-                    showDeleteButton = state.isEditableMode && !state.isDeleting
-                )
-            }
+        items(state.historyItems, key = { it.id }) { item ->
+            HistoryItemCard(
+                item = item,
+                onClick = { onItemClick(item) }
+            )
         }
     }
 }
@@ -297,11 +303,11 @@ private fun HistoryListContent(
 @Composable
 private fun HistoryItemCard(
     item: PickingTaskItem,
-    onDeleteClick: () -> Unit,
-    showDeleteButton: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     OutlinedCard(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         border = BorderStroke(1.dp, BorderGray),
         shape = RoundedCornerShape(12.dp),
@@ -309,76 +315,34 @@ private fun HistoryItemCard(
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Item name + delete icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = item.itemName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                if (showDeleteButton) {
-                    IconButton(
-                        onClick = onDeleteClick,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "削除",
-                            tint = TitleRed,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(
-                color = Color(0xFFEEEEEE),
-                modifier = Modifier.padding(vertical = 2.dp)
+            // Row 1: Item name
+            Text(
+                text = item.itemName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
             )
 
-            // Slip number
-            InfoRow(label = "伝票番号", value = item.slipNumber.toString())
+            // Row 2: JAN / 伝票番号
+            val janDisplay = item.janCode ?: "-"
+            Text(
+                text = "$janDisplay / 伝票番号: ${item.slipNumber}",
+                fontSize = 13.sp,
+                color = TextSecond
+            )
 
-            // Volume and capacity (if available)
-            if (item.volume != null || item.capacityCase != null) {
-                val spec = buildString {
-                    if (item.volume != null) append(item.volume)
-                    if (item.capacityCase != null) {
-                        if (isNotEmpty()) append(" / ")
-                        append("入数: ${item.capacityCase}")
-                    }
-                }
-                InfoRow(label = "規格", value = spec)
-            }
-
-            // JAN code (if available)
-            if (item.janCode != null) {
-                InfoRow(label = "JAN", value = item.janCode!!)
-            } else {
-                InfoRow(label = "JAN", value = "-")
-            }
-
-            // Get quantity type
+            // Row 3: 出庫数 / 受注数
             val qtyLabel = when (item.plannedQtyType) {
                 QuantityType.CASE -> "ケース"
                 QuantityType.PIECE -> "バラ"
             }
-
-            InfoRow(
-                label = "予定数量",
-                value = String.format("%.1f %s", item.plannedQty, qtyLabel)
-            )
-
-            InfoRow(
-                label = "出庫数量",
-                value = String.format("%.1f %s", item.pickedQty, qtyLabel)
+            Text(
+                text = "出庫: ${String.format("%.0f", item.pickedQty)} $qtyLabel / 受注: ${String.format("%.0f", item.plannedQty)} $qtyLabel",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary
             )
         }
     }
@@ -538,36 +502,84 @@ private fun ConfirmAllDialog(
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = { if (!isConfirming) onCancel() },
-        title = { Text("確定確認") },
-        text = { Text("すべての出庫履歴を確定しますか？\n確定後は変更できません。") },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                enabled = !isConfirming,
-                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange)
+    Dialog(
+        onDismissRequest = { if (!isConfirming) onCancel() }
+    ) {
+        OutlinedCard(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.outlinedCardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, BorderGray)
+        ) {
+            Column(
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (isConfirming) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                } else {
-                    Text("確定")
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = BadgeGreen,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "すべての出庫履歴を確定しますか？",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = "確定後は変更できません。",
+                    fontSize = 14.sp,
+                    color = ReadonlyText
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCancel,
+                        enabled = !isConfirming,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .height(40.dp)
+                            .widthIn(min = 120.dp),
+                        border = BorderStroke(1.dp, BorderGray)
+                    ) {
+                        Text(
+                            text = "キャンセル",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                    Button(
+                        onClick = onConfirm,
+                        enabled = !isConfirming,
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .height(40.dp)
+                            .widthIn(min = 120.dp)
+                    ) {
+                        if (isConfirming) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(
+                                text = "確定",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onCancel,
-                enabled = !isConfirming
-            ) {
-                Text("キャンセル")
-            }
         }
-    )
+    }
 }
 
 // ========== Preview Section ==========
@@ -598,8 +610,7 @@ private fun PreviewHistoryItemCardPicking() {
                 walkingOrder = 12234,
                 images = emptyList()
             ),
-            onDeleteClick = {},
-            showDeleteButton = true
+            onClick = {}
         )
     }
 }
@@ -630,8 +641,7 @@ private fun PreviewHistoryItemCardCompleted() {
                 walkingOrder = 12234,
                 images = emptyList()
             ),
-            onDeleteClick = {},
-            showDeleteButton = false
+            onClick = {}
         )
     }
 }
@@ -662,8 +672,7 @@ private fun PreviewHistoryItemCardShortage() {
                 walkingOrder = 12234,
                 images = emptyList()
             ),
-            onDeleteClick = {},
-            showDeleteButton = true
+            onClick = {}
         )
     }
 }
@@ -933,7 +942,7 @@ private fun PreviewFullPageEditableMode() {
         ) { padding ->
             HistoryListContent(
                 state = mockState,
-                onDeleteClick = {},
+                onItemClick = {},
                 modifier = Modifier.padding(padding)
             )
         }
@@ -1184,7 +1193,7 @@ private fun PreviewFullPageWithPickingItems() {
         ) { padding ->
             HistoryListContent(
                 state = mockState,
-                onDeleteClick = {},
+                onItemClick = {},
                 modifier = Modifier.padding(padding)
             )
         }

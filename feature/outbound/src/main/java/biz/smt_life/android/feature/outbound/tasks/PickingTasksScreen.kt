@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -131,52 +132,51 @@ fun PickingTasksScreen(
     Scaffold(
         containerColor = BackgroundCream,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFDFBF2)
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "戻る",
-                            tint = HeaderRed,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                },
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.LocalShipping,
-                            contentDescription = null,
-                            tint = HeaderOrange,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Text(
-                            text = "配送コース選択",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = HeaderRed
-                        )
-                        if (warehouseName.isNotEmpty()) {
-                            Text(
-                                text = " ｜",
-                                fontSize = 16.sp,
-                                color = Color(0xFFCCCCCC)
-                            )
-                            Text(
-                                text = warehouseName,
-                                fontSize = 16.sp,
-                                color = HeaderOrange
+            Column {
+                TopAppBar(
+                    modifier = Modifier.height(60.dp),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFFFDFBF2)
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "戻る",
+                                tint = HeaderRed,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
+                    },
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocalShipping,
+                                contentDescription = null,
+                                tint = HeaderOrange,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(
+                                text = "配送コース選択",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = HeaderRed
+                            )
+                            if (warehouseName.isNotEmpty()) {
+                                Text(
+                                    text = "｜${warehouseName}",
+                                    fontSize = 14.sp,
+                                    color = HeaderOrange
+                                )
+                            }
+                        }
                     }
-                }
-            )
+                )
+                HorizontalDivider(thickness = 2.dp, color = Color(0xFFF9A825))
+            }
         },
         snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
@@ -185,10 +185,6 @@ fun PickingTasksScreen(
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            HorizontalDivider(
-                thickness = 2.dp,
-                color = Color(0xFFF9A825)
-            )
             Box(modifier = Modifier.weight(1f)) {
                 when (state.tasksState) {
                     is TaskListState.Loading -> LoadingContent()
