@@ -52,12 +52,13 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        // Filter out fully processed (confirmed) tasks
-                        val activeTasks = tasks.filter { !it.isFullyProcessed }
-                        val newState = if (activeTasks.isEmpty()) {
+                        val activeTasks = tasks.filter { !it.isAllRegistered }
+                        val completedTasks = tasks.filter { it.isAllRegistered }
+                            .sortedBy { it.courseName }
+                        val newState = if (activeTasks.isEmpty() && completedTasks.isEmpty()) {
                             TaskListState.Empty
                         } else {
-                            TaskListState.Success(activeTasks)
+                            TaskListState.Success(activeTasks, completedTasks)
                         }
                         currentState.copy(tasksState = newState)
                     } else {
@@ -147,14 +148,16 @@ class PickingTasksViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(tasksState = TaskListState.Loading) }
 
-            repository.getMyAreaTasks(warehouseId, pickerId)
+            val shippingDate = tokenManager.getShippingDate()
+            repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
                 .onSuccess { tasks ->
-                    // Filter out fully processed (confirmed) tasks
-                    val activeTasks = tasks.filter { !it.isFullyProcessed }
-                    val newState = if (activeTasks.isEmpty()) {
+                    val activeTasks = tasks.filter { !it.isAllRegistered }
+                    val completedTasks = tasks.filter { it.isAllRegistered }
+                        .sortedBy { it.courseName }
+                    val newState = if (activeTasks.isEmpty() && completedTasks.isEmpty()) {
                         TaskListState.Empty
                     } else {
-                        TaskListState.Success(activeTasks)
+                        TaskListState.Success(activeTasks, completedTasks)
                     }
                     _state.update { it.copy(tasksState = newState) }
                 }
@@ -189,7 +192,13 @@ class PickingTasksViewModel @Inject constructor(
             // Store the selected task for the next screen
             _state.update { it.copy(selectedTask = task) }
 
-            // Start the task if not already started (server will be idempotent)
+            // Completed tasks: skip startTask API call, navigate directly to history
+            if (task.isAllRegistered) {
+                onNavigateToHistory(task)
+                return@launch
+            }
+
+            // Start the task if not already started
             repository.startTask(task.taskId)
                 .onSuccess {
                     // Determine navigation based on task status
@@ -201,10 +210,6 @@ class PickingTasksViewModel @Inject constructor(
                         task.hasPickingItems -> {
                             // Only PICKING items exist → navigate to History (editable)
                             onNavigateToHistory(task)
-                        }
-                        task.isFullyProcessed -> {
-                            // All COMPLETED/SHORTAGE → navigate to Data Input (show completed message)
-                            onNavigateToDataInput(task)
                         }
                         else -> {
                             // Fallback: navigate to Data Input
@@ -230,6 +235,10 @@ class PickingTasksViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         selectTask(task, onSuccess, onSuccess, onError)
+    }
+
+    fun selectTab(tab: TaskTab) {
+        _state.update { it.copy(selectedTab = tab) }
     }
 
     /**

@@ -6,4 +6,5 @@ interface AuthRepository {
     suspend fun login(staffCode: String, password: String): Result<AuthResult>
     suspend fun logout(): Result<Unit>
     suspend fun validateSession(): Result<AuthResult>
+    suspend fun checkConnection(): Result<Unit>
 }

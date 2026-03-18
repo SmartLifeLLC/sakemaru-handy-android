@@ -1,5 +1,8 @@
 package biz.smt_life.android.feature.outbound.tasks
 
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,12 +12,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -22,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.CardDefaults
@@ -33,6 +41,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,6 +68,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.PickingTask
 import kotlinx.coroutines.launch
+
+// ===== Orientation persistence (shared with P21) =====
+private const val PREF_NAME_ORIENTATION = "p21_orientation_prefs"
+private const val PREF_KEY_IS_PORTRAIT = "p21_is_portrait"
 
 // ─── Color definitions ───────────────────────────────────────────────────────
 
@@ -72,7 +89,7 @@ private data class CourseCardColors(
 )
 
 private fun courseCardColors(task: PickingTask): CourseCardColors = when {
-    task.isFullyProcessed -> CourseCardColors(  // 完了
+    task.isAllRegistered -> CourseCardColors(  // 完了
         background       = Color(0xFFF5F5F5),
         border           = Color(0xFFBDBDBD),
         titleColor       = Color(0xFF757575),
@@ -124,9 +141,23 @@ fun PickingTasksScreen(
     var isStartingTask by remember { mutableStateOf(false) }
     val warehouseName = state.warehouseName
 
-    // Show error messages
-    LaunchedEffect(Unit) {
-        // Handle errors via snackbar if needed
+    // ===== Orientation control (shared with P21) =====
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val prefs = remember { context.getSharedPreferences(PREF_NAME_ORIENTATION, Context.MODE_PRIVATE) }
+    var isPortrait by remember { mutableStateOf(prefs.getBoolean(PREF_KEY_IS_PORTRAIT, false)) }
+
+    LaunchedEffect(isPortrait) {
+        activity?.requestedOrientation = if (isPortrait) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+    }
+
+    fun toggleOrientation() {
+        isPortrait = !isPortrait
+        prefs.edit().putBoolean(PREF_KEY_IS_PORTRAIT, isPortrait).apply()
     }
 
     Scaffold(
@@ -173,6 +204,16 @@ fun PickingTasksScreen(
                                 )
                             }
                         }
+                    },
+                    actions = {
+                        IconButton(onClick = { toggleOrientation() }) {
+                            Icon(
+                                imageVector = Icons.Filled.ScreenRotation,
+                                contentDescription = "画面回転",
+                                tint = HeaderOrange,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 )
                 HorizontalDivider(thickness = 2.dp, color = Color(0xFFF9A825))
@@ -194,36 +235,109 @@ fun PickingTasksScreen(
                         onRetry = { viewModel.refresh() }
                     )
                     is TaskListState.Success -> {
-                        val tasks = (state.tasksState as TaskListState.Success).tasks
-                        TaskListContent(
-                            tasks = tasks,
-                            isRefreshing = false,
-                            onRefresh = { viewModel.refresh() },
-                            onTaskClick = { task ->
-                                isStartingTask = true
-                                viewModel.selectTask(
-                                    task = task,
-                                    onNavigateToDataInput = { selectedTask ->
-                                        isStartingTask = false
-                                        onNavigateToDataInput(selectedTask.taskId)
+                        val successState = state.tasksState as TaskListState.Success
+                        val activeTasks = successState.tasks
+                        val completedTasks = successState.completedTasks
+
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // タブバー
+                            val selectedTabIndex = when (state.selectedTab) {
+                                TaskTab.ACTIVE -> 0
+                                TaskTab.COMPLETED -> 1
+                                TaskTab.SUPPORT -> 2
+                            }
+                            TabRow(
+                                selectedTabIndex = selectedTabIndex,
+                                containerColor = Color(0xFFFDFBF2),
+                                contentColor = HeaderOrange,
+                                indicator = { tabPositions ->
+                                    TabRowDefaults.SecondaryIndicator(
+                                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                                        height = 3.dp,
+                                        color = HeaderOrange
+                                    )
+                                }
+                            ) {
+                                Tab(
+                                    selected = state.selectedTab == TaskTab.ACTIVE,
+                                    onClick = { viewModel.selectTab(TaskTab.ACTIVE) },
+                                    text = {
+                                        Text(
+                                            text = "作業中（${activeTasks.size}）",
+                                            fontWeight = if (state.selectedTab == TaskTab.ACTIVE) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 15.sp
+                                        )
                                     },
-                                    onNavigateToHistory = { selectedTask ->
-                                        isStartingTask = false
-                                        onNavigateToHistory(selectedTask.taskId)
-                                    },
-                                    onError = { errorMessage ->
-                                        isStartingTask = false
-                                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = errorMessage,
-                                                duration = androidx.compose.material3.SnackbarDuration.Short
-                                            )
-                                        }
-                                    }
+                                    selectedContentColor = HeaderOrange,
+                                    unselectedContentColor = TextGray
                                 )
-                            },
-                            isStartingTask = isStartingTask
-                        )
+                                Tab(
+                                    selected = state.selectedTab == TaskTab.COMPLETED,
+                                    onClick = { viewModel.selectTab(TaskTab.COMPLETED) },
+                                    text = {
+                                        Text(
+                                            text = "完了（${completedTasks.size}）",
+                                            fontWeight = if (state.selectedTab == TaskTab.COMPLETED) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 15.sp
+                                        )
+                                    },
+                                    selectedContentColor = HeaderOrange,
+                                    unselectedContentColor = TextGray
+                                )
+                                Tab(
+                                    selected = state.selectedTab == TaskTab.SUPPORT,
+                                    onClick = { viewModel.selectTab(TaskTab.SUPPORT) },
+                                    text = {
+                                        Text(
+                                            text = "応援",
+                                            fontWeight = if (state.selectedTab == TaskTab.SUPPORT) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 15.sp
+                                        )
+                                    },
+                                    selectedContentColor = HeaderOrange,
+                                    unselectedContentColor = TextGray
+                                )
+                            }
+
+                            // リスト表示
+                            val displayTasks = when (state.selectedTab) {
+                                TaskTab.ACTIVE -> activeTasks
+                                TaskTab.COMPLETED -> completedTasks
+                                TaskTab.SUPPORT -> emptyList() // 今後実装予定
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                TaskListContent(
+                                    tasks = displayTasks,
+                                    isRefreshing = false,
+                                    onRefresh = { viewModel.refresh() },
+                                    onTaskClick = { task ->
+                                        isStartingTask = true
+                                        viewModel.selectTask(
+                                            task = task,
+                                            onNavigateToDataInput = { selectedTask ->
+                                                isStartingTask = false
+                                                onNavigateToDataInput(selectedTask.taskId)
+                                            },
+                                            onNavigateToHistory = { selectedTask ->
+                                                isStartingTask = false
+                                                onNavigateToHistory(selectedTask.taskId)
+                                            },
+                                            onError = { errorMessage ->
+                                                isStartingTask = false
+                                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        message = errorMessage,
+                                                        duration = androidx.compose.material3.SnackbarDuration.Short
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    },
+                                    isStartingTask = isStartingTask,
+                                    isPortrait = isPortrait
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -289,7 +403,8 @@ private fun TaskListContent(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onTaskClick: (PickingTask) -> Unit,
-    isStartingTask: Boolean = false
+    isStartingTask: Boolean = false,
+    isPortrait: Boolean = false
 ) {
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -307,20 +422,39 @@ private fun TaskListContent(
                     .padding(top = 12.dp, start = 16.dp, bottom = 12.dp)
             )
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(tasks, key = { it.taskId }) { task ->
-                    PickingTaskCard(
-                        task = task,
-                        onClick = { onTaskClick(task) },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isStartingTask
-                    )
+            if (isPortrait) {
+                // Portrait: 1列リスト表示
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(tasks, key = { it.taskId }) { task ->
+                        PickingTaskCard(
+                            task = task,
+                            onClick = { onTaskClick(task) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isStartingTask
+                        )
+                    }
+                }
+            } else {
+                // Landscape: 2列グリッド表示
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(tasks, key = { it.taskId }) { task ->
+                        PickingTaskCard(
+                            task = task,
+                            onClick = { onTaskClick(task) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isStartingTask
+                        )
+                    }
                 }
             }
         }
@@ -383,7 +517,7 @@ private fun PickingTaskCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (task.isFullyProcessed) {
+                if (task.isAllRegistered) {
                     Surface(
                         color = Color(0xFF757575),
                         shape = RoundedCornerShape(20.dp)

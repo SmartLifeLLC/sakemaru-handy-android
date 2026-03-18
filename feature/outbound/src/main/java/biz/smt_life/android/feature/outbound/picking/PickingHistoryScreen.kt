@@ -1,5 +1,8 @@
 package biz.smt_life.android.feature.outbound.picking
 
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,7 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -44,11 +47,15 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,7 +87,6 @@ private val BadgeGreen   = Color(0xFF27AE60)
  *
  * @param taskId The picking task ID to show history for
  * @param onNavigateBack Navigate back to previous screen
- * @param onHistoryConfirmed Callback when user confirms all (navigate back to course list)
  * @param viewModel ViewModel for this screen
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,12 +94,31 @@ private val BadgeGreen   = Color(0xFF27AE60)
 fun PickingHistoryScreen(
     taskId: Int,
     onNavigateBack: () -> Unit,
-    onHistoryConfirmed: () -> Unit,
+    onNavigateToMain: () -> Unit = {},
     onItemClick: (PickingTaskItem) -> Unit = { _ -> },
     viewModel: PickingHistoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // ===== Orientation control (shared with P21) =====
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val prefs = remember { context.getSharedPreferences("p21_orientation_prefs", Context.MODE_PRIVATE) }
+    var isPortrait by remember { mutableStateOf(prefs.getBoolean("p21_is_portrait", false)) }
+
+    LaunchedEffect(isPortrait) {
+        activity?.requestedOrientation = if (isPortrait) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+    }
+
+    fun toggleOrientation() {
+        isPortrait = !isPortrait
+        prefs.edit().putBoolean("p21_is_portrait", isPortrait).apply()
+    }
 
     // Initialize viewModel with taskId - it will observe the repository flow
     LaunchedEffect(taskId) {
@@ -125,16 +150,6 @@ fun PickingHistoryScreen(
         )
     }
 
-    // Confirm-all dialog
-    if (state.showConfirmDialog) {
-        ConfirmAllDialog(
-            isConfirming = state.isConfirming,
-            onConfirm = {
-                viewModel.confirmAll(onSuccess = onHistoryConfirmed)
-            },
-            onCancel = { viewModel.dismissConfirmDialog() }
-        )
-    }
 
     Scaffold(
         containerColor = BodyBg,
@@ -143,81 +158,54 @@ fun PickingHistoryScreen(
                 TopAppBar(
                     modifier = Modifier.height(60.dp),
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Inventory2,
-                                contentDescription = null,
-                                tint = AccentOrange,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "出庫履歴",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TitleRed
-                            )
-                            val courseName = state.task?.courseName
-                            if (!courseName.isNullOrBlank()) {
-                                Spacer(Modifier.width(8.dp))
-                                Surface(
-                                    color = BadgeGreen,
-                                    shape = RoundedCornerShape(12.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                onClick = onNavigateBack,
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
-                                    ) {
-                                        Text(
-                                            text = courseName,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            lineHeight = 12.sp
-                                        )
-                                        Spacer(Modifier.width(2.dp))
-                                        Text(
-                                            text = "▼",
-                                            fontSize = 9.sp,
-                                            color = Color.White,
-                                            lineHeight = 10.sp
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = TitleRed,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                                 }
                             }
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(24.dp))
                             Surface(
-                                color = AccentOrange,
-                                shape = RoundedCornerShape(10.dp)
+                                onClick = { toggleOrientation() },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
                             ) {
-                                Text(
-                                    text = "${state.task?.registeredCount ?: 0} / ${state.task?.totalItems ?: 0}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    lineHeight = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
-                                )
-                            }
-                            if (state.warehouseName.isNotBlank()) {
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = "｜${state.warehouseName}",
-                                    fontSize = 14.sp,
-                                    color = AccentOrange
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "画面回転",
+                                        tint = AccentOrange,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                }
                             }
                         }
                     },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る",
-                                tint = TitleRed
-                            )
-                        }
-                    },
+                    navigationIcon = {},
+                    actions = {},
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = HeaderBg
                     )
@@ -226,14 +214,7 @@ fun PickingHistoryScreen(
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        bottomBar = {
-            if (state.isEditableMode && state.historyItems.isNotEmpty()) {
-                HistoryBottomBar(
-                    onConfirmAllClick = { viewModel.showConfirmDialog() },
-                    canConfirm = state.canConfirmAll
-                )
-            }
-        }
+        bottomBar = {}
     ) { padding ->
         when {
             state.isLoading -> {
@@ -246,15 +227,8 @@ fun PickingHistoryScreen(
                     CircularProgressIndicator(color = AccentOrange)
                 }
             }
-            state.historyItems.isEmpty() && state.isReadOnlyMode -> {
-                // Read-only mode with no PICKING items (all completed)
-                ReadOnlyModeContent(
-                    task = state.task!!,
-                    modifier = Modifier.padding(padding)
-                )
-            }
             state.historyItems.isEmpty() -> {
-                // No history items at all
+                // No registered items at all
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -271,7 +245,8 @@ fun PickingHistoryScreen(
             else -> {
                 HistoryListContent(
                     state = state,
-                    onItemClick = onItemClick,
+                    onItemClick = if (state.isReadOnlyMode) { _ -> } else onItemClick,
+                    onNavigateBack = onNavigateBack,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -283,26 +258,75 @@ fun PickingHistoryScreen(
 private fun HistoryListContent(
     state: PickingHistoryState,
     onItemClick: (PickingTaskItem) -> Unit,
+    onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(state.historyItems, key = { it.id }) { item ->
-            HistoryItemCard(
-                item = item,
-                onClick = { onItemClick(item) }
+    val groupedItems = state.groupedHistoryItems
+
+    Column(modifier = modifier.fillMaxSize()) {
+        // Progress count - fixed at top
+        Surface(
+            color = AccentOrange,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
             )
+        }
+
+        // Scrollable list
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(groupedItems, key = { it.itemId }) { groupedItem ->
+                GroupedHistoryItemCard(
+                    item = groupedItem,
+                    onClick = {
+                        state.historyItems.firstOrNull { it.itemId == groupedItem.itemId }
+                            ?.let { onItemClick(it) }
+                    }
+                )
+            }
+            item {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onNavigateBack,
+                    shape = RoundedCornerShape(6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("もどる", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun HistoryItemCard(
-    item: PickingTaskItem,
+private fun GroupedHistoryItemCard(
+    item: GroupedHistoryItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -317,7 +341,15 @@ private fun HistoryItemCard(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Row 1: Item name
+            // Row 1: Location code
+            Text(
+                text = item.locationCode ?: "-",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+
+            // Row 2: Item name
             Text(
                 text = item.itemName,
                 fontSize = 16.sp,
@@ -325,25 +357,37 @@ private fun HistoryItemCard(
                 color = TextPrimary
             )
 
-            // Row 2: JAN / 伝票番号
-            val janDisplay = item.janCode ?: "-"
-            Text(
-                text = "$janDisplay / 伝票番号: ${item.slipNumber}",
-                fontSize = 13.sp,
-                color = TextSecond
-            )
-
-            // Row 3: 出庫数 / 受注数
-            val qtyLabel = when (item.plannedQtyType) {
-                QuantityType.CASE -> "ケース"
-                QuantityType.PIECE -> "バラ"
+            // Row 3: JAN code
+            if (!item.janCode.isNullOrBlank()) {
+                Text(
+                    text = item.janCode,
+                    fontSize = 13.sp,
+                    color = TextSecond
+                )
             }
-            Text(
-                text = "出庫: ${String.format("%.0f", item.pickedQty)} $qtyLabel / 受注: ${String.format("%.0f", item.plannedQty)} $qtyLabel",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary
-            )
+
+            // Row 4: Quantities
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (item.totalCasePlanned > 0) {
+                    Text(
+                        text = "ケース: ${String.format("%.0f", item.totalCasePicked)} / ${String.format("%.0f", item.totalCasePlanned)}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
+                if (item.totalPiecePlanned > 0) {
+                    Text(
+                        text = "バラ: ${String.format("%.0f", item.totalPiecePicked)} / ${String.format("%.0f", item.totalPiecePlanned)}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
+            }
         }
     }
 }
@@ -431,35 +475,6 @@ private fun StatusBadge(status: biz.smt_life.android.core.domain.model.ItemStatu
     }
 }
 
-@Composable
-private fun HistoryBottomBar(
-    onConfirmAllClick: () -> Unit,
-    canConfirm: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Button(
-                onClick = onConfirmAllClick,
-                enabled = canConfirm,
-                shape = RoundedCornerShape(6.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
-                modifier = Modifier.widthIn(min = 200.dp)
-            ) {
-                Text("確定")
-            }
-        }
-    }
-}
 
 @Composable
 private fun DeleteConfirmationDialog(
@@ -496,181 +511,28 @@ private fun DeleteConfirmationDialog(
     )
 }
 
-@Composable
-private fun ConfirmAllDialog(
-    isConfirming: Boolean,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit
-) {
-    Dialog(
-        onDismissRequest = { if (!isConfirming) onCancel() }
-    ) {
-        OutlinedCard(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.outlinedCardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, BorderGray)
-        ) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    tint = BadgeGreen,
-                    modifier = Modifier.size(48.dp)
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "すべての出庫履歴を確定しますか？",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "確定後は変更できません。",
-                    fontSize = 14.sp,
-                    color = ReadonlyText
-                )
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onCancel,
-                        enabled = !isConfirming,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .height(40.dp)
-                            .widthIn(min = 120.dp),
-                        border = BorderStroke(1.dp, BorderGray)
-                    ) {
-                        Text(
-                            text = "キャンセル",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                    }
-                    Button(
-                        onClick = onConfirm,
-                        enabled = !isConfirming,
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .height(40.dp)
-                            .widthIn(min = 120.dp)
-                    ) {
-                        if (isConfirming) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                            )
-                        } else {
-                            Text(
-                                text = "確定",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 // ========== Preview Section ==========
 
 @Preview(
-    name = "History Item Card - Picking",
+    name = "Grouped History Item Card",
     showBackground = true,
     widthDp = 400
 )
 @Composable
-private fun PreviewHistoryItemCardPicking() {
+private fun PreviewGroupedHistoryItemCard() {
     MaterialTheme {
-        HistoryItemCard(
-            item = PickingTaskItem(
-                id = 1,
+        GroupedHistoryItemCard(
+            item = GroupedHistoryItem(
                 itemId = 101,
                 itemName = "サッポロ生ビール黒ラベル 500ml缶",
-                slipNumber = 2023121500,
-                volume = "500ml",
-                capacityCase = 24,
+                locationCode = "A-01-02",
                 janCode = "4901777123456",
-                plannedQty = 24.0,
-                plannedQtyType = QuantityType.CASE,
-                pickedQty = 20.0,
-                status = biz.smt_life.android.core.domain.model.ItemStatus.PICKING,
-                packaging = "packaging",
-                temperatureType = "temperatureType",
-                walkingOrder = 12234,
-                images = emptyList()
-            ),
-            onClick = {}
-        )
-    }
-}
-
-@Preview(
-    name = "History Item Card - Completed",
-    showBackground = true,
-    widthDp = 400
-)
-@Composable
-private fun PreviewHistoryItemCardCompleted() {
-    MaterialTheme {
-        HistoryItemCard(
-            item = PickingTaskItem(
-                id = 2,
-                itemId = 102,
-                itemName = "アサヒスーパードライ 350ml缶",
-                slipNumber = 2023121500,
-                volume = "350ml",
-                capacityCase = 24,
-                janCode = "4901777234567",
-                plannedQty = 12.0,
-                plannedQtyType = QuantityType.CASE,
-                pickedQty = 12.0,
-                status = biz.smt_life.android.core.domain.model.ItemStatus.COMPLETED,
-                packaging = "packaging",
-                temperatureType = "temperatureType",
-                walkingOrder = 12234,
-                images = emptyList()
-            ),
-            onClick = {}
-        )
-    }
-}
-
-@Preview(
-    name = "History Item Card - Shortage",
-    showBackground = true,
-    widthDp = 400
-)
-@Composable
-private fun PreviewHistoryItemCardShortage() {
-    MaterialTheme {
-        HistoryItemCard(
-            item = PickingTaskItem(
-                id = 3,
-                itemId = 103,
-                itemName = "キリン一番搾り 500ml缶",
-                slipNumber = 2023121500,
-                volume = "500ml",
-                capacityCase = 24,
-                janCode = "4901777345678",
-                plannedQty = 10.0,
-                plannedQtyType = QuantityType.CASE,
-                pickedQty = 0.0,
-                status = biz.smt_life.android.core.domain.model.ItemStatus.SHORTAGE,
-                packaging = "packaging",
-                temperatureType = "temperatureType",
-                walkingOrder = 12234,
-                images = emptyList()
+                totalCasePlanned = 24.0,
+                totalCasePicked = 20.0,
+                totalPiecePlanned = 10.0,
+                totalPiecePicked = 8.0,
+                customerCount = 3
             ),
             onClick = {}
         )
@@ -725,21 +587,6 @@ private fun PreviewDeleteConfirmationDialog() {
                 walkingOrder = 12234,
                 images = emptyList()
             ),
-            onConfirm = {},
-            onCancel = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Confirm All Dialog",
-    showBackground = true
-)
-@Composable
-private fun PreviewConfirmAllDialog() {
-    MaterialTheme {
-        ConfirmAllDialog(
-            isConfirming = false,
             onConfirm = {},
             onCancel = {}
         )
@@ -900,30 +747,67 @@ private fun PreviewFullPageEditableMode() {
             topBar = {
                 Column {
                     TopAppBar(
+                        modifier = Modifier.height(60.dp),
                         title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.Inventory2,
-                                    contentDescription = null,
-                                    tint = AccentOrange,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = "出庫履歴",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TitleRed
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Surface(
+                                    color = AccentOrange,
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "3 / 6 件完了",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = {}) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "戻る",
-                                    tint = TitleRed
-                                )
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = TitleRed,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                }
+                            }
+                        },
+                        actions = {
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "画面回転",
+                                        tint = AccentOrange,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -933,12 +817,7 @@ private fun PreviewFullPageEditableMode() {
                     HorizontalDivider(thickness = 2.dp, color = DividerGold)
                 }
             },
-            bottomBar = {
-                HistoryBottomBar(
-                    onConfirmAllClick = {},
-                    canConfirm = true
-                )
-            }
+            bottomBar = {}
         ) { padding ->
             HistoryListContent(
                 state = mockState,
@@ -1009,30 +888,67 @@ private fun PreviewFullPageReadOnlyMode() {
             topBar = {
                 Column {
                     TopAppBar(
+                        modifier = Modifier.height(60.dp),
                         title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.Inventory2,
-                                    contentDescription = null,
-                                    tint = AccentOrange,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = "出庫履歴",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TitleRed
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Surface(
+                                    color = AccentOrange,
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "3 / 6 件完了",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = {}) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "戻る",
-                                    tint = TitleRed
-                                )
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = TitleRed,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                }
+                            }
+                        },
+                        actions = {
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "画面回転",
+                                        tint = AccentOrange,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -1151,30 +1067,67 @@ private fun PreviewFullPageWithPickingItems() {
             topBar = {
                 Column {
                     TopAppBar(
+                        modifier = Modifier.height(60.dp),
                         title = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.Inventory2,
-                                    contentDescription = null,
-                                    tint = AccentOrange,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = "出庫履歴",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TitleRed
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Surface(
+                                    color = AccentOrange,
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "3 / 6 件完了",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = {}) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "戻る",
-                                    tint = TitleRed
-                                )
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = TitleRed,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                }
+                            }
+                        },
+                        actions = {
+                            Surface(
+                                onClick = {},
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "画面回転",
+                                        tint = AccentOrange,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -1184,12 +1137,7 @@ private fun PreviewFullPageWithPickingItems() {
                     HorizontalDivider(thickness = 2.dp, color = DividerGold)
                 }
             },
-            bottomBar = {
-                HistoryBottomBar(
-                    onConfirmAllClick = {},
-                    canConfirm = true
-                )
-            }
+            bottomBar = {}
         ) { padding ->
             HistoryListContent(
                 state = mockState,

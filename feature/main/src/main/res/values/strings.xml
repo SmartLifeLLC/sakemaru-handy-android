@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="main_title">Handy Warehouse</string>
+    <string name="main_title">酒丸蔵</string>
     <string name="main_settings">Settings</string>
     <string name="main_loading">Loading…</string>
     <string name="main_error">Error: %1$s</string>

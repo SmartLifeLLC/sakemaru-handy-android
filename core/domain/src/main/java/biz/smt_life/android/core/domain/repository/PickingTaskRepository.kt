@@ -38,16 +38,17 @@ interface PickingTaskRepository {
      * @param pickerId Picker ID for filtering
      * @return Result containing list of picking tasks or error
      */
-    suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int): Result<List<PickingTask>>
+    suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int, shippingDate: String? = null): Result<List<PickingTask>>
 
     /**
      * Fetch all picking tasks for "All Courses" tab (no picker filter).
      * Updates the tasksFlow on success.
      *
      * @param warehouseId Required warehouse ID
+     * @param shippingDate Optional shipping date filter (yyyy/MM/dd)
      * @return Result containing list of picking tasks or error
      */
-    suspend fun getAllTasks(warehouseId: Int): Result<List<PickingTask>>
+    suspend fun getAllTasks(warehouseId: Int, shippingDate: String? = null): Result<List<PickingTask>>
 
     /**
      * Start a picking task. Changes status to PICKING and sets started_at timestamp.

@@ -43,12 +43,13 @@ class PickingTaskRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int): Result<List<PickingTask>> {
+    override suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int, shippingDate: String?): Result<List<PickingTask>> {
         return try {
-            android.util.Log.d("PickingTaskRepository", "getMyAreaTasks called with warehouseId=$warehouseId, pickerId=$pickerId")
+            android.util.Log.d("PickingTaskRepository", "getMyAreaTasks called with warehouseId=$warehouseId, pickerId=$pickerId, shippingDate=$shippingDate")
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = pickerId
+                pickerId = pickerId,
+                shippingDate = shippingDate
             )
             android.util.Log.d("PickingTaskRepository", "API response: isSuccess=${response.isSuccess}, code=${response.code}, data=${response.result?.data?.size ?: 0} items, errorMessage=${response.result?.errorMessage}")
 
@@ -67,11 +68,12 @@ class PickingTaskRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllTasks(warehouseId: Int): Result<List<PickingTask>> {
+    override suspend fun getAllTasks(warehouseId: Int, shippingDate: String?): Result<List<PickingTask>> {
         return try {
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = 0 // No picker filter for "All Courses"
+                pickerId = 0, // No picker filter for "All Courses"
+                shippingDate = shippingDate
             )
 
             if (response.isSuccess && response.result?.data != null) {
@@ -308,7 +310,9 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 status = biz.smt_life.android.core.domain.model.ItemStatus.fromString(item.status),
                 walkingOrder = item.walkingOrder,
                 slipNumber = item.slipNumber,
-                customerName = item.customerName
+                customerName = item.customerName,
+                customerCode = item.customerCode,
+                locationCode = item.location?.code
             )
         }
 

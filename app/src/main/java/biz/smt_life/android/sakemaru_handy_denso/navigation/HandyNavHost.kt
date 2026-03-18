@@ -1,5 +1,7 @@
 package biz.smt_life.android.sakemaru_handy_denso.navigation
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -233,10 +236,21 @@ fun HandyNavHost(
             arguments = listOf(
                 navArgument("taskId") {
                     type = NavType.IntType
+                },
+                navArgument("editItemId") {
+                    type = NavType.IntType
+                    defaultValue = -1
                 }
             )
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val editItemId = backStackEntry.arguments?.getInt("editItemId")?.takeIf { it > 0 }
+            val context = LocalContext.current
+            val activity = context as? Activity
+
+            fun restoreLandscape() {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
 
             // Get the shared ViewModel from the parent navigation entry
             val parentEntry = remember(backStackEntry) {
@@ -267,11 +281,14 @@ fun HandyNavHost(
             } else {
                 OutboundPickingScreen(
                     task = task,
+                    editItemId = editItemId,
                     onNavigateBack = {
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         navController.popBackStack()
                     },
                     onNavigateToCourseList = {
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         navController.popBackStack()
                     },
@@ -280,16 +297,17 @@ fun HandyNavHost(
                         navController.navigate(Routes.PickingHistory.createRoute(taskId))
                     },
                     onNavigateToMain = {
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         navController.navigate(Routes.Main.route) {
                             popUpTo(Routes.PickingList.route) { inclusive = true }
                         }
                     },
                     onTaskCompleted = {
-                        // Task completed successfully - navigate back to course list and refresh
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         pickingTasksViewModel.refresh()
-                        navController.popBackStack()
+                        navController.popBackStack(Routes.PickingList.route, inclusive = false)
                     }
                 )
             }
@@ -305,6 +323,12 @@ fun HandyNavHost(
             )
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val context = LocalContext.current
+            val activity = context as? Activity
+
+            fun restoreLandscape() {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
 
             // Get the shared ViewModel from the parent navigation entry
             val parentEntry = remember(backStackEntry) {
@@ -318,15 +342,16 @@ fun HandyNavHost(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onHistoryConfirmed = {
-                    // All items confirmed - navigate back to course list and refresh
+                onNavigateToMain = {
+                    restoreLandscape()
                     pickingTasksViewModel.clearSelectedTask()
-                    pickingTasksViewModel.refresh()
-                    navController.popBackStack()
+                    navController.navigate(Routes.Main.route) {
+                        popUpTo(Routes.PickingList.route) { inclusive = true }
+                    }
                 },
                 onItemClick = { item ->
                     // Navigate to P21 (edit mode) for this item
-                    navController.navigate(Routes.OutboundPicking.createRoute(taskId))
+                    navController.navigate(Routes.OutboundPicking.createRoute(taskId, item.itemId))
                 }
             )
         }

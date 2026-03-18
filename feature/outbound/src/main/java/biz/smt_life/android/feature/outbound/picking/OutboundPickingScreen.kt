@@ -1,17 +1,25 @@
 package biz.smt_life.android.feature.outbound.picking
 
+import android.app.Activity
+import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,6 +28,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
@@ -27,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,12 +80,17 @@ private val Neutral600   = Color(0xFF525252)
 private val Neutral700   = Color(0xFF404040)
 private val ReadonlyText = Color(0xFF888888)
 
+// ===== Orientation persistence =====
+private const val PREF_NAME_P21 = "p21_orientation_prefs"
+private const val PREF_KEY_IS_PORTRAIT = "p21_is_portrait"
+
 /**
  * Outbound Picking Screen (2.5.2 - 出庫データ入力).
  * Header is maintained from existing design.
  * Body redesigned to match HTML reference:
  * - Left pane: Product info + location/slip + order qty + ship qty + action buttons
  * - Right pane: History list with delete buttons
+ * Supports Portrait/Landscape toggle via TopAppBar button.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,13 +101,35 @@ fun OutboundPickingScreen(
     onNavigateToHistory: () -> Unit,
     onNavigateToMain: () -> Unit,
     onTaskCompleted: () -> Unit,
+    editItemId: Int? = null,
     viewModel: OutboundPickingViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(task.taskId) {
-        viewModel.initialize(task)
+    // ===== Orientation control =====
+    val context = LocalContext.current
+    val view = LocalView.current
+    val activity = context as? Activity
+    val prefs = remember { context.getSharedPreferences(PREF_NAME_P21, Context.MODE_PRIVATE) }
+    var isPortrait by remember { mutableStateOf(prefs.getBoolean(PREF_KEY_IS_PORTRAIT, false)) }
+
+    // Apply orientation
+    LaunchedEffect(isPortrait) {
+        activity?.requestedOrientation = if (isPortrait) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+    }
+
+    fun toggleOrientation() {
+        isPortrait = !isPortrait
+        prefs.edit().putBoolean(PREF_KEY_IS_PORTRAIT, isPortrait).apply()
+    }
+
+    LaunchedEffect(task.taskId, editItemId) {
+        viewModel.initialize(task, editItemId)
     }
 
     LaunchedEffect(state.errorMessage) {
@@ -104,10 +142,18 @@ fun OutboundPickingScreen(
         }
     }
 
-    if (state.showImageDialog && state.currentItem != null) {
+    if (state.showImageDialog && state.currentGroup != null) {
         ImageViewerDialog(
-            images = state.currentItem!!.images,
+            images = state.currentGroup!!.images,
             onDismiss = { viewModel.dismissImageDialog() }
+        )
+    }
+
+    if (state.showJanScannerDialog && state.currentGroup != null) {
+        JanCodeScannerDialog(
+            expectedJanCode = state.currentGroup!!.janCode,
+            onResult = { code, match -> viewModel.onJanScanResult(code, match) },
+            onDismiss = { viewModel.dismissJanScannerDialog() }
         )
     }
 
@@ -119,91 +165,54 @@ fun OutboundPickingScreen(
                 TopAppBar(
                     modifier = Modifier.height(60.dp),
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Inventory2,
-                                contentDescription = null,
-                                tint = AccentOrange,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "出庫",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TitleRed
-                            )
-                            val courseName = state.originalTask?.courseName
-                            if (!courseName.isNullOrBlank()) {
-                                Spacer(Modifier.width(8.dp))
-                                Surface(
-                                    onClick = onNavigateToCourseList,
-                                    color = BadgeGreen,
-                                    shape = RoundedCornerShape(12.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                onClick = onNavigateBack,
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
-                                    ) {
-                                        Text(
-                                            text = courseName,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            lineHeight = 12.sp
-                                        )
-                                        Spacer(Modifier.width(2.dp))
-                                        Text(
-                                            text = "▼",
-                                            fontSize = 9.sp,
-                                            color = Color.White,
-                                            lineHeight = 10.sp
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = TitleRed,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                                 }
                             }
-                            Spacer(Modifier.width(6.dp))
+                            Spacer(Modifier.width(24.dp))
                             Surface(
-                                color = AccentOrange,
-                                shape = RoundedCornerShape(10.dp)
+                                onClick = { toggleOrientation() },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
                             ) {
-                                Text(
-                                    text = "${state.registeredCount} / ${state.totalCount}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    lineHeight = 12.sp,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 0.dp)
-                                )
-                            }
-                            if (state.warehouseName.isNotBlank()) {
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    text = "｜${state.warehouseName}",
-                                    fontSize = 14.sp,
-                                    color = AccentOrange
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "画面回転",
+                                        tint = AccentOrange,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                }
                             }
                         }
                     },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る(F4)",
-                                tint = TitleRed
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = onNavigateToMain) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = "ホーム(F8)",
-                                tint = TitleRed
-                            )
-                        }
-                    },
+                    navigationIcon = {},
+                    actions = {},
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = HeaderBg
                     )
@@ -225,12 +234,20 @@ fun OutboundPickingScreen(
                     CircularProgressIndicator()
                 }
             }
-            state.currentItem != null && state.originalTask != null -> {
+            state.currentGroup != null && state.originalTask != null -> {
                 OutboundPickingBody(
                     state = state,
-                    onPickedQtyChange = viewModel::onPickedQtyChange,
+                    isPortrait = isPortrait,
+                    onTotalCaseInputChange = viewModel::onTotalCaseInputChange,
+                    onTotalPieceInputChange = viewModel::onTotalPieceInputChange,
+                    onCustomerCaseQtyChange = viewModel::onCustomerCaseQtyChange,
+                    onCustomerPieceQtyChange = viewModel::onCustomerPieceQtyChange,
                     onImageClick = { viewModel.showImageDialog() },
-                    onRegisterClick = viewModel::registerCurrentItem,
+                    onJanScanClick = { viewModel.showJanScannerDialog() },
+                    onRegisterClick = {
+                        performHapticFeedback(context)
+                        viewModel.registerGroupedItem()
+                    },
                     onHistoryClick = onNavigateToHistory,
                     modifier = Modifier.padding(padding)
                 )
@@ -268,59 +285,35 @@ fun OutboundPickingScreen(
                                     color = Color(0xFF212529)
                                 )
                             } else {
-                                // 全商品登録完了（確定前）
+                                // 全商品登録完了
                                 Text(
                                     text = "すべての商品が登録されました。",
-                                    fontSize = 16.sp,
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF212529)
                                 )
-                                Text(
-                                    text = "確定を押下してください。",
-                                    fontSize = 14.sp,
-                                    color = Neutral500
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Spacer(Modifier.height(16.dp))
+                                Button(
+                                    onClick = { viewModel.completeTask(onSuccess = onTaskCompleted) },
+                                    enabled = !state.isCompleting,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp)
                                 ) {
-                                    OutlinedButton(
-                                        onClick = onNavigateToHistory,
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier
-                                            .height(40.dp)
-                                            .widthIn(min = 120.dp),
-                                        border = BorderStroke(1.dp, Neutral300)
-                                    ) {
-                                        Text(
-                                            text = "キャンセル",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Neutral700
+                                    if (state.isCompleting) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(20.dp),
+                                            strokeWidth = 2.dp,
+                                            color = Color.White
                                         )
-                                    }
-                                    Button(
-                                        onClick = { viewModel.completeTask(onSuccess = onTaskCompleted) },
-                                        enabled = !state.isCompleting,
-                                        colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier
-                                            .height(40.dp)
-                                            .widthIn(min = 120.dp)
-                                    ) {
-                                        if (state.isCompleting) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(16.dp),
-                                                strokeWidth = 2.dp,
-                                                color = Color.White
-                                            )
-                                        } else {
-                                            Text(
-                                                text = "確定",
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
+                                    } else {
+                                        Text(
+                                            text = "完了",
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
@@ -332,315 +325,490 @@ fun OutboundPickingScreen(
     }
 }
 
-// ===== NEW BODY LAYOUT =====
+// ===== NEW BODY LAYOUT (Grouped) =====
 
 @Composable
 private fun OutboundPickingBody(
     state: OutboundPickingState,
-    onPickedQtyChange: (String) -> Unit,
+    isPortrait: Boolean,
+    onTotalCaseInputChange: (String) -> Unit,
+    onTotalPieceInputChange: (String) -> Unit,
+    onCustomerCaseQtyChange: (Int, String) -> Unit,
+    onCustomerPieceQtyChange: (Int, String) -> Unit,
     onImageClick: () -> Unit,
+    onJanScanClick: () -> Unit,
     onRegisterClick: () -> Unit,
     onHistoryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentItem = state.currentItem!!
-    val originalTask = state.originalTask!!
+    val group = state.currentGroup!!
 
-    Row(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        // ===== LEFT PANE: Product info + Qty + Buttons =====
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(12.dp),
-            color = Color.White,
-            shadowElevation = 1.dp,
-            border = BorderStroke(1.dp, Neutral200)
+    if (isPortrait) {
+        Column(
+            modifier = modifier.fillMaxSize().padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            // Progress count - compact at top in portrait
+            Surface(
+                color = AccentOrange,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // (a) Product info header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = currentItem.itemName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            style = androidx.compose.ui.text.TextStyle(
-                                platformStyle = PlatformTextStyle(includeFontPadding = false)
-                            )
-                        )
-                        val specLine = buildString {
-                            if (currentItem.janCode != null) append(currentItem.janCode)
-                            if (currentItem.volume != null) {
-                                if (isNotEmpty()) append(" / ")
-                                append(currentItem.volume)
-                            }
-                            if (currentItem.capacityCase != null) {
-                                if (isNotEmpty()) append(" / ")
-                                append("入数:${currentItem.capacityCase}")
-                            }
-                        }
-                        if (specLine.isNotEmpty()) {
-                            Text(
-                                text = specLine,
-                                fontSize = 16.sp,
-                                color = Neutral500,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                        Text(
-                            text = "得意先名: ${currentItem.customerName ?: ""}",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Neutral500,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                    }
-                    // Image button
-                    Surface(
-                        modifier = Modifier
-                            .width(44.dp)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = Amber50,
-                        border = BorderStroke(1.dp, Amber200),
-                        onClick = { onImageClick() }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.Image,
-                                contentDescription = "商品画像",
-                                tint = if (state.hasImages) Amber600 else Neutral400,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-
-                // (b) Location & Slip number (2 rows)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ロケーション",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Neutral500,
-                        modifier = Modifier.width(100.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(30.dp)
-                            .background(Amber50, RoundedCornerShape(6.dp))
-                            .border(1.dp, Amber300, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = originalTask.pickingAreaName.ifBlank { "未設定" },
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (originalTask.pickingAreaName.isBlank()) Neutral400 else Color.Black
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "伝票番号",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Neutral500,
-                        modifier = Modifier.width(100.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(30.dp)
-                            .background(Amber50, RoundedCornerShape(6.dp))
-                            .border(1.dp, Amber300, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = currentItem.slipNumber.toString(),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
+                Text(
+                    text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+            }
+            Surface(
+                modifier = Modifier.weight(0.35f).fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp), color = Color.White,
+                shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+            ) {
+                ProductInfoSection(group = group, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
+            }
+            Surface(
+                modifier = Modifier.weight(0.65f).fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp), color = Color.White,
+                shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+            ) {
+                GroupedQuantitySection(
+                    state = state,
+                    onTotalCaseInputChange = onTotalCaseInputChange,
+                    onTotalPieceInputChange = onTotalPieceInputChange,
+                    onCustomerCaseQtyChange = onCustomerCaseQtyChange,
+                    onCustomerPieceQtyChange = onCustomerPieceQtyChange,
+                    onRegisterClick = onRegisterClick,
+                    onHistoryClick = onHistoryClick
+                )
             }
         }
-
-        // ===== RIGHT PANE: Order qty + Ship qty + Buttons =====
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(12.dp),
-            color = Color.White,
-            shadowElevation = 1.dp,
-            border = BorderStroke(1.dp, Neutral200)
+    } else {
+        Column(
+            modifier = modifier.fillMaxSize().padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            // Progress count - compact in landscape
+            Surface(
+                color = AccentOrange,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // (c) ケース & バラ with 受注数 inline (2 columns)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Text(
+                    text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                )
+            }
+            Row(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(12.dp), color = Color.White,
+                    shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                 ) {
-                    val caseQty = if (state.quantityTypeLabel == "ケース")
-                        String.format("%.0f", currentItem.plannedQty) else "0"
-                    val pieceQty = if (state.quantityTypeLabel == "バラ")
-                        String.format("%.0f", currentItem.plannedQty) else "0"
-
-                    // ケース column
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "ケース（受注数：$caseQty）",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Neutral500,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        OutlinedTextField(
-                            value = if (state.quantityTypeLabel == "ケース")
-                                state.pickedQtyInput.removeSuffix(".0") else "",
-                            onValueChange = onPickedQtyChange,
-                            enabled = !state.isUpdating,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Amber600,
-                                unfocusedBorderColor = Neutral300
-                            )
-                        )
-                    }
-
-                    // バラ column
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "バラ（受注数：$pieceQty）",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Neutral500,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        OutlinedTextField(
-                            value = if (state.quantityTypeLabel == "バラ")
-                                state.pickedQtyInput.removeSuffix(".0") else "",
-                            onValueChange = onPickedQtyChange,
-                            enabled = !state.isUpdating,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Amber600,
-                                unfocusedBorderColor = Neutral300
-                            )
-                        )
-                    }
+                    ProductInfoSection(group = group, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // (e) Action buttons (登録 / 履歴)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Surface(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(12.dp), color = Color.White,
+                    shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                 ) {
-                    // 登録/確定
-                    Button(
-                        onClick = onRegisterClick,
-                        enabled = state.canRegister,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Amber600,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        if (state.isUpdating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                            )
-                        } else {
-                            Text(
-                                text = "登録",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    // 履歴
-                    Button(
-                        onClick = onHistoryClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Amber50,
-                            contentColor = Amber700
-                        ),
-                        border = BorderStroke(1.dp, Amber300)
-                    ) {
-                        Text("履歴", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
+                    GroupedQuantitySection(
+                        state = state,
+                        onTotalCaseInputChange = onTotalCaseInputChange,
+                        onTotalPieceInputChange = onTotalPieceInputChange,
+                        onCustomerCaseQtyChange = onCustomerCaseQtyChange,
+                        onCustomerPieceQtyChange = onCustomerPieceQtyChange,
+                        onRegisterClick = onRegisterClick,
+                        onHistoryClick = onHistoryClick
+                    )
                 }
             }
         }
     }
+}
+
+// ===== Extracted Components =====
+
+@Composable
+private fun ProductInfoSection(
+    group: GroupedPickingItem,
+    hasImages: Boolean,
+    onImageClick: () -> Unit,
+    onJanScanClick: () -> Unit,
+    janScanResult: JanScanResult?,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(10.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        // 商品名（2行固定、超えたら文字縮小）
+        var itemNameFontSize by remember(group.itemId) { mutableStateOf(18.sp) }
+        Text(
+            text = group.itemName,
+            fontSize = itemNameFontSize,
+            fontWeight = FontWeight.ExtraBold,
+            minLines = 2,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { result ->
+                if (result.hasVisualOverflow && itemNameFontSize > 12.sp) {
+                    itemNameFontSize = itemNameFontSize * 0.9f
+                }
+            },
+            style = androidx.compose.ui.text.TextStyle(
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            )
+        )
+
+        // JANコード（大きめ表示）+ 一致/不一致バッジ
+        if (!group.janCode.isNullOrBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = group.janCode, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+                if (janScanResult != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Surface(
+                        color = if (janScanResult.isMatch) Color(0xFF27AE60) else Color(0xFFE74C3C),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = if (janScanResult.isMatch) "JAN一致" else "不一致",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 容量・入数
+        val specLine = buildString {
+            if (group.volume != null) append(group.volume)
+            if (group.capacityCase != null) {
+                if (isNotEmpty()) append(" / ")
+                append("入数:${group.capacityCase}")
+            }
+        }
+        if (specLine.isNotEmpty()) {
+            Text(text = specLine, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+        }
+
+        // ロケーション（大きめ表示）
+        Box(
+            modifier = Modifier.fillMaxWidth()
+                .background(Amber50, RoundedCornerShape(6.dp))
+                .border(1.dp, Amber300, RoundedCornerShape(6.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = group.locationCode?.ifBlank { null } ?: "未設定",
+                fontSize = 32.sp, fontWeight = FontWeight.Bold,
+                color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black
+            )
+        }
+
+        // 画像確認 | JAN確認 ボタン（横並び）
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Surface(
+                modifier = Modifier.weight(1f).height(44.dp),
+                shape = RoundedCornerShape(8.dp), color = Amber50,
+                border = BorderStroke(1.dp, Amber200),
+                onClick = { onImageClick() }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Filled.Image, "商品画像", tint = if (hasImages) Amber600 else Neutral400, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("商品画像", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (hasImages) Amber600 else Neutral400)
+                }
+            }
+            Surface(
+                modifier = Modifier.weight(1f).height(44.dp),
+                shape = RoundedCornerShape(8.dp), color = Color(0xFFE8F5E9),
+                border = BorderStroke(1.dp, Color(0xFF81C784)),
+                onClick = { onJanScanClick() }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Filled.CheckCircle, "JAN確認", tint = Color(0xFF388E3C), modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("JAN確認", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupedQuantitySection(
+    state: OutboundPickingState,
+    onTotalCaseInputChange: (String) -> Unit,
+    onTotalPieceInputChange: (String) -> Unit,
+    onCustomerCaseQtyChange: (Int, String) -> Unit,
+    onCustomerPieceQtyChange: (Int, String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        // === テーブルヘッダー: 区分 | ケース | バラ ===
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Amber50, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .border(1.dp, Amber300, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("区分", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Neutral500,
+                modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("ケース", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Neutral500,
+                modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("バラ", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Neutral500,
+                modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        }
+
+        // === 合計行 ===
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = Amber300)
+                .background(Color(0xFFFFF8E1))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("合計", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = TitleRed,
+                modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            // ケース合計入力
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    CompactNumberInput(
+                        value = state.totalCaseInput,
+                        onValueChange = onTotalCaseInputChange,
+                        enabled = !state.isUpdating,
+                        modifier = Modifier.width(56.dp).height(38.dp)
+                    )
+                    Text("/${String.format("%.0f", state.totalCasePlanned)}", fontSize = 18.sp, color = Neutral500)
+                }
+            }
+            // バラ合計入力
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    CompactNumberInput(
+                        value = state.totalPieceInput,
+                        onValueChange = onTotalPieceInputChange,
+                        enabled = !state.isUpdating,
+                        modifier = Modifier.width(56.dp).height(38.dp)
+                    )
+                    Text("/${String.format("%.0f", state.totalPiecePlanned)}", fontSize = 18.sp, color = Neutral500)
+                }
+            }
+        }
+
+        HorizontalDivider(color = Amber300, thickness = 2.dp)
+
+        // === 得意先別出荷数内訳ラベル ===
+        Text(
+            text = "得意先別出荷数内訳",
+            fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Neutral500,
+            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+        )
+
+        // === 得意先別リスト（スクロール可能） ===
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            itemsIndexed(state.currentGroup?.customerEntries ?: emptyList()) { index, entry ->
+                CustomerEntryRow(
+                    entry = entry,
+                    onCaseQtyChange = { onCustomerCaseQtyChange(index, it) },
+                    onPieceQtyChange = { onCustomerPieceQtyChange(index, it) },
+                    isUpdating = state.isUpdating
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // === 登録・履歴ボタン ===
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onRegisterClick,
+                enabled = state.canRegister,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Amber600, contentColor = Color.White)
+            ) {
+                if (state.isUpdating) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+                } else {
+                    Text("登録", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Button(
+                onClick = onHistoryClick,
+                modifier = Modifier.weight(1f).height(48.dp),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Amber50, contentColor = Amber700),
+                border = BorderStroke(1.dp, Amber300)
+            ) {
+                Text("履歴", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomerEntryRow(
+    entry: CustomerEntry,
+    onCaseQtyChange: (String) -> Unit,
+    onPieceQtyChange: (String) -> Unit,
+    isUpdating: Boolean
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(width = 0.5.dp, color = Neutral200)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 得意先名（ヘッダーの「区分」列と同じ weight）
+        Text(
+            text = entry.customerCode.ifBlank { entry.customerName.ifBlank { "—" } },
+            modifier = Modifier.weight(1f),
+            fontSize = 18.sp, fontWeight = FontWeight.Bold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        // ケース列
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            if (entry.caseEntry != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    CompactNumberInput(
+                        value = entry.caseEntry.pickedQtyInput,
+                        onValueChange = onCaseQtyChange,
+                        enabled = !isUpdating,
+                        modifier = Modifier.width(56.dp).height(36.dp)
+                    )
+                    Text("/${String.format("%.0f", entry.caseEntry.plannedQty)}", fontSize = 18.sp, color = Neutral500)
+                }
+            } else {
+                Text("—", fontSize = 13.sp, color = Neutral300)
+            }
+        }
+        // バラ列
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            if (entry.pieceEntry != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    CompactNumberInput(
+                        value = entry.pieceEntry.pickedQtyInput,
+                        onValueChange = onPieceQtyChange,
+                        enabled = !isUpdating,
+                        modifier = Modifier.width(56.dp).height(36.dp)
+                    )
+                    Text("/${String.format("%.0f", entry.pieceEntry.plannedQty)}", fontSize = 18.sp, color = Neutral500)
+                }
+            } else {
+                Text("—", fontSize = 13.sp, color = Neutral300)
+            }
+        }
+    }
+}
+
+// ===== Compact Number Input (minimal padding) =====
+
+@Composable
+private fun CompactNumberInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var isFocused by remember { mutableStateOf(false) }
+    var textFieldValue by remember(value) {
+        mutableStateOf(TextFieldValue(value, TextRange(value.length)))
+    }
+    // 外部からvalueが変わった場合に同期
+    LaunchedEffect(value) {
+        if (textFieldValue.text != value) {
+            textFieldValue = TextFieldValue(value, TextRange(value.length))
+        }
+    }
+    BasicTextField(
+        value = textFieldValue,
+        onValueChange = { newValue ->
+            textFieldValue = newValue
+            onValueChange(newValue.text)
+        },
+        enabled = enabled,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        textStyle = androidx.compose.ui.text.TextStyle(
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            color = Color.Black
+        ),
+        modifier = modifier
+            .onFocusChanged { focusState ->
+                isFocused = focusState.isFocused
+                if (focusState.isFocused) {
+                    // フォーカス時に全選択
+                    textFieldValue = textFieldValue.copy(selection = TextRange(0, textFieldValue.text.length))
+                }
+            },
+        decorationBox = { innerTextField ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White, RoundedCornerShape(4.dp))
+                    .border(
+                        width = if (isFocused) 2.dp else 1.dp,
+                        color = if (isFocused) Amber600 else Neutral300,
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                innerTextField()
+            }
+        }
+    )
 }
 
 // ===== Dialogs (maintained) =====
@@ -654,7 +822,7 @@ private fun CompletionConfirmationDialog(
     AlertDialog(
         onDismissRequest = { if (!isCompleting) onCancel() },
         title = { Text("完了確認") },
-        text = { Text("すべての商品登録を完了しました。確定しますか？") },
+        text = { Text("すべての商品登録を完了しますか？") },
         confirmButton = {
             Button(
                 onClick = onConfirm,
@@ -668,16 +836,8 @@ private fun CompletionConfirmationDialog(
                         color = Color.White
                     )
                 } else {
-                    Text("確定")
+                    Text("完了")
                 }
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onCancel,
-                enabled = !isCompleting
-            ) {
-                Text("キャンセル")
             }
         }
     )
@@ -870,36 +1030,63 @@ private fun ImageViewerDialog(
 
 // ========== Previews ==========
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(
-    name = "P21 - HTML Design Body",
-    showBackground = true,
-    widthDp = 800,
-    heightDp = 600
+private fun previewGroupedItems(): List<GroupedPickingItem> = listOf(
+    GroupedPickingItem(
+        itemId = 300,
+        itemName = "サッポロ生ビール黒ラベル 500ml缶",
+        janCode = "4901773000001",
+        volume = "500ml",
+        capacityCase = 24,
+        locationCode = "A-01-03",
+        images = emptyList(),
+        walkingOrder = 3000,
+        customerEntries = listOf(
+            CustomerEntry(
+                caseEntry = CustomerEntryDetail(pickingItemResultId = 1, plannedQty = 5.0, pickedQtyInput = "5"),
+                pieceEntry = null,
+                customerName = "居酒屋A",
+                customerCode = "C001",
+                slipNumbers = listOf(2023121700)
+            ),
+            CustomerEntry(
+                caseEntry = CustomerEntryDetail(pickingItemResultId = 2, plannedQty = 5.0, pickedQtyInput = "5"),
+                pieceEntry = CustomerEntryDetail(pickingItemResultId = 3, plannedQty = 3.0, pickedQtyInput = "3"),
+                customerName = "レストランB",
+                customerCode = "C002",
+                slipNumbers = listOf(2023121701, 2023121702)
+            ),
+            CustomerEntry(
+                caseEntry = null,
+                pieceEntry = CustomerEntryDetail(pickingItemResultId = 4, plannedQty = 5.0, pickedQtyInput = "5"),
+                customerName = "ホテルC",
+                customerCode = "C003",
+                slipNumbers = listOf(2023121703)
+            )
+        )
+    )
 )
-@Composable
-private fun PreviewOutboundPickingBody() {
+
+private fun previewSampleTask(): PickingTask {
     val items = List(10) { index ->
         PickingTaskItem(
             id = index,
-            itemId = 300 + index,
-            itemName = if (index == 5) "サッポロ生ビール黒ラベル 500ml缶" else "商品 ${index + 1}",
+            itemId = 300 + (index / 3),
+            itemName = "商品 ${index + 1}",
             slipNumber = 2023121700 + index,
-            volume = "1000ml",
-            capacityCase = 12,
-            janCode = if (index % 2 == 0) "490177712345${index}" else null,
-            plannedQty = 10.0,
-            plannedQtyType = QuantityType.CASE,
-            pickedQty = if (index < 5) 10.0 else 0.0,
-            status = if (index < 5) ItemStatus.PICKING else ItemStatus.PENDING,
+            volume = "500ml",
+            capacityCase = 24,
+            janCode = "490177300000${index}",
+            plannedQty = 5.0,
+            plannedQtyType = if (index % 2 == 0) QuantityType.CASE else QuantityType.PIECE,
+            pickedQty = if (index < 3) 5.0 else 0.0,
+            status = if (index < 3) ItemStatus.PICKING else ItemStatus.PENDING,
             packaging = "ケース",
             temperatureType = "冷蔵",
             walkingOrder = 3000 + index,
             images = emptyList()
         )
     }
-
-    val sampleTask = PickingTask(
+    return PickingTask(
         taskId = 1,
         courseCode = "C003",
         courseName = "Cコース（深夜便）",
@@ -908,14 +1095,23 @@ private fun PreviewOutboundPickingBody() {
         pickingAreaCode = "AREA-C",
         items = items
     )
+}
 
-    val pendingItems = items.filter { it.status == ItemStatus.PENDING }
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "P21 - Grouped Landscape",
+    showBackground = true,
+    widthDp = 800,
+    heightDp = 600
+)
+@Composable
+private fun PreviewOutboundPickingBody() {
     val state = OutboundPickingState(
-        originalTask = sampleTask,
-        pendingItems = pendingItems,
-        currentIndex = 0,
-        pickedQtyInput = "10",
+        originalTask = previewSampleTask(),
+        groupedItems = previewGroupedItems(),
+        currentGroupIndex = 0,
+        totalCaseInput = "10",
+        totalPieceInput = "8",
         isLoading = false,
         warehouseId = 1
     )
@@ -937,7 +1133,7 @@ private fun PreviewOutboundPickingBody() {
                                 }
                                 Spacer(Modifier.width(6.dp))
                                 Surface(color = AccentOrange, shape = RoundedCornerShape(12.dp)) {
-                                    Text("5 / 10", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
+                                    Text("${state.registeredGroupCount} / ${state.totalGroupCount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
                                 }
                             }
                         },
@@ -959,8 +1155,106 @@ private fun PreviewOutboundPickingBody() {
         ) { padding ->
             OutboundPickingBody(
                 state = state,
-                onPickedQtyChange = {},
+                isPortrait = false,
+                onTotalCaseInputChange = {},
+                onTotalPieceInputChange = {},
+                onCustomerCaseQtyChange = { _, _ -> },
+                onCustomerPieceQtyChange = { _, _ -> },
                 onImageClick = {},
+                onJanScanClick = {},
+                onRegisterClick = {},
+                onHistoryClick = {},
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+}
+
+private fun performHapticFeedback(context: android.content.Context) {
+    try {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val vibratorManager = context.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+            vibratorManager?.defaultVibrator?.vibrate(
+                android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            val vibrator = context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+            vibrator?.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+        }
+    } catch (_: Exception) {
+        // Vibration not available
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(
+    name = "P21 - Grouped Portrait",
+    showBackground = true,
+    widthDp = 420,
+    heightDp = 800
+)
+@Composable
+private fun PreviewOutboundPickingBodyPortrait() {
+    val state = OutboundPickingState(
+        originalTask = previewSampleTask(),
+        groupedItems = previewGroupedItems(),
+        currentGroupIndex = 0,
+        totalCaseInput = "10",
+        totalPieceInput = "8",
+        isLoading = false,
+        warehouseId = 1
+    )
+
+    MaterialTheme {
+        Scaffold(
+            containerColor = BodyBg,
+            topBar = {
+                Column {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.Inventory2, null, tint = AccentOrange, modifier = Modifier.size(22.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("出庫", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                Spacer(Modifier.width(8.dp))
+                                Surface(color = BadgeGreen, shape = RoundedCornerShape(20.dp)) {
+                                    Text("Cコース（深夜便）", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                                }
+                                Spacer(Modifier.width(6.dp))
+                                Surface(color = AccentOrange, shape = RoundedCornerShape(12.dp)) {
+                                    Text("${state.registeredGroupCount} / ${state.totalGroupCount}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
+                                }
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {}) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "戻る", tint = TitleRed)
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Default.Refresh, "画面回転", tint = AccentOrange, modifier = Modifier.size(26.dp))
+                            }
+                            IconButton(onClick = {}) {
+                                Icon(Icons.Default.Home, "ホーム", tint = TitleRed)
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
+                    )
+                    HorizontalDivider(thickness = 2.dp, color = DividerGold)
+                }
+            }
+        ) { padding ->
+            OutboundPickingBody(
+                state = state,
+                isPortrait = true,
+                onTotalCaseInputChange = {},
+                onTotalPieceInputChange = {},
+                onCustomerCaseQtyChange = { _, _ -> },
+                onCustomerPieceQtyChange = { _, _ -> },
+                onImageClick = {},
+                onJanScanClick = {},
                 onRegisterClick = {},
                 onHistoryClick = {},
                 modifier = Modifier.padding(padding)

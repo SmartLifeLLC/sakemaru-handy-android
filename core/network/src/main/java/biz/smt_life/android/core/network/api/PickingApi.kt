@@ -34,7 +34,8 @@ interface PickingApi {
     suspend fun getPickingTasks(
         @Query("warehouse_id") warehouseId: Int,
         @Query("picker_id") pickerId: Int,
-        @Query("picking_area_id") pickingAreaId: Int? = null
+        @Query("picking_area_id") pickingAreaId: Int? = null,
+        @Query("shipping_date") shippingDate: String? = null
     ): ApiEnvelope<List<PickingTaskResponse>>
 
     /**

@@ -16,8 +16,14 @@ sealed class Routes(val route: String) {
 
     // Outbound routes (2.5.1 - 2.5.4 spec flow)
     object PickingList : Routes("picking_list") // 2.5.1 - コース選択
-    object OutboundPicking : Routes("outbound_picking/{taskId}") { // 2.5.2 - データ入力
-        fun createRoute(taskId: Int) = "outbound_picking/$taskId"
+    object OutboundPicking : Routes("outbound_picking/{taskId}?editItemId={editItemId}") { // 2.5.2 - データ入力
+        fun createRoute(taskId: Int, editItemId: Int? = null): String {
+            return if (editItemId != null) {
+                "outbound_picking/$taskId?editItemId=$editItemId"
+            } else {
+                "outbound_picking/$taskId"
+            }
+        }
     }
     object PickingHistory : Routes("picking_history/{taskId}") { // 2.5.3 - 履歴
         fun createRoute(taskId: Int) = "picking_history/$taskId"

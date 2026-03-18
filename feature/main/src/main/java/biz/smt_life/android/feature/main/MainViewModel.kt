@@ -3,8 +3,10 @@ package biz.smt_life.android.feature.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import biz.smt_life.android.core.domain.model.PendingCounts
+import biz.smt_life.android.core.domain.model.IncomingWarehouse
 import biz.smt_life.android.core.domain.model.Warehouse
 import biz.smt_life.android.core.domain.repository.AuthRepository
+import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.ui.HostPreferences
 import biz.smt_life.android.core.ui.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val incomingRepository: IncomingRepository,
     private val tokenManager: TokenManager,
     private val hostPreferences: HostPreferences
 ) : ViewModel() {
@@ -58,6 +61,75 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun openWarehouseDialog() {
+        val current = _uiState.value
+        if (current !is MainUiState.Ready) return
+        _uiState.value = current.copy(showWarehouseDialog = true, isLoadingWarehouses = true)
+        viewModelScope.launch {
+            incomingRepository.getWarehouses()
+                .onSuccess { warehouses ->
+                    val state = _uiState.value
+                    if (state is MainUiState.Ready) {
+                        _uiState.value = state.copy(
+                            availableWarehouses = warehouses,
+                            isLoadingWarehouses = false
+                        )
+                    }
+                }
+                .onFailure {
+                    val state = _uiState.value
+                    if (state is MainUiState.Ready) {
+                        _uiState.value = state.copy(
+                            isLoadingWarehouses = false
+                        )
+                    }
+                }
+        }
+    }
+
+    fun dismissWarehouseDialog() {
+        val current = _uiState.value
+        if (current is MainUiState.Ready) {
+            _uiState.value = current.copy(showWarehouseDialog = false)
+        }
+    }
+
+    fun selectWarehouse(warehouse: IncomingWarehouse) {
+        tokenManager.setDefaultWarehouseId(warehouse.id)
+        val current = _uiState.value
+        if (current is MainUiState.Ready) {
+            _uiState.value = current.copy(
+                warehouse = Warehouse(warehouse.id.toString(), warehouse.name),
+                showWarehouseDialog = false
+            )
+        }
+    }
+
+    fun openDatePicker() {
+        val current = _uiState.value
+        if (current is MainUiState.Ready) {
+            _uiState.value = current.copy(showDatePicker = true)
+        }
+    }
+
+    fun dismissDatePicker() {
+        val current = _uiState.value
+        if (current is MainUiState.Ready) {
+            _uiState.value = current.copy(showDatePicker = false)
+        }
+    }
+
+    fun selectShippingDate(dateString: String) {
+        tokenManager.setShippingDate(dateString)
+        val current = _uiState.value
+        if (current is MainUiState.Ready) {
+            _uiState.value = current.copy(
+                shippingDate = dateString,
+                showDatePicker = false
+            )
+        }
+    }
+
     private fun loadData() {
         viewModelScope.launch {
             try {
@@ -83,7 +155,10 @@ class MainViewModel @Inject constructor(
                     inventory = 0
                 )
                 val currentDate = getCurrentDate()
-                val appVersion = "Ver.1.0" // TODO: Get from BuildConfig
+                val shippingDate = tokenManager.getShippingDate() ?: currentDate
+                // Ensure shipping date is saved
+                tokenManager.setShippingDate(shippingDate)
+                val appVersion = "1.0" // TODO: Get from BuildConfig
 
                 _uiState.value = MainUiState.Ready(
                     pickerCode = pickerCode,
@@ -91,6 +166,7 @@ class MainViewModel @Inject constructor(
                     warehouse = warehouse,
                     pendingCounts = pendingCounts,
                     currentDate = currentDate,
+                    shippingDate = shippingDate,
                     hostUrl = hostUrl,
                     appVersion = appVersion
                 )

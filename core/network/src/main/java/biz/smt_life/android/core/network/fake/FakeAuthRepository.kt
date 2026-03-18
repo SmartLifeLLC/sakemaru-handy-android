@@ -52,6 +52,11 @@ class FakeAuthRepository @Inject constructor(
         return Result.success(Unit)
     }
 
+    override suspend fun checkConnection(): Result<Unit> {
+        delay(LATENCY_MS)
+        return Result.success(Unit)
+    }
+
     override suspend fun validateSession(): Result<AuthResult> {
         delay(LATENCY_MS)
         // Fake validation - always succeeds if called

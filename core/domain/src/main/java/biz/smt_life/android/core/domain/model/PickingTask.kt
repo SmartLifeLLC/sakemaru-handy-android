@@ -62,6 +62,10 @@ data class PickingTask(
     val isFullyProcessed: Boolean
         get() = pendingCount == 0 && pickingCount == 0 && completedOrShortageCount == totalItems
 
+    /** 全アイテムが登録済み（出荷指示数 == 検品済み）。P20完了タブの判定に使用 */
+    val isAllRegistered: Boolean
+        get() = totalItems > 0 && pendingCount == 0
+
     // Legacy properties (still used for UI display)
     val isCompleted: Boolean
         get() = completedItems == totalItems && totalItems > 0
@@ -99,7 +103,9 @@ data class PickingTaskItem(
     val status: ItemStatus, // Server-controlled status
     val walkingOrder: Int,
     val slipNumber: Int,
-    val customerName: String? = null
+    val customerName: String? = null,
+    val customerCode: String? = null,
+    val locationCode: String? = null
 ) {
     val isCompleted: Boolean
         get() = status == ItemStatus.COMPLETED || status == ItemStatus.SHORTAGE

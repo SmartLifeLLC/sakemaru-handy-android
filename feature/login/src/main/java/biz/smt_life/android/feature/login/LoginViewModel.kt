@@ -97,6 +97,23 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    fun checkConnection() {
+        viewModelScope.launch {
+            _state.update { it.copy(isCheckingConnection = true, connectionResult = null) }
+            authRepository.checkConnection()
+                .onSuccess {
+                    _state.update { it.copy(isCheckingConnection = false, connectionResult = ConnectionResult.SUCCESS) }
+                }
+                .onFailure {
+                    _state.update { it.copy(isCheckingConnection = false, connectionResult = ConnectionResult.FAILURE) }
+                }
+        }
+    }
+
+    fun clearConnectionResult() {
+        _state.update { it.copy(connectionResult = null) }
+    }
+
     fun clearError() {
         _state.update { it.copy(errorMessage = null) }
     }

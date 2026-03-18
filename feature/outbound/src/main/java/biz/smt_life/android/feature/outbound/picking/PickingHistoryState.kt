@@ -21,12 +21,47 @@ data class PickingHistoryState(
     val warehouseName: String = ""
 ) {
     /**
-     * Items to show in history (status == PICKING).
+     * Items to show in history (all registered items: PICKING, COMPLETED, SHORTAGE).
      */
     val historyItems: List<PickingTaskItem>
         get() = task?.items?.filter {
-            it.status == biz.smt_life.android.core.domain.model.ItemStatus.PICKING
+            it.status != biz.smt_life.android.core.domain.model.ItemStatus.PENDING
         } ?: emptyList()
+
+    /**
+     * History items grouped by itemId for display.
+     * Shows total case/piece quantities per product.
+     */
+    val groupedHistoryItems: List<GroupedHistoryItem>
+        get() = historyItems
+            .groupBy { it.itemId }
+            .map { (itemId, items) ->
+                val representative = items.first()
+                val totalCasePlanned = items
+                    .filter { it.plannedQtyType == biz.smt_life.android.core.domain.model.QuantityType.CASE }
+                    .sumOf { it.plannedQty }
+                val totalCasePicked = items
+                    .filter { it.plannedQtyType == biz.smt_life.android.core.domain.model.QuantityType.CASE }
+                    .sumOf { it.pickedQty }
+                val totalPiecePlanned = items
+                    .filter { it.plannedQtyType == biz.smt_life.android.core.domain.model.QuantityType.PIECE }
+                    .sumOf { it.plannedQty }
+                val totalPiecePicked = items
+                    .filter { it.plannedQtyType == biz.smt_life.android.core.domain.model.QuantityType.PIECE }
+                    .sumOf { it.pickedQty }
+                GroupedHistoryItem(
+                    itemId = itemId,
+                    itemName = representative.itemName,
+                    locationCode = representative.locationCode,
+                    janCode = representative.janCode,
+                    totalCasePlanned = totalCasePlanned,
+                    totalCasePicked = totalCasePicked,
+                    totalPiecePlanned = totalPiecePlanned,
+                    totalPiecePicked = totalPiecePicked,
+                    customerCount = items.map { it.customerName }.distinct().size
+                )
+            }
+            .sortedBy { it.itemName }
 
     /**
      * Editable mode: at least one PICKING item exists.
@@ -47,4 +82,33 @@ data class PickingHistoryState(
      */
     val canConfirmAll: Boolean
         get() = isEditableMode && historyItems.isNotEmpty() && !isConfirming && !isDeleting
+
+    /**
+     * Total number of distinct products (by itemId) across all task items.
+     * Matches OutboundPickingState.totalGroupCount for consistency.
+     */
+    val totalGroupCount: Int
+        get() = task?.items?.map { it.itemId }?.distinct()?.size ?: 0
+
+    /**
+     * Number of distinct products that have been registered (PICKING status).
+     * Matches the input screen's grouped product count.
+     */
+    val registeredGroupCount: Int
+        get() = groupedHistoryItems.size
 }
+
+/**
+ * History items grouped by product (itemId) with total quantities.
+ */
+data class GroupedHistoryItem(
+    val itemId: Int,
+    val itemName: String,
+    val locationCode: String?,
+    val janCode: String?,
+    val totalCasePlanned: Double,
+    val totalCasePicked: Double,
+    val totalPiecePlanned: Double,
+    val totalPiecePicked: Double,
+    val customerCount: Int
+)

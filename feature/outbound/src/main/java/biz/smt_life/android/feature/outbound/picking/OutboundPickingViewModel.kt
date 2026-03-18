@@ -2,7 +2,10 @@ package biz.smt_life.android.feature.outbound.picking
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import biz.smt_life.android.core.domain.model.ItemStatus
 import biz.smt_life.android.core.domain.model.PickingTask
+import biz.smt_life.android.core.domain.model.PickingTaskItem
+import biz.smt_life.android.core.domain.model.QuantityType
 import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.network.NetworkException
@@ -16,7 +19,7 @@ import javax.inject.Inject
 
 /**
  * ViewModel for Outbound Picking (2.5.2 - Data Input Screen).
- * Handles picking item updates, navigation between items, and task completion.
+ * Groups items by itemId for batch picking with total/individual quantity input.
  */
 @HiltViewModel
 class OutboundPickingViewModel @Inject constructor(
@@ -30,54 +33,351 @@ class OutboundPickingViewModel @Inject constructor(
 
     /**
      * Initialize the screen with a picking task.
-     * Stores the original task and filters PENDING items for display (per spec 2.5.2).
-     * Gets warehouse ID from TokenManager for server refresh operations.
-     *
-     * @param task The picking task to work with
+     * Normal flow: groups PENDING items only.
+     * Edit flow (from history): includes PICKING items for the specified editItemId,
+     * so user can edit a previously registered item.
+     * @param editItemId If specified, include PICKING items for this itemId and jump to it
      */
-    fun initialize(task: PickingTask) {
+    fun initialize(task: PickingTask, editItemId: Int? = null) {
         val warehouseId = tokenManager.getDefaultWarehouseId()
+        val grouped = if (editItemId != null) {
+            groupEditableItems(task.items, editItemId)
+        } else {
+            groupPendingItems(task.items)
+        }
+
+        val startIndex = if (editItemId != null) {
+            grouped.indexOfFirst { it.itemId == editItemId }.coerceAtLeast(0)
+        } else {
+            0
+        }
 
         _state.update {
-            // Filter to only PENDING items (status-based filtering)
-            val pendingItems = task.items.filter { item ->
-                item.status == biz.smt_life.android.core.domain.model.ItemStatus.PENDING
-            }
-
-            if (pendingItems.isEmpty()) {
-                // No PENDING items - should not happen if navigation is correct
-                // Show error state
-                return@update it.copy(
+            if (grouped.isEmpty()) {
+                it.copy(
                     originalTask = task,
-                    pendingItems = emptyList(),
-                    currentIndex = 0,
-                    pickedQtyInput = "",
+                    groupedItems = emptyList(),
+                    currentGroupIndex = 0,
+                    totalCaseInput = "",
+                    totalPieceInput = "",
                     isLoading = false,
-                    warehouseId = warehouseId,
-                    errorMessage = "登録可能な商品がありません"
+                    warehouseId = warehouseId
+                )
+            } else {
+                val targetGroup = grouped[startIndex]
+                it.copy(
+                    originalTask = task,
+                    groupedItems = grouped,
+                    currentGroupIndex = startIndex,
+                    totalCaseInput = formatTotal(targetGroup, QuantityType.CASE),
+                    totalPieceInput = formatTotal(targetGroup, QuantityType.PIECE),
+                    isLoading = false,
+                    warehouseId = warehouseId
                 )
             }
-
-            val currentItem = pendingItems.firstOrNull()
-            // Default picked qty = planned qty per spec
-            val defaultQty = currentItem?.plannedQty?.toString() ?: ""
-
-            it.copy(
-                originalTask = task,         // Store full task for counters
-                pendingItems = pendingItems, // Store filtered PENDING items
-                currentIndex = 0,
-                pickedQtyInput = defaultQty,
-                isLoading = false,
-                warehouseId = warehouseId
-            )
         }
         loadWarehouseName(warehouseId)
     }
 
+    // ===== Grouping Logic =====
+
+    private fun groupPendingItems(items: List<PickingTaskItem>): List<GroupedPickingItem> {
+        val pendingItems = items.filter { it.status == ItemStatus.PENDING }
+        return groupItemsInternal(pendingItems, usePickedQty = false)
+    }
+
     /**
-     * Load warehouse name from master data for header display.
-     * Errors are silently ignored — warehouse name is optional display info.
+     * Group PENDING items + PICKING items for the specified editItemId.
+     * PICKING items use pickedQty as initial input value.
      */
+    private fun groupEditableItems(items: List<PickingTaskItem>, editItemId: Int): List<GroupedPickingItem> {
+        val editableItems = items.filter {
+            it.status == ItemStatus.PENDING || (it.status == ItemStatus.PICKING && it.itemId == editItemId)
+        }
+        return groupItemsInternal(editableItems, usePickedQty = true)
+    }
+
+    private fun groupItemsInternal(
+        items: List<PickingTaskItem>,
+        usePickedQty: Boolean
+    ): List<GroupedPickingItem> {
+        return items
+            .groupBy { it.itemId }
+            .map { (itemId, itemGroup) ->
+                val representative = itemGroup.first()
+                val customerGroups = itemGroup.groupBy { it.customerName ?: "" }
+                val customerEntries = customerGroups.map { (customerName, customerItems) ->
+                    val caseItem = customerItems.find { it.plannedQtyType == QuantityType.CASE }
+                    val pieceItem = customerItems.find { it.plannedQtyType == QuantityType.PIECE }
+                    CustomerEntry(
+                        customerName = customerName,
+                        customerCode = customerItems.first().customerCode ?: "",
+                        caseEntry = caseItem?.let {
+                            val initialQty = if (usePickedQty && it.status == ItemStatus.PICKING) it.pickedQty else it.plannedQty
+                            CustomerEntryDetail(
+                                pickingItemResultId = it.id,
+                                plannedQty = it.plannedQty,
+                                pickedQtyInput = String.format("%.0f", initialQty)
+                            )
+                        },
+                        pieceEntry = pieceItem?.let {
+                            val initialQty = if (usePickedQty && it.status == ItemStatus.PICKING) it.pickedQty else it.plannedQty
+                            CustomerEntryDetail(
+                                pickingItemResultId = it.id,
+                                plannedQty = it.plannedQty,
+                                pickedQtyInput = String.format("%.0f", initialQty)
+                            )
+                        },
+                        slipNumbers = customerItems.map { it.slipNumber }
+                    )
+                }
+                GroupedPickingItem(
+                    itemId = itemId,
+                    itemName = representative.itemName,
+                    janCode = representative.janCode,
+                    volume = representative.volume,
+                    capacityCase = representative.capacityCase,
+                    locationCode = representative.locationCode,
+                    images = representative.images,
+                    walkingOrder = itemGroup.minOf { it.walkingOrder },
+                    customerEntries = customerEntries
+                )
+            }
+            .sortedBy { it.walkingOrder }
+    }
+
+    private fun formatTotal(group: GroupedPickingItem, type: QuantityType): String {
+        val total = when (type) {
+            QuantityType.CASE -> group.customerEntries.mapNotNull { it.caseEntry }.sumOf { it.plannedQty }
+            QuantityType.PIECE -> group.customerEntries.mapNotNull { it.pieceEntry }.sumOf { it.plannedQty }
+        }
+        return if (total > 0) String.format("%.0f", total) else ""
+    }
+
+    // ===== Total Input Handlers (auto-distribute) =====
+
+    fun onTotalCaseInputChange(value: String) {
+        if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        _state.update { it.copy(totalCaseInput = value) }
+
+        val totalInput = value.toDoubleOrNull() ?: return
+        val group = _state.value.currentGroup ?: return
+        val maxTotal = _state.value.totalCasePlanned
+        val clamped = totalInput.coerceIn(0.0, maxTotal)
+
+        var remaining = clamped
+        val updatedEntries = group.customerEntries.map { entry ->
+            if (entry.caseEntry != null) {
+                val allocated = minOf(remaining, entry.caseEntry.plannedQty)
+                remaining -= allocated
+                entry.copy(caseEntry = entry.caseEntry.copy(
+                    pickedQtyInput = String.format("%.0f", allocated)
+                ))
+            } else entry
+        }
+        updateCurrentGroupEntries(updatedEntries)
+    }
+
+    fun onTotalPieceInputChange(value: String) {
+        if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        _state.update { it.copy(totalPieceInput = value) }
+
+        val totalInput = value.toDoubleOrNull() ?: return
+        val group = _state.value.currentGroup ?: return
+        val maxTotal = _state.value.totalPiecePlanned
+        val clamped = totalInput.coerceIn(0.0, maxTotal)
+
+        var remaining = clamped
+        val updatedEntries = group.customerEntries.map { entry ->
+            if (entry.pieceEntry != null) {
+                val allocated = minOf(remaining, entry.pieceEntry.plannedQty)
+                remaining -= allocated
+                entry.copy(pieceEntry = entry.pieceEntry.copy(
+                    pickedQtyInput = String.format("%.0f", allocated)
+                ))
+            } else entry
+        }
+        updateCurrentGroupEntries(updatedEntries)
+    }
+
+    // ===== Individual Input Handlers =====
+
+    fun onCustomerCaseQtyChange(customerIndex: Int, value: String) {
+        if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        val group = _state.value.currentGroup ?: return
+        val entry = group.customerEntries.getOrNull(customerIndex) ?: return
+        val caseEntry = entry.caseEntry ?: return
+
+        val updatedEntries = group.customerEntries.toMutableList()
+        updatedEntries[customerIndex] = entry.copy(
+            caseEntry = caseEntry.copy(pickedQtyInput = value)
+        )
+        updateCurrentGroupEntries(updatedEntries)
+        recalculateTotalCase()
+    }
+
+    fun onCustomerPieceQtyChange(customerIndex: Int, value: String) {
+        if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        val group = _state.value.currentGroup ?: return
+        val entry = group.customerEntries.getOrNull(customerIndex) ?: return
+        val pieceEntry = entry.pieceEntry ?: return
+
+        val updatedEntries = group.customerEntries.toMutableList()
+        updatedEntries[customerIndex] = entry.copy(
+            pieceEntry = pieceEntry.copy(pickedQtyInput = value)
+        )
+        updateCurrentGroupEntries(updatedEntries)
+        recalculateTotalPiece()
+    }
+
+    private fun updateCurrentGroupEntries(updatedEntries: List<CustomerEntry>) {
+        val currentIndex = _state.value.currentGroupIndex
+        val groups = _state.value.groupedItems.toMutableList()
+        val currentGroup = groups.getOrNull(currentIndex) ?: return
+        groups[currentIndex] = currentGroup.copy(customerEntries = updatedEntries)
+        _state.update { it.copy(groupedItems = groups) }
+    }
+
+    private fun recalculateTotalCase() {
+        val group = _state.value.currentGroup ?: return
+        val total = group.customerEntries
+            .mapNotNull { it.caseEntry }
+            .sumOf { it.pickedQtyInput.toDoubleOrNull() ?: 0.0 }
+        _state.update { it.copy(totalCaseInput = String.format("%.0f", total)) }
+    }
+
+    private fun recalculateTotalPiece() {
+        val group = _state.value.currentGroup ?: return
+        val total = group.customerEntries
+            .mapNotNull { it.pieceEntry }
+            .sumOf { it.pickedQtyInput.toDoubleOrNull() ?: 0.0 }
+        _state.update { it.copy(totalPieceInput = String.format("%.0f", total)) }
+    }
+
+    // ===== Registration =====
+
+    fun registerGroupedItem() {
+        val group = _state.value.currentGroup ?: return
+        val originalTask = _state.value.originalTask ?: return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isUpdating = true, errorMessage = null) }
+
+            try {
+                for (entry in group.customerEntries) {
+                    entry.caseEntry?.let { caseDetail ->
+                        val qty = caseDetail.pickedQtyInput.toDoubleOrNull() ?: 0.0
+                        pickingTaskRepository.updatePickingItem(
+                            resultId = caseDetail.pickingItemResultId,
+                            pickedQty = qty,
+                            pickedQtyType = QuantityType.CASE.name
+                        ).getOrThrow()
+                    }
+                    entry.pieceEntry?.let { pieceDetail ->
+                        val qty = pieceDetail.pickedQtyInput.toDoubleOrNull() ?: 0.0
+                        pickingTaskRepository.updatePickingItem(
+                            resultId = pieceDetail.pickingItemResultId,
+                            pickedQty = qty,
+                            pickedQtyType = QuantityType.PIECE.name
+                        ).getOrThrow()
+                    }
+                }
+                refreshTaskFromServer(originalTask.taskId)
+            } catch (e: Exception) {
+                _state.update { it.copy(isUpdating = false, errorMessage = mapErrorMessage(e)) }
+            }
+        }
+    }
+
+    // ===== Navigation =====
+
+    fun moveToPrevGroup() {
+        if (!_state.value.canMovePrev) return
+        val newIndex = _state.value.currentGroupIndex - 1
+        _state.update { it.copy(currentGroupIndex = newIndex) }
+        loadGroupTotals(newIndex)
+    }
+
+    fun moveToNextGroup() {
+        if (!_state.value.canMoveNext) return
+        val newIndex = _state.value.currentGroupIndex + 1
+        _state.update { it.copy(currentGroupIndex = newIndex) }
+        loadGroupTotals(newIndex)
+    }
+
+    private fun loadGroupTotals(index: Int) {
+        val group = _state.value.groupedItems.getOrNull(index) ?: return
+        _state.update {
+            it.copy(
+                totalCaseInput = formatTotal(group, QuantityType.CASE),
+                totalPieceInput = formatTotal(group, QuantityType.PIECE)
+            )
+        }
+    }
+
+    private fun moveToNextGroupOrComplete() {
+        val refreshedTask = _state.value.originalTask ?: return
+        val grouped = groupPendingItems(refreshedTask.items)
+
+        if (grouped.isEmpty()) {
+            _state.update {
+                it.copy(
+                    groupedItems = emptyList(),
+                    currentGroupIndex = 0,
+                    totalCaseInput = "",
+                    totalPieceInput = "",
+                    isUpdating = false
+                )
+            }
+        } else {
+            val firstGroup = grouped.first()
+            _state.update {
+                it.copy(
+                    groupedItems = grouped,
+                    currentGroupIndex = 0,
+                    totalCaseInput = formatTotal(firstGroup, QuantityType.CASE),
+                    totalPieceInput = formatTotal(firstGroup, QuantityType.PIECE),
+                    isUpdating = false
+                )
+            }
+        }
+    }
+
+    // ===== Refresh & Complete =====
+
+    private suspend fun refreshTaskFromServer(taskId: Int) {
+        val warehouseId = _state.value.warehouseId
+        val pickerId = tokenManager.getPickerId()
+
+        pickingTaskRepository.refreshTask(taskId, warehouseId, pickerId)
+            .onSuccess { refreshedTask ->
+                _state.update { it.copy(originalTask = refreshedTask) }
+                moveToNextGroupOrComplete()
+            }
+            .onFailure { error ->
+                _state.update { it.copy(isUpdating = false, errorMessage = mapErrorMessage(error)) }
+            }
+    }
+
+    fun completeTask(onSuccess: () -> Unit) {
+        val taskId = _state.value.originalTask?.taskId ?: return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isCompleting = true, errorMessage = null) }
+
+            pickingTaskRepository.completeTask(taskId)
+                .onSuccess {
+                    _state.update { it.copy(isCompleting = false, showCompletionDialog = false) }
+                    onSuccess()
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isCompleting = false, errorMessage = mapErrorMessage(error)) }
+                }
+        }
+    }
+
+    // ===== Utility =====
+
     private fun loadWarehouseName(warehouseId: Int) {
         viewModelScope.launch {
             incomingRepository.getWarehouses()
@@ -88,245 +388,33 @@ class OutboundPickingViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Update the picked quantity input field.
-     */
-    fun onPickedQtyChange(value: String) {
-        // Allow only valid decimal numbers
-        if (value.isEmpty() || value.matches(Regex("^\\d*\\.?\\d*$"))) {
-            _state.update { it.copy(pickedQtyInput = value) }
-        }
-    }
-
-    /**
-     * Navigate to previous PENDING item (前へ F2).
-     * Default quantity is planned qty for PENDING items.
-     */
-    fun moveToPrevItem() {
-        _state.update { currentState ->
-            if (currentState.canMovePrev) {
-                val newIndex = currentState.currentIndex - 1
-                val newItem = currentState.task?.items?.getOrNull(newIndex)
-                // PENDING items: default to planned qty
-                val newQty = newItem?.plannedQty?.toString() ?: ""
-
-                currentState.copy(
-                    currentIndex = newIndex,
-                    pickedQtyInput = newQty,
-                    errorMessage = null
-                )
-            } else {
-                currentState
-            }
-        }
-    }
-
-    /**
-     * Navigate to next PENDING item (次へ F3).
-     * Default quantity is planned qty for PENDING items.
-     */
-    fun moveToNextItem() {
-        _state.update { currentState ->
-            if (currentState.canMoveNext) {
-                val newIndex = currentState.currentIndex + 1
-                val newItem = currentState.task?.items?.getOrNull(newIndex)
-                // PENDING items: default to planned qty
-                val newQty = newItem?.plannedQty?.toString() ?: ""
-
-                currentState.copy(
-                    currentIndex = newIndex,
-                    pickedQtyInput = newQty,
-                    errorMessage = null
-                )
-            } else {
-                currentState
-            }
-        }
-    }
-
-    /**
-     * Register the current item's picked quantity (登録(F1) button).
-     * Calls POST /api/picking/tasks/{wms_picking_item_result_id}/update
-     *
-     * On success:
-     * - Refresh task from server to get updated status and counts
-     * - Update counters (registeredCount, totalCount) from refreshed task
-     * - Remove registered item from PENDING list
-     * - Move to next PENDING item or show completion dialog
-     */
-    fun registerCurrentItem() {
-        val currentState = _state.value
-        val currentItem = currentState.currentItem ?: return
-        val originalTask = currentState.originalTask ?: return
-
-        // Validate input
-        val pickedQty = currentState.pickedQtyInput.toDoubleOrNull()
-        if (pickedQty == null || pickedQty < 0.0) {
-            _state.update { it.copy(errorMessage = "数量を正しく入力してください") }
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isUpdating = true, errorMessage = null) }
-
-            // Step 1: Update the item
-            pickingTaskRepository.updatePickingItem(
-                resultId = currentItem.id,
-                pickedQty = pickedQty,
-                pickedQtyType = currentItem.plannedQtyType.name
-            )
-                .onSuccess { updatedItem ->
-                    // Step 2: Refresh the task from server to get updated status and counts
-                    // This is critical for counter updates!
-                    refreshTaskFromServer(originalTask.taskId)
-                }
-                .onFailure { error ->
-                    val errorMessage = mapErrorMessage(error)
-                    _state.update { it.copy(isUpdating = false, errorMessage = errorMessage) }
-                }
-        }
-    }
-
-    /**
-     * Refresh the task from server and update state.
-     * Called after registration to ensure counters reflect latest server state.
-     */
-    private suspend fun refreshTaskFromServer(taskId: Int) {
-        val warehouseId = _state.value.warehouseId
-        val pickerId = tokenManager.getPickerId()
-
-        pickingTaskRepository.refreshTask(taskId, warehouseId, pickerId)
-            .onSuccess { refreshedTask ->
-                // Update state with refreshed task
-                val newPendingItems = refreshedTask.items.filter { item ->
-                    item.status == biz.smt_life.android.core.domain.model.ItemStatus.PENDING
-                }
-
-                _state.update { currentState ->
-                    currentState.copy(
-                        originalTask = refreshedTask,  // Updated task with new counts
-                        pendingItems = newPendingItems,
-                        isUpdating = false
-                    )
-                }
-
-                // Move to next PENDING item or show completion dialog
-                moveToNextPendingOrComplete()
-            }
-            .onFailure { error ->
-                val errorMessage = mapErrorMessage(error)
-                _state.update { it.copy(isUpdating = false, errorMessage = errorMessage) }
-            }
-    }
-
-    /**
-     * After registration and refresh, move to next PENDING item in the list.
-     * The pendingItems list has been updated from the server refresh.
-     * If no more PENDING items, show completion dialog.
-     */
-    private fun moveToNextPendingOrComplete() {
-        val currentState = _state.value
-
-        if (currentState.pendingItems.isEmpty()) {
-            // All PENDING items processed.
-            // UI will show the completion card via the `else` branch naturally
-            // (currentItem == null → else → CheckCircle + 確定 button).
-            // Don't auto-show dialog — let user see the completion message first.
-            return
-        } else {
-            // Stay at current index (or adjust if out of bounds)
-            val newIndex = if (currentState.currentIndex >= currentState.pendingItems.size) {
-                currentState.pendingItems.size - 1
-            } else {
-                currentState.currentIndex
-            }
-
-            val newItem = currentState.pendingItems.getOrNull(newIndex)
-            val newQty = newItem?.plannedQty?.toString() ?: ""
-
-            _state.update {
-                it.copy(
-                    currentIndex = newIndex,
-                    pickedQtyInput = newQty
-                )
-            }
-        }
-    }
-
-    /**
-     * Show the completion confirmation dialog manually.
-     * Used when user taps a "Complete" button.
-     */
-    fun showCompletionDialog() {
-        _state.update { it.copy(showCompletionDialog = true) }
-    }
-
-    /**
-     * Dismiss the completion confirmation dialog.
-     */
-    fun dismissCompletionDialog() {
-        _state.update { it.copy(showCompletionDialog = false) }
-    }
-
-    /**
-     * Complete the picking task (確定 button in dialog).
-     * Calls POST /api/picking/tasks/{id}/complete
-     * On success, navigates back to the course list.
-     *
-     * @return true if completion started successfully
-     */
-    fun completeTask(onSuccess: () -> Unit) {
-        val task = _state.value.task ?: return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isCompleting = true, errorMessage = null) }
-
-            pickingTaskRepository.completeTask(task.taskId)
-                .onSuccess {
-                    _state.update {
-                        it.copy(
-                            isCompleting = false,
-                            showCompletionDialog = false
-                        )
-                    }
-                    onSuccess()
-                }
-                .onFailure { error ->
-                    val errorMessage = mapErrorMessage(error)
-                    _state.update {
-                        it.copy(
-                            isCompleting = false,
-                            errorMessage = errorMessage
-                        )
-                    }
-                }
-        }
-    }
-
-    /**
-     * Show image viewer dialog (画像 F5 button).
-     */
     fun showImageDialog() {
         _state.update { it.copy(showImageDialog = true) }
     }
 
-    /**
-     * Dismiss image viewer dialog.
-     */
     fun dismissImageDialog() {
         _state.update { it.copy(showImageDialog = false) }
     }
 
-    /**
-     * Clear error message.
-     */
+    fun showJanScannerDialog() {
+        _state.update { it.copy(showJanScannerDialog = true) }
+    }
+
+    fun dismissJanScannerDialog() {
+        _state.update { it.copy(showJanScannerDialog = false) }
+    }
+
+    fun onJanScanResult(scannedCode: String, isMatch: Boolean) {
+        val itemId = _state.value.currentGroup?.itemId ?: return
+        _state.update {
+            it.copy(janScanResults = it.janScanResults + (itemId to JanScanResult(scannedCode, isMatch)))
+        }
+    }
+
     fun clearError() {
         _state.update { it.copy(errorMessage = null) }
     }
 
-    /**
-     * Map exceptions to user-friendly Japanese error messages.
-     */
     private fun mapErrorMessage(error: Throwable): String {
         return when (error) {
             is NetworkException.Unauthorized -> "認証エラー。再ログインしてください。"
