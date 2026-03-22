@@ -20,7 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -407,27 +407,49 @@ private fun OutboundPickingBody(
                     }
                 }
             }
-            Surface(
-                modifier = Modifier.weight(0.35f).fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp), color = Color.White,
-                shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
-            ) {
-                ProductInfoSection(group = group, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
-            }
-            Surface(
-                modifier = Modifier.weight(0.65f).fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp), color = Color.White,
-                shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
-            ) {
-                GroupedQuantitySection(
-                    state = state,
-                    onTotalCaseInputChange = onTotalCaseInputChange,
-                    onTotalPieceInputChange = onTotalPieceInputChange,
-                    onCustomerCaseQtyChange = onCustomerCaseQtyChange,
-                    onCustomerPieceQtyChange = onCustomerPieceQtyChange,
-                    onRegisterClick = onRegisterClick,
-                    onHistoryClick = onHistoryClick
-                )
+            AnimatedContent(
+                targetState = state.currentGroupIndex,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> -width } + fadeOut()
+                        )
+                    } else {
+                        (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> width } + fadeOut()
+                        )
+                    }.using(SizeTransform(clip = false))
+                },
+                label = "SwipeAnimationPortrait"
+            ) { targetIndex ->
+                val targetGroup = state.groupedItems.getOrNull(targetIndex) ?: state.currentGroup!!
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.weight(0.35f).fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+                    ) {
+                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
+                    }
+                    Surface(
+                        modifier = Modifier.weight(0.65f).fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+                    ) {
+                        GroupedQuantitySection(
+                            state = state,
+                            onTotalCaseInputChange = onTotalCaseInputChange,
+                            onTotalPieceInputChange = onTotalPieceInputChange,
+                            onCustomerCaseQtyChange = onCustomerCaseQtyChange,
+                            onCustomerPieceQtyChange = onCustomerPieceQtyChange,
+                            onRegisterClick = onRegisterClick,
+                            onHistoryClick = onHistoryClick
+                        )
+                    }
+                }
             }
         }
     } else {
@@ -461,31 +483,48 @@ private fun OutboundPickingBody(
                     }
                 }
             }
-            Row(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Surface(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    shape = RoundedCornerShape(12.dp), color = Color.White,
-                    shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+            AnimatedContent(
+                targetState = state.currentGroupIndex,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> -width } + fadeOut()
+                        )
+                    } else {
+                        (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> width } + fadeOut()
+                        )
+                    }.using(SizeTransform(clip = false))
+                },
+                label = "SwipeAnimationLandscape"
+            ) { targetIndex ->
+                val targetGroup = state.groupedItems.getOrNull(targetIndex) ?: state.currentGroup!!
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    ProductInfoSection(group = group, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
-                }
-                Surface(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    shape = RoundedCornerShape(12.dp), color = Color.White,
-                    shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
-                ) {
-                    GroupedQuantitySection(
-                        state = state,
-                        onTotalCaseInputChange = onTotalCaseInputChange,
-                        onTotalPieceInputChange = onTotalPieceInputChange,
-                        onCustomerCaseQtyChange = onCustomerCaseQtyChange,
-                        onCustomerPieceQtyChange = onCustomerPieceQtyChange,
-                        onRegisterClick = onRegisterClick,
-                        onHistoryClick = onHistoryClick
-                    )
+                    Surface(
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+                    ) {
+                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
+                    }
+                    Surface(
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
+                    ) {
+                        GroupedQuantitySection(
+                            state = state,
+                            onTotalCaseInputChange = onTotalCaseInputChange,
+                            onTotalPieceInputChange = onTotalPieceInputChange,
+                            onCustomerCaseQtyChange = onCustomerCaseQtyChange,
+                            onCustomerPieceQtyChange = onCustomerPieceQtyChange,
+                            onRegisterClick = onRegisterClick,
+                            onHistoryClick = onHistoryClick
+                        )
+                    }
                 }
             }
         }
