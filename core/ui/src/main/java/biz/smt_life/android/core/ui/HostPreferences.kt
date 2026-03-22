@@ -22,7 +22,7 @@ private val Context.hostDataStore: DataStore<Preferences> by preferencesDataStor
  */
 @Singleton
 class HostPreferences @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val dataStore = context.hostDataStore
 
