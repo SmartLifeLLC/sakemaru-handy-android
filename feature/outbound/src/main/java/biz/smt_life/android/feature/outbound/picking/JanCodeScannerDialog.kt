@@ -54,6 +54,7 @@ private const val TAG = "JanCodeScanner"
 @Composable
 fun JanCodeScannerDialog(
     expectedJanCode: String?,
+    isInCamera: Boolean = false,
     onResult: (scannedCode: String, isMatch: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -164,6 +165,7 @@ fun JanCodeScannerDialog(
                         }
                         isScanning -> {
                             CameraPreviewWithScanner(
+                                isInCamera = isInCamera,
                                 onBarcodeDetected = { code ->
                                     if (isScanning) {
                                         isScanning = false
@@ -269,6 +271,7 @@ fun JanCodeScannerDialog(
 
 @Composable
 private fun CameraPreviewWithScanner(
+    isInCamera: Boolean,
     onBarcodeDetected: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -349,7 +352,7 @@ private fun CameraPreviewWithScanner(
                             }
                         }
 
-                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                    val cameraSelector = if (isInCamera) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
 
                     provider.unbindAll()
                     provider.bindToLifecycle(

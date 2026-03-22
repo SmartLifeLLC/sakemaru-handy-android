@@ -169,52 +169,55 @@ fun PickingTasksScreen(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color(0xFFFDFBF2)
                     ),
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る",
-                                tint = HeaderRed,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    },
+                    navigationIcon = {},
                     title = {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.LocalShipping,
-                                contentDescription = null,
-                                tint = HeaderOrange,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Text(
-                                text = "配送コース選択",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = HeaderRed
-                            )
-                            if (warehouseName.isNotEmpty()) {
-                                Text(
-                                    text = "｜${warehouseName}",
-                                    fontSize = 14.sp,
-                                    color = HeaderOrange
-                                )
+                            Surface(
+                                onClick = onNavigateBack,
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "戻る",
+                                        tint = HeaderRed,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = HeaderRed)
+                                }
+                            }
+                            Spacer(Modifier.width(24.dp))
+                            Surface(
+                                onClick = { toggleOrientation() },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color.Transparent
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ScreenRotation,
+                                        contentDescription = "画面回転",
+                                        tint = HeaderOrange,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = HeaderOrange)
+                                }
                             }
                         }
                     },
-                    actions = {
-                        IconButton(onClick = { toggleOrientation() }) {
-                            Icon(
-                                imageVector = Icons.Filled.ScreenRotation,
-                                contentDescription = "画面回転",
-                                tint = HeaderOrange,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
+                    actions = {}
                 )
                 HorizontalDivider(thickness = 2.dp, color = Color(0xFFF9A825))
             }
@@ -236,15 +239,17 @@ fun PickingTasksScreen(
                     )
                     is TaskListState.Success -> {
                         val successState = state.tasksState as TaskListState.Success
-                        val activeTasks = successState.tasks
+                        val pendingTasks = successState.pendingTasks
+                        val activeTasks = successState.activeTasks
                         val completedTasks = successState.completedTasks
 
                         Column(modifier = Modifier.fillMaxSize()) {
                             // タブバー
                             val selectedTabIndex = when (state.selectedTab) {
-                                TaskTab.ACTIVE -> 0
-                                TaskTab.COMPLETED -> 1
-                                TaskTab.SUPPORT -> 2
+                                TaskTab.PENDING -> 0
+                                TaskTab.ACTIVE -> 1
+                                TaskTab.COMPLETED -> 2
+                                TaskTab.SUPPORT -> 3
                             }
                             TabRow(
                                 selectedTabIndex = selectedTabIndex,
@@ -258,6 +263,19 @@ fun PickingTasksScreen(
                                     )
                                 }
                             ) {
+                                Tab(
+                                    selected = state.selectedTab == TaskTab.PENDING,
+                                    onClick = { viewModel.selectTab(TaskTab.PENDING) },
+                                    text = {
+                                        Text(
+                                            text = "作業前（${pendingTasks.size}）",
+                                            fontWeight = if (state.selectedTab == TaskTab.PENDING) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 15.sp
+                                        )
+                                    },
+                                    selectedContentColor = HeaderOrange,
+                                    unselectedContentColor = TextGray
+                                )
                                 Tab(
                                     selected = state.selectedTab == TaskTab.ACTIVE,
                                     onClick = { viewModel.selectTab(TaskTab.ACTIVE) },
@@ -301,6 +319,7 @@ fun PickingTasksScreen(
 
                             // リスト表示
                             val displayTasks = when (state.selectedTab) {
+                                TaskTab.PENDING -> pendingTasks
                                 TaskTab.ACTIVE -> activeTasks
                                 TaskTab.COMPLETED -> completedTasks
                                 TaskTab.SUPPORT -> emptyList() // 今後実装予定

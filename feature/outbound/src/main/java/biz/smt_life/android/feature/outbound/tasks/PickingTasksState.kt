@@ -14,10 +14,10 @@ data class PickingTasksState(
     val errorMessage: String? = null,
     val selectedTask: PickingTask? = null, // Task selected for navigation to picking screen
     val warehouseName: String = "",
-    val selectedTab: TaskTab = TaskTab.ACTIVE
+    val selectedTab: TaskTab = TaskTab.PENDING
 )
 
-enum class TaskTab { ACTIVE, COMPLETED, SUPPORT }
+enum class TaskTab { PENDING, ACTIVE, COMPLETED, SUPPORT }
 
 /**
  * State for the task list.
@@ -26,7 +26,8 @@ sealed interface TaskListState {
     data object Loading : TaskListState
     data object Empty : TaskListState
     data class Success(
-        val tasks: List<PickingTask>,
+        val pendingTasks: List<PickingTask> = emptyList(),
+        val activeTasks: List<PickingTask> = emptyList(),
         val completedTasks: List<PickingTask> = emptyList()
     ) : TaskListState
     data class Error(val message: String) : TaskListState

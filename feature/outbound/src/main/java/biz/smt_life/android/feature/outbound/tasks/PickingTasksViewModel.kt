@@ -52,13 +52,14 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        val activeTasks = tasks.filter { !it.isAllRegistered }
+                        val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isAllRegistered }
+                        val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isAllRegistered }
                         val completedTasks = tasks.filter { it.isAllRegistered }
                             .sortedBy { it.courseName }
-                        val newState = if (activeTasks.isEmpty() && completedTasks.isEmpty()) {
+                        val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                             TaskListState.Empty
                         } else {
-                            TaskListState.Success(activeTasks, completedTasks)
+                            TaskListState.Success(pendingTasks, activeTasks, completedTasks)
                         }
                         currentState.copy(tasksState = newState)
                     } else {
@@ -151,13 +152,14 @@ class PickingTasksViewModel @Inject constructor(
             val shippingDate = tokenManager.getShippingDate()
             repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
                 .onSuccess { tasks ->
-                    val activeTasks = tasks.filter { !it.isAllRegistered }
+                    val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isAllRegistered }
+                    val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isAllRegistered }
                     val completedTasks = tasks.filter { it.isAllRegistered }
                         .sortedBy { it.courseName }
-                    val newState = if (activeTasks.isEmpty() && completedTasks.isEmpty()) {
+                    val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                         TaskListState.Empty
                     } else {
-                        TaskListState.Success(activeTasks, completedTasks)
+                        TaskListState.Success(pendingTasks, activeTasks, completedTasks)
                     }
                     _state.update { it.copy(tasksState = newState) }
                 }

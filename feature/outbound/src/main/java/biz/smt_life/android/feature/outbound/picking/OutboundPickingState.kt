@@ -63,6 +63,7 @@ data class OutboundPickingState(
     val isCompleting: Boolean = false,
     val showImageDialog: Boolean = false,
     val showJanScannerDialog: Boolean = false,
+    val isJanScannerInCamera: Boolean = false,
     val janScanResults: Map<Int, JanScanResult> = emptyMap(),
     val warehouseId: Int = 0,
     val warehouseName: String = ""

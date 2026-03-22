@@ -20,13 +20,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -235,22 +242,46 @@ fun OutboundPickingScreen(
                 }
             }
             state.currentGroup != null && state.originalTask != null -> {
-                OutboundPickingBody(
-                    state = state,
-                    isPortrait = isPortrait,
-                    onTotalCaseInputChange = viewModel::onTotalCaseInputChange,
-                    onTotalPieceInputChange = viewModel::onTotalPieceInputChange,
-                    onCustomerCaseQtyChange = viewModel::onCustomerCaseQtyChange,
-                    onCustomerPieceQtyChange = viewModel::onCustomerPieceQtyChange,
-                    onImageClick = { viewModel.showImageDialog() },
-                    onJanScanClick = { viewModel.showJanScannerDialog() },
-                    onRegisterClick = {
-                        performHapticFeedback(context)
-                        viewModel.registerGroupedItem()
-                    },
-                    onHistoryClick = onNavigateToHistory,
-                    modifier = Modifier.padding(padding)
-                )
+                var offsetX by remember { mutableStateOf(0f) }
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (offsetX > 60f && state.canMovePrev) {
+                                    viewModel.moveToPrevGroup()
+                                } else if (offsetX < -60f && state.canMoveNext) {
+                                    viewModel.moveToNextGroup()
+                                }
+                                offsetX = 0f
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetX += dragAmount
+                            }
+                        )
+                    }
+                ) {
+                    OutboundPickingBody(
+                        state = state,
+                        isPortrait = isPortrait,
+                        onTotalCaseInputChange = viewModel::onTotalCaseInputChange,
+                        onTotalPieceInputChange = viewModel::onTotalPieceInputChange,
+                        onCustomerCaseQtyChange = viewModel::onCustomerCaseQtyChange,
+                        onCustomerPieceQtyChange = viewModel::onCustomerPieceQtyChange,
+                        onImageClick = { viewModel.showImageDialog() },
+                        onJanScanClick = { isInCamera -> viewModel.showJanScannerDialog(isInCamera) },
+                        onRegisterClick = {
+                            performHapticFeedback(context)
+                            viewModel.registerGroupedItem()
+                        },
+                        onHistoryClick = onNavigateToHistory,
+                        moveToPrevGroup = viewModel::moveToPrevGroup,
+                        moveToNextGroup = viewModel::moveToNextGroup,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             else -> {
                 Box(
@@ -336,9 +367,11 @@ private fun OutboundPickingBody(
     onCustomerCaseQtyChange: (Int, String) -> Unit,
     onCustomerPieceQtyChange: (Int, String) -> Unit,
     onImageClick: () -> Unit,
-    onJanScanClick: () -> Unit,
+    onJanScanClick: (Boolean) -> Unit,
     onRegisterClick: () -> Unit,
     onHistoryClick: () -> Unit,
+    moveToPrevGroup: () -> Unit,
+    moveToNextGroup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val group = state.currentGroup!!
@@ -354,16 +387,25 @@ private fun OutboundPickingBody(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = moveToPrevGroup, enabled = state.canMovePrev, modifier = Modifier.size(36.dp)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前へ", tint = if (state.canMovePrev) Color.White else Color.White.copy(alpha = 0.5f))
+                    }
+                    Text(
+                        text = "${state.currentGroupIndex + 1}/${state.groupedItems.size} (${state.registeredGroupCount}/${state.totalGroupCount}完了)",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    IconButton(onClick = moveToNextGroup, enabled = state.canMoveNext, modifier = Modifier.size(36.dp)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "次へ", tint = if (state.canMoveNext) Color.White else Color.White.copy(alpha = 0.5f))
+                    }
+                }
             }
             Surface(
                 modifier = Modifier.weight(0.35f).fillMaxWidth(),
@@ -399,16 +441,25 @@ private fun OutboundPickingBody(
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = moveToPrevGroup, enabled = state.canMovePrev, modifier = Modifier.size(36.dp)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前へ", tint = if (state.canMovePrev) Color.White else Color.White.copy(alpha = 0.5f))
+                    }
+                    Text(
+                        text = "${state.currentGroupIndex + 1}/${state.groupedItems.size} (${state.registeredGroupCount}/${state.totalGroupCount}完了)",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    IconButton(onClick = moveToNextGroup, enabled = state.canMoveNext, modifier = Modifier.size(36.dp)) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "次へ", tint = if (state.canMoveNext) Color.White else Color.White.copy(alpha = 0.5f))
+                    }
+                }
             }
             Row(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -448,7 +499,7 @@ private fun ProductInfoSection(
     group: GroupedPickingItem,
     hasImages: Boolean,
     onImageClick: () -> Unit,
-    onJanScanClick: () -> Unit,
+    onJanScanClick: (Boolean) -> Unit,
     janScanResult: JanScanResult?,
     modifier: Modifier = Modifier
 ) {
@@ -527,13 +578,13 @@ private fun ProductInfoSection(
             )
         }
 
-        // 画像確認 | JAN確認 ボタン（横並び）
+        // 画像確認 | JAN(IN) | JAN(OUT) ボタン（横並び）
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Surface(
-                modifier = Modifier.weight(1f).height(44.dp),
+                modifier = Modifier.weight(1.2f).height(44.dp),
                 shape = RoundedCornerShape(8.dp), color = Amber50,
                 border = BorderStroke(1.dp, Amber200),
                 onClick = { onImageClick() }
@@ -543,25 +594,41 @@ private fun ProductInfoSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Filled.Image, "商品画像", tint = if (hasImages) Amber600 else Neutral400, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("商品画像", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (hasImages) Amber600 else Neutral400)
+                    Icon(Icons.Filled.Image, "商品画像", tint = if (hasImages) Amber600 else Neutral400, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("商品画像", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (hasImages) Amber600 else Neutral400)
                 }
             }
             Surface(
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = RoundedCornerShape(8.dp), color = Color(0xFFE8F5E9),
                 border = BorderStroke(1.dp, Color(0xFF81C784)),
-                onClick = { onJanScanClick() }
+                onClick = { onJanScanClick(true) }
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Filled.CheckCircle, "JAN確認", tint = Color(0xFF388E3C), modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("JAN確認", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                    Icon(Icons.Filled.CheckCircle, "JAN(IN)", tint = Color(0xFF388E3C), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("JAN(IN)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                }
+            }
+            Surface(
+                modifier = Modifier.weight(1f).height(44.dp),
+                shape = RoundedCornerShape(8.dp), color = Color(0xFFE8F5E9),
+                border = BorderStroke(1.dp, Color(0xFF81C784)),
+                onClick = { onJanScanClick(false) }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(Icons.Filled.CheckCircle, "JAN(OUT)", tint = Color(0xFF388E3C), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("JAN(OUT)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
                 }
             }
         }
@@ -639,22 +706,39 @@ private fun GroupedQuantitySection(
 
         HorizontalDivider(color = Amber300, thickness = 2.dp)
 
-        // === 得意先別出荷数内訳ラベル ===
-        Text(
-            text = "得意先別出荷数内訳",
-            fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Neutral500,
-            modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
-        )
+        var isExpanded by remember { mutableStateOf(false) }
+
+        // === 得意先別出荷数内訳ラベル（折りたたみトリガー） ===
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "得意先別出荷数内訳",
+                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Neutral500,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = if (isExpanded) "閉じる" else "開く",
+                tint = Neutral500
+            )
+        }
 
         // === 得意先別リスト（スクロール可能） ===
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            itemsIndexed(state.currentGroup?.customerEntries ?: emptyList()) { index, entry ->
-                CustomerEntryRow(
-                    entry = entry,
-                    onCaseQtyChange = { onCustomerCaseQtyChange(index, it) },
-                    onPieceQtyChange = { onCustomerPieceQtyChange(index, it) },
-                    isUpdating = state.isUpdating
-                )
+        AnimatedVisibility(visible = isExpanded) {
+            LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
+                itemsIndexed(state.currentGroup?.customerEntries ?: emptyList()) { index, entry ->
+                    CustomerEntryRow(
+                        entry = entry,
+                        onCaseQtyChange = { onCustomerCaseQtyChange(index, it) },
+                        onPieceQtyChange = { onCustomerPieceQtyChange(index, it) },
+                        isUpdating = state.isUpdating
+                    )
+                }
             }
         }
 
@@ -1164,6 +1248,8 @@ private fun PreviewOutboundPickingBody() {
                 onJanScanClick = {},
                 onRegisterClick = {},
                 onHistoryClick = {},
+                moveToPrevGroup = {},
+                moveToNextGroup = {},
                 modifier = Modifier.padding(padding)
             )
         }
@@ -1257,6 +1343,8 @@ private fun PreviewOutboundPickingBodyPortrait() {
                 onJanScanClick = {},
                 onRegisterClick = {},
                 onHistoryClick = {},
+                moveToPrevGroup = {},
+                moveToNextGroup = {},
                 modifier = Modifier.padding(padding)
             )
         }

@@ -488,7 +488,7 @@ private fun ReadyContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                 MenuCard(
-                    label = "入庫処理（00）",
+                    label = "入庫処理",
                     bottomBorderColor = WmsColor.InboundBorder,
                     circleBg = WmsColor.InboundCircleBg,
                     iconColor = WmsColor.InboundIcon,
@@ -498,7 +498,7 @@ private fun ReadyContent(
                     showIcon = false
                 )
                 MenuCard(
-                    label = "出庫処理(00)",
+                    label = "出庫処理",
                     bottomBorderColor = WmsColor.OutboundBorder,
                     circleBg = WmsColor.OutboundCircleBg,
                     iconColor = WmsColor.OutboundIcon,
@@ -518,7 +518,7 @@ private fun ReadyContent(
                     showIcon = false
                 )
                 MenuCard(
-                    label = "棚卸処理(00)",
+                    label = "棚卸処理",
                     bottomBorderColor = WmsColor.InventoryBorder,
                     circleBg = WmsColor.InventoryCircleBg,
                     iconColor = WmsColor.InventoryIcon,
@@ -734,7 +734,7 @@ private fun ReadyContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         MenuCard(
-                            label = "入庫処理（00）",
+                            label = "入庫処理",
                             bottomBorderColor = WmsColor.InboundBorder,
                             circleBg = WmsColor.InboundCircleBg,
                             iconColor = WmsColor.InboundIcon,
@@ -743,7 +743,7 @@ private fun ReadyContent(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                         MenuCard(
-                            label = "出庫処理(00)",
+                            label = "出庫処理",
                             bottomBorderColor = WmsColor.OutboundBorder,
                             circleBg = WmsColor.OutboundCircleBg,
                             iconColor = WmsColor.OutboundIcon,
@@ -770,7 +770,7 @@ private fun ReadyContent(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                         MenuCard(
-                            label = "棚卸処理(00)",
+                            label = "棚卸処理",
                             bottomBorderColor = WmsColor.InventoryBorder,
                             circleBg = WmsColor.InventoryCircleBg,
                             iconColor = WmsColor.InventoryIcon,

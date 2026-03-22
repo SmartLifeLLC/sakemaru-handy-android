@@ -396,8 +396,8 @@ class OutboundPickingViewModel @Inject constructor(
         _state.update { it.copy(showImageDialog = false) }
     }
 
-    fun showJanScannerDialog() {
-        _state.update { it.copy(showJanScannerDialog = true) }
+    fun showJanScannerDialog(isInCamera: Boolean = false) {
+        _state.update { it.copy(showJanScannerDialog = true, isJanScannerInCamera = isInCamera) }
     }
 
     fun dismissJanScannerDialog() {

@@ -284,17 +284,19 @@ fun HandyNavHost(
                     editItemId = editItemId,
                     onNavigateBack = {
                         restoreLandscape()
-                        pickingTasksViewModel.clearSelectedTask()
+                        // Don't clear selectedTask - P22 may still need it for edit navigation
                         navController.popBackStack()
                     },
                     onNavigateToCourseList = {
                         restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
-                        navController.popBackStack()
+                        navController.popBackStack(Routes.PickingList.route, inclusive = false)
                     },
                     onNavigateToHistory = {
-                        // Navigate to PickingHistory screen (2.5.3)
-                        navController.navigate(Routes.PickingHistory.createRoute(taskId))
+                        // Replace P21 with P22 in the stack (pop back to P20, then push P22)
+                        navController.navigate(Routes.PickingHistory.createRoute(taskId)) {
+                            popUpTo(Routes.PickingList.route) { inclusive = false }
+                        }
                     },
                     onNavigateToMain = {
                         restoreLandscape()
@@ -340,7 +342,10 @@ fun HandyNavHost(
             PickingHistoryScreen(
                 taskId = taskId,
                 onNavigateBack = {
-                    navController.popBackStack()
+                    // Always go back to P20 (course selection), clearing task context
+                    pickingTasksViewModel.clearSelectedTask()
+                    pickingTasksViewModel.refresh()
+                    navController.popBackStack(Routes.PickingList.route, inclusive = false)
                 },
                 onNavigateToMain = {
                     restoreLandscape()

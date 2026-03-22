@@ -372,20 +372,40 @@ private fun GroupedHistoryItemCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (item.totalCasePlanned > 0) {
-                    Text(
-                        text = "ケース: ${String.format("%.0f", item.totalCasePicked)} / ${String.format("%.0f", item.totalCasePlanned)}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextPrimary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "ケース: ${String.format("%.0f", item.totalCasePicked)} / ${String.format("%.0f", item.totalCasePlanned)}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        if (item.totalCasePicked < item.totalCasePlanned) {
+                            Text(
+                                text = " ［欠品数: ${String.format("%.0f", item.totalCasePlanned - item.totalCasePicked)}］",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TitleRed
+                            )
+                        }
+                    }
                 }
                 if (item.totalPiecePlanned > 0) {
-                    Text(
-                        text = "バラ: ${String.format("%.0f", item.totalPiecePicked)} / ${String.format("%.0f", item.totalPiecePlanned)}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextPrimary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "バラ: ${String.format("%.0f", item.totalPiecePicked)} / ${String.format("%.0f", item.totalPiecePlanned)}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        if (item.totalPiecePicked < item.totalPiecePlanned) {
+                            Text(
+                                text = " ［欠品数: ${String.format("%.0f", item.totalPiecePlanned - item.totalPiecePicked)}］",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TitleRed
+                            )
+                        }
+                    }
                 }
             }
         }
