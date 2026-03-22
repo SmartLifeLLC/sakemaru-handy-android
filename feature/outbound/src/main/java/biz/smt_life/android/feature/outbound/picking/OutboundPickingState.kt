@@ -83,7 +83,9 @@ data class OutboundPickingState(
      * Registered group count = total groups - remaining pending groups.
      */
     val registeredGroupCount: Int
-        get() = totalGroupCount - groupedItems.size
+        get() = originalTask?.items
+            ?.groupBy { it.itemId }
+            ?.count { (_, items) -> items.all { it.status != biz.smt_life.android.core.domain.model.ItemStatus.PENDING } } ?: 0
 
     val canMovePrev: Boolean
         get() = currentGroupIndex > 0

@@ -40,16 +40,14 @@ class OutboundPickingViewModel @Inject constructor(
      */
     fun initialize(task: PickingTask, editItemId: Int? = null) {
         val warehouseId = tokenManager.getDefaultWarehouseId()
-        val grouped = if (editItemId != null) {
-            groupEditableItems(task.items, editItemId)
-        } else {
-            groupPendingItems(task.items)
-        }
+        val grouped = groupItemsInternal(task.items)
 
         val startIndex = if (editItemId != null) {
             grouped.indexOfFirst { it.itemId == editItemId }.coerceAtLeast(0)
         } else {
-            0
+            grouped.indexOfFirst { group -> 
+                task.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
+            }.coerceAtLeast(0)
         }
 
         _state.update {
@@ -81,25 +79,8 @@ class OutboundPickingViewModel @Inject constructor(
 
     // ===== Grouping Logic =====
 
-    private fun groupPendingItems(items: List<PickingTaskItem>): List<GroupedPickingItem> {
-        val pendingItems = items.filter { it.status == ItemStatus.PENDING }
-        return groupItemsInternal(pendingItems, usePickedQty = false)
-    }
-
-    /**
-     * Group PENDING items + PICKING items for the specified editItemId.
-     * PICKING items use pickedQty as initial input value.
-     */
-    private fun groupEditableItems(items: List<PickingTaskItem>, editItemId: Int): List<GroupedPickingItem> {
-        val editableItems = items.filter {
-            it.status == ItemStatus.PENDING || (it.status == ItemStatus.PICKING && it.itemId == editItemId)
-        }
-        return groupItemsInternal(editableItems, usePickedQty = true)
-    }
-
     private fun groupItemsInternal(
-        items: List<PickingTaskItem>,
-        usePickedQty: Boolean
+        items: List<PickingTaskItem>
     ): List<GroupedPickingItem> {
         return items
             .groupBy { it.itemId }
@@ -113,7 +94,7 @@ class OutboundPickingViewModel @Inject constructor(
                         customerName = customerName,
                         customerCode = customerItems.first().customerCode ?: "",
                         caseEntry = caseItem?.let {
-                            val initialQty = if (usePickedQty && it.status == ItemStatus.PICKING) it.pickedQty else it.plannedQty
+                            val initialQty = if (it.status != ItemStatus.PENDING) it.pickedQty else it.plannedQty
                             CustomerEntryDetail(
                                 pickingItemResultId = it.id,
                                 plannedQty = it.plannedQty,
@@ -121,7 +102,7 @@ class OutboundPickingViewModel @Inject constructor(
                             )
                         },
                         pieceEntry = pieceItem?.let {
-                            val initialQty = if (usePickedQty && it.status == ItemStatus.PICKING) it.pickedQty else it.plannedQty
+                            val initialQty = if (it.status != ItemStatus.PENDING) it.pickedQty else it.plannedQty
                             CustomerEntryDetail(
                                 pickingItemResultId = it.id,
                                 plannedQty = it.plannedQty,
@@ -317,9 +298,9 @@ class OutboundPickingViewModel @Inject constructor(
 
     private fun moveToNextGroupOrComplete() {
         val refreshedTask = _state.value.originalTask ?: return
-        val grouped = groupPendingItems(refreshedTask.items)
+        val grouped = groupItemsInternal(refreshedTask.items)
 
-        if (grouped.isEmpty()) {
+        if (refreshedTask.isFullyProcessed) {
             _state.update {
                 it.copy(
                     groupedItems = emptyList(),
@@ -330,13 +311,17 @@ class OutboundPickingViewModel @Inject constructor(
                 )
             }
         } else {
-            val firstGroup = grouped.first()
+            val nextPendingIndex = grouped.indexOfFirst { group -> 
+                refreshedTask.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
+            }.coerceAtLeast(0)
+            
+            val targetGroup = grouped[nextPendingIndex]
             _state.update {
                 it.copy(
                     groupedItems = grouped,
-                    currentGroupIndex = 0,
-                    totalCaseInput = formatTotal(firstGroup, QuantityType.CASE),
-                    totalPieceInput = formatTotal(firstGroup, QuantityType.PIECE),
+                    currentGroupIndex = nextPendingIndex,
+                    totalCaseInput = formatTotal(targetGroup, QuantityType.CASE),
+                    totalPieceInput = formatTotal(targetGroup, QuantityType.PIECE),
                     isUpdating = false
                 )
             }
