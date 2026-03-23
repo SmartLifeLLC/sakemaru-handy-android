@@ -189,46 +189,46 @@ private fun OutboundPickingHeader(
             }
         }
 
-        // TIER 2
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(24.dp)
-                    .background(bgColor, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.CenterStart
+        // TIER 2 (Portrait Only)
+        if (isPortrait) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
-                        .background(progressColor, RoundedCornerShape(12.dp))
-                )
-
-                // Text overlay
-                val overlayText = if (isPortrait) "$currentPage/$totalPages" else "${(progress * 100).toInt()}%"
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                        .weight(1f)
+                        .height(24.dp)
+                        .background(bgColor, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    Text(
-                        text = overlayText,
-                        style = strokeStyle
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                            .background(progressColor, RoundedCornerShape(12.dp))
                     )
-                    Text(
-                        text = overlayText,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-            }
 
-            if (isPortrait) {
+                    // Text overlay
+                    val overlayText = "$currentPage/$totalPages"
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = overlayText,
+                            style = strokeStyle
+                        )
+                        Text(
+                            text = overlayText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
+                }
+
                 Row(
                     modifier = Modifier
                         .background(Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
@@ -540,7 +540,7 @@ private fun OutboundPickingBody(
                         shape = RoundedCornerShape(12.dp), color = Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
-                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
+                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = true)
                     }
                     Surface(
                         modifier = Modifier.weight(0.65f).fillMaxWidth(),
@@ -591,7 +591,7 @@ private fun OutboundPickingBody(
                         shape = RoundedCornerShape(12.dp), color = Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
-                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult)
+                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = false)
                     }
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -623,6 +623,7 @@ private fun ProductInfoSection(
     onImageClick: () -> Unit,
     onJanScanClick: (Boolean) -> Unit,
     janScanResult: JanScanResult?,
+    isPortrait: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -673,7 +674,7 @@ private fun ProductInfoSection(
             }
         }
 
-        // 容量・入数
+        // 容量・入数 & ロケーション
         val specLine = buildString {
             if (group.volume != null) append(group.volume)
             if (group.capacityCase != null) {
@@ -681,23 +682,49 @@ private fun ProductInfoSection(
                 append("入数:${group.capacityCase}")
             }
         }
-        if (specLine.isNotEmpty()) {
-            Text(text = specLine, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Neutral500)
-        }
 
-        // ロケーション（大きめ表示）
-        Box(
-            modifier = Modifier.fillMaxWidth()
-                .background(Amber50, RoundedCornerShape(6.dp))
-                .border(1.dp, Amber300, RoundedCornerShape(6.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = group.locationCode?.ifBlank { null } ?: "未設定",
-                fontSize = 32.sp, fontWeight = FontWeight.Bold,
-                color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black
-            )
+        if (isPortrait) {
+            if (specLine.isNotEmpty()) {
+                Text(text = specLine, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+            }
+
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .background(Amber50, RoundedCornerShape(6.dp))
+                    .border(1.dp, Amber300, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = group.locationCode?.ifBlank { null } ?: "未設定",
+                    fontSize = 32.sp, fontWeight = FontWeight.Bold,
+                    color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (specLine.isNotEmpty()) {
+                    Text(text = specLine, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+                }
+
+                Box(
+                    modifier = Modifier.weight(1f).padding(start = 12.dp)
+                        .background(Amber50, RoundedCornerShape(6.dp))
+                        .border(1.dp, Amber300, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        text = group.locationCode?.ifBlank { null } ?: "未設定",
+                        fontSize = 28.sp, fontWeight = FontWeight.Bold,
+                        color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black
+                    )
+                }
+            }
         }
 
         // 画像確認 | JAN(IN) | JAN(OUT) ボタン（横並び）
