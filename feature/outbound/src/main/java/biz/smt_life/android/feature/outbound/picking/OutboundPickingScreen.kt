@@ -156,17 +156,6 @@ private fun OutboundPickingHeader(
                     Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                 }
 
-                Row(
-                    modifier = Modifier
-                        .background(Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(18.dp))
-                    Text(timeText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
-                }
-
                 TextButton(onClick = toggleOrientation, contentPadding = PaddingValues(0.dp)) {
                     Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
                 }
@@ -200,36 +189,55 @@ private fun OutboundPickingHeader(
         }
 
         // TIER 2
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .background(bgColor, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.CenterStart
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
-                    .background(progressColor, RoundedCornerShape(12.dp))
-            )
-
-            // Text overlay
-            val overlayText = if (isPortrait) "$currentPage/$totalPages" else "${(progress * 100).toInt()}%"
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                    .weight(1f)
+                    .height(24.dp)
+                    .background(bgColor, RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.CenterStart
             ) {
-                Text(
-                    text = overlayText,
-                    style = strokeStyle
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                        .background(progressColor, RoundedCornerShape(12.dp))
                 )
-                Text(
-                    text = overlayText,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
+
+                // Text overlay
+                val overlayText = if (isPortrait) "$currentPage/$totalPages" else "${(progress * 100).toInt()}%"
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = overlayText,
+                        style = strokeStyle
+                    )
+                    Text(
+                        text = overlayText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                }
+            }
+
+            if (isPortrait) {
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(16.dp))
+                    Text(timeText, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
         }
 
