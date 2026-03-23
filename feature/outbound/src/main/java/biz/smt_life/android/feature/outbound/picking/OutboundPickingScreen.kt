@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
@@ -721,8 +722,8 @@ private fun ProductInfoSection(
             }
             Surface(
                 modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(8.dp), color = Color(0xFFE8F5E9),
-                border = BorderStroke(1.dp, Color(0xFF81C784)),
+                shape = RoundedCornerShape(8.dp), color = Color(0xFFE3F2FD),
+                border = BorderStroke(1.dp, Color(0xFF64B5F6)),
                 onClick = { onJanScanClick(true) }
             ) {
                 Row(
@@ -730,15 +731,15 @@ private fun ProductInfoSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Filled.CheckCircle, "JAN(IN)", tint = Color(0xFF388E3C), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.CameraAlt, "JAN(内)", tint = Color(0xFF1976D2), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("JAN(IN)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                    Text("JAN(内)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
                 }
             }
             Surface(
                 modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(8.dp), color = Color(0xFFE8F5E9),
-                border = BorderStroke(1.dp, Color(0xFF81C784)),
+                shape = RoundedCornerShape(8.dp), color = Color(0xFFF3E5F5),
+                border = BorderStroke(1.dp, Color(0xFFBA68C8)),
                 onClick = { onJanScanClick(false) }
             ) {
                 Row(
@@ -746,9 +747,9 @@ private fun ProductInfoSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Filled.CheckCircle, "JAN(OUT)", tint = Color(0xFF388E3C), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.CameraAlt, "JAN(外)", tint = Color(0xFF7B1FA2), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("JAN(OUT)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF388E3C))
+                    Text("JAN(外)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7B1FA2))
                 }
             }
         }
