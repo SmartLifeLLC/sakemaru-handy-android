@@ -49,6 +49,7 @@ data class PickingHistoryState(
                 val totalPiecePicked = items
                     .filter { it.plannedQtyType == biz.smt_life.android.core.domain.model.QuantityType.PIECE }
                     .sumOf { it.pickedQty }
+                val allItemIds = task?.items?.map { it.itemId }?.distinct() ?: emptyList()
                 GroupedHistoryItem(
                     itemId = itemId,
                     itemName = representative.itemName,
@@ -58,10 +59,11 @@ data class PickingHistoryState(
                     totalCasePicked = totalCasePicked,
                     totalPiecePlanned = totalPiecePlanned,
                     totalPiecePicked = totalPiecePicked,
-                    customerCount = items.map { it.customerName }.distinct().size
+                    customerCount = items.map { it.customerName }.distinct().size,
+                    workNumber = (allItemIds.indexOf(itemId).takeIf { it >= 0 } ?: 0) + 1
                 )
             }
-            .sortedBy { it.itemName }
+            .sortedBy { it.workNumber }
 
     /**
      * Editable mode: at least one PICKING item exists.
@@ -110,5 +112,6 @@ data class GroupedHistoryItem(
     val totalCasePicked: Double,
     val totalPiecePlanned: Double,
     val totalPiecePicked: Double,
-    val customerCount: Int
+    val customerCount: Int,
+    val workNumber: Int = 0
 )

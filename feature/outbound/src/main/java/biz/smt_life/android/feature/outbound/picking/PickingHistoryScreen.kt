@@ -158,48 +158,77 @@ fun PickingHistoryScreen(
                 TopAppBar(
                     modifier = Modifier.height(60.dp),
                     title = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                onClick = onNavigateBack,
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color.Transparent
+                        val headerText = "${state.registeredGroupCount}/${state.totalGroupCount} 完了"
+                        if (isPortrait) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                Surface(
+                                    onClick = onNavigateBack,
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.Transparent
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "戻る",
-                                        tint = TitleRed,
-                                        modifier = Modifier.size(30.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "戻る",
+                                            tint = TitleRed,
+                                            modifier = Modifier.size(30.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                    }
+                                }
+                                Spacer(Modifier.width(24.dp))
+                                Surface(
+                                    onClick = { toggleOrientation() },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.Transparent
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Refresh,
+                                            contentDescription = "画面回転",
+                                            tint = AccentOrange,
+                                            modifier = Modifier.size(30.dp)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                    }
                                 }
                             }
-                            Spacer(Modifier.width(24.dp))
-                            Surface(
-                                onClick = { toggleOrientation() },
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color.Transparent
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "画面回転",
-                                        tint = AccentOrange,
-                                        modifier = Modifier.size(30.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        onClick = onNavigateBack,
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color.Transparent
+                                    ) {
+                                        Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed, modifier = Modifier.padding(horizontal = 8.dp))
+                                    }
+                                    Text(" | ", fontSize = 20.sp, color = Color.Gray)
+                                    Text(headerText, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                                    Text(" | ", fontSize = 20.sp, color = Color.Gray)
+                                    Surface(
+                                        onClick = { toggleOrientation() },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color.Transparent
+                                    ) {
+                                        Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange, modifier = Modifier.padding(horizontal = 8.dp))
+                                    }
                                 }
                             }
                         }
@@ -245,6 +274,7 @@ fun PickingHistoryScreen(
             else -> {
                 HistoryListContent(
                     state = state,
+                    isPortrait = isPortrait,
                     onItemClick = if (state.isReadOnlyMode) { _ -> } else onItemClick,
                     onNavigateBack = onNavigateBack,
                     modifier = Modifier.padding(padding)
@@ -257,6 +287,7 @@ fun PickingHistoryScreen(
 @Composable
 private fun HistoryListContent(
     state: PickingHistoryState,
+    isPortrait: Boolean,
     onItemClick: (PickingTaskItem) -> Unit,
     onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -264,34 +295,39 @@ private fun HistoryListContent(
     val groupedItems = state.groupedHistoryItems
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Progress count - fixed at top
-        Surface(
-            color = AccentOrange,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
+        if (isPortrait) {
+            // Progress count at top for Portrait mode
+            Surface(
+                color = AccentOrange,
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp)
-            )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "${state.registeredGroupCount} / ${state.totalGroupCount} 件完了",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp)
+                )
+            }
         }
 
-        // Scrollable list
-        LazyColumn(
+        // Scrollable Grid
+        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(if (isPortrait) 1 else 2),
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(groupedItems, key = { it.itemId }) { groupedItem ->
+            items(groupedItems.size, key = { groupedItems[it].itemId }) { index ->
+                val groupedItem = groupedItems[index]
                 GroupedHistoryItemCard(
                     item = groupedItem,
                     onClick = {
@@ -300,7 +336,7 @@ private fun HistoryListContent(
                     }
                 )
             }
-            item {
+            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onNavigateBack,
@@ -341,50 +377,55 @@ private fun GroupedHistoryItemCard(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Row 1: Location code
-            Text(
-                text = item.locationCode ?: "-",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
+            // Row 1: Location code & Work number
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = item.locationCode ?: "-",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = "作業番号 ${item.workNumber}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextSecond
+                )
+            }
 
             // Row 2: Item name
             Text(
                 text = item.itemName,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TextPrimary,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
-
-            // Row 3: JAN code
-            if (!item.janCode.isNullOrBlank()) {
-                Text(
-                    text = item.janCode,
-                    fontSize = 13.sp,
-                    color = TextSecond
-                )
-            }
 
             // Row 4: Quantities
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (item.totalCasePlanned > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "ケース: ${String.format("%.0f", item.totalCasePicked)} / ${String.format("%.0f", item.totalCasePlanned)}",
-                            fontSize = 14.sp,
+                            text = "ケース: ${String.format("%.0f", item.totalCasePicked)}/${String.format("%.0f", item.totalCasePlanned)}",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
                         if (item.totalCasePicked < item.totalCasePlanned) {
                             Text(
-                                text = " ［欠品数: ${String.format("%.0f", item.totalCasePlanned - item.totalCasePicked)}］",
-                                fontSize = 14.sp,
+                                text = " (欠品数: ${String.format("%.0f", item.totalCasePlanned - item.totalCasePicked)})",
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TitleRed
+                                color = Color.Red
                             )
                         }
                     }
@@ -392,17 +433,17 @@ private fun GroupedHistoryItemCard(
                 if (item.totalPiecePlanned > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "バラ: ${String.format("%.0f", item.totalPiecePicked)} / ${String.format("%.0f", item.totalPiecePlanned)}",
-                            fontSize = 14.sp,
+                            text = "バラ: ${String.format("%.0f", item.totalPiecePicked)}/${String.format("%.0f", item.totalPiecePlanned)}",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = TextPrimary
                         )
                         if (item.totalPiecePicked < item.totalPiecePlanned) {
                             Text(
-                                text = " ［欠品数: ${String.format("%.0f", item.totalPiecePlanned - item.totalPiecePicked)}］",
-                                fontSize = 14.sp,
+                                text = " (欠品数: ${String.format("%.0f", item.totalPiecePlanned - item.totalPiecePicked)})",
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TitleRed
+                                color = Color.Red
                             )
                         }
                     }
@@ -841,6 +882,7 @@ private fun PreviewFullPageEditableMode() {
         ) { padding ->
             HistoryListContent(
                 state = mockState,
+                isPortrait = false,
                 onItemClick = {},
                 modifier = Modifier.padding(padding)
             )
@@ -1161,6 +1203,7 @@ private fun PreviewFullPageWithPickingItems() {
         ) { padding ->
             HistoryListContent(
                 state = mockState,
+                isPortrait = false,
                 onItemClick = {},
                 modifier = Modifier.padding(padding)
             )

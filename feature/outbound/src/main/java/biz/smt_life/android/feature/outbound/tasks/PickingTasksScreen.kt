@@ -192,7 +192,7 @@ fun PickingTasksScreen(
                                         modifier = Modifier.size(30.dp)
                                     )
                                     Spacer(Modifier.width(4.dp))
-                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = HeaderRed)
+                                    Text("メニュー", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = HeaderRed)
                                 }
                             }
                             Spacer(Modifier.width(24.dp))

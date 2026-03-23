@@ -154,7 +154,7 @@ private fun OutboundPickingHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onNavigateBack, contentPadding = PaddingValues(0.dp)) {
-                    Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                    Text("配送コース", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                 }
 
                 TextButton(onClick = toggleOrientation, contentPadding = PaddingValues(0.dp)) {
