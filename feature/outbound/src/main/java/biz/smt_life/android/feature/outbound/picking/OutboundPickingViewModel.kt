@@ -102,16 +102,24 @@ class OutboundPickingViewModel @Inject constructor(
     }
 
     private fun calculateInitialElapsed(startedAt: String?): Int {
-        if (startedAt == null) return 0
-        return try {
-            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
-            sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo") // Use JST as per system default
-            val startTime = sdf.parse(startedAt)?.time ?: return 0
-            val currentTime = System.currentTimeMillis()
-            ((currentTime - startTime) / 1000).toInt().coerceAtLeast(0)
-        } catch (e: Exception) {
-            0
+        if (startedAt.isNullOrBlank()) return 0
+        val formats = listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss")
+        for (pattern in formats) {
+            try {
+                val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+                if (pattern.contains("Z")) {
+                    sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                } else {
+                    sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo")
+                }
+                val startTime = sdf.parse(startedAt)?.time ?: continue
+                val currentTime = System.currentTimeMillis()
+                return ((currentTime - startTime) / 1000).toInt().coerceAtLeast(0)
+            } catch (e: Exception) {
+                // Try next
+            }
         }
+        return 0
     }
 
     override fun onCleared() {

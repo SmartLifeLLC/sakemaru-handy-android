@@ -13,7 +13,8 @@ data class PickingTaskResponse(
     val course: CourseInfo,
     @SerialName("picking_area") val pickingArea: PickingAreaInfo,
     val wave: WaveInfo,
-    @SerialName("picking_list") val pickingList: List<PickingItem>
+    @SerialName("picking_list") val pickingList: List<PickingItem>,
+    @SerialName("started_at") val startedAt: String? = null
 )
 
 @Serializable

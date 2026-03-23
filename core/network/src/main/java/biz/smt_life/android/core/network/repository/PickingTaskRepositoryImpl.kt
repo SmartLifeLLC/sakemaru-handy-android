@@ -333,7 +333,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
             pickingAreaName = pickingArea.name,
             pickingAreaCode = pickingArea.code,
             items = items,
-            startedAt = wave.startedAt
+            startedAt = startedAt ?: wave.startedAt
             // totalItems, registeredCount, etc. are now computed properties
         )
     }
