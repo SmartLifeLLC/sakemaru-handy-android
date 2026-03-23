@@ -143,20 +143,20 @@ class OutboundPickingViewModel @Inject constructor(
 
     fun onTotalCaseInputChange(value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
-        _state.update { it.copy(totalCaseInput = value) }
-
-        val totalInput = value.toDoubleOrNull() ?: return
-        val group = _state.value.currentGroup ?: return
+        val totalInput = value.toDoubleOrNull() ?: 0.0
         val maxTotal = _state.value.totalCasePlanned
-        val clamped = totalInput.coerceIn(0.0, maxTotal)
+        if (totalInput > maxTotal) return
 
-        var remaining = clamped
+        _state.update { it.copy(totalCaseInput = value) }
+        val group = _state.value.currentGroup ?: return
+
+        var remaining = totalInput
         val updatedEntries = group.customerEntries.map { entry ->
             if (entry.caseEntry != null) {
                 val allocated = minOf(remaining, entry.caseEntry.plannedQty)
                 remaining -= allocated
                 entry.copy(caseEntry = entry.caseEntry.copy(
-                    pickedQtyInput = String.format("%.0f", allocated)
+                    pickedQtyInput = if (value.isEmpty()) "" else String.format("%.0f", allocated)
                 ))
             } else entry
         }
@@ -165,20 +165,20 @@ class OutboundPickingViewModel @Inject constructor(
 
     fun onTotalPieceInputChange(value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
-        _state.update { it.copy(totalPieceInput = value) }
-
-        val totalInput = value.toDoubleOrNull() ?: return
-        val group = _state.value.currentGroup ?: return
+        val totalInput = value.toDoubleOrNull() ?: 0.0
         val maxTotal = _state.value.totalPiecePlanned
-        val clamped = totalInput.coerceIn(0.0, maxTotal)
+        if (totalInput > maxTotal) return
 
-        var remaining = clamped
+        _state.update { it.copy(totalPieceInput = value) }
+        val group = _state.value.currentGroup ?: return
+
+        var remaining = totalInput
         val updatedEntries = group.customerEntries.map { entry ->
             if (entry.pieceEntry != null) {
                 val allocated = minOf(remaining, entry.pieceEntry.plannedQty)
                 remaining -= allocated
                 entry.copy(pieceEntry = entry.pieceEntry.copy(
-                    pickedQtyInput = String.format("%.0f", allocated)
+                    pickedQtyInput = if (value.isEmpty()) "" else String.format("%.0f", allocated)
                 ))
             } else entry
         }
@@ -193,6 +193,9 @@ class OutboundPickingViewModel @Inject constructor(
         val entry = group.customerEntries.getOrNull(customerIndex) ?: return
         val caseEntry = entry.caseEntry ?: return
 
+        val inputQty = value.toDoubleOrNull() ?: 0.0
+        if (inputQty > caseEntry.plannedQty) return
+
         val updatedEntries = group.customerEntries.toMutableList()
         updatedEntries[customerIndex] = entry.copy(
             caseEntry = caseEntry.copy(pickedQtyInput = value)
@@ -206,6 +209,9 @@ class OutboundPickingViewModel @Inject constructor(
         val group = _state.value.currentGroup ?: return
         val entry = group.customerEntries.getOrNull(customerIndex) ?: return
         val pieceEntry = entry.pieceEntry ?: return
+
+        val inputQty = value.toDoubleOrNull() ?: 0.0
+        if (inputQty > pieceEntry.plannedQty) return
 
         val updatedEntries = group.customerEntries.toMutableList()
         updatedEntries[customerIndex] = entry.copy(
