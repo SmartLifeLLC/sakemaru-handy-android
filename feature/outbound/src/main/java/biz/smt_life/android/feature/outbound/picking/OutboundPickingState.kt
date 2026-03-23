@@ -114,6 +114,22 @@ data class OutboundPickingState(
             return false
         }
 
+    /**
+     * True if all items in the current group have been registered (status is not PENDING).
+     */
+    val isCurrentGroupRegistered: Boolean
+        get() {
+            val group = currentGroup ?: return false
+            val items = originalTask?.items ?: return false
+            val resultIds = group.customerEntries.flatMap { entry ->
+                listOfNotNull(entry.caseEntry?.pickingItemResultId, entry.pieceEntry?.pickingItemResultId)
+            }
+            if (resultIds.isEmpty()) return false
+            return resultIds.all { id ->
+                items.find { it.id == id }?.status != biz.smt_life.android.core.domain.model.ItemStatus.PENDING
+            }
+        }
+
     val hasImages: Boolean
         get() = currentGroup?.images?.isNotEmpty() == true
 

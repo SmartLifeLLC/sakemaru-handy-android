@@ -540,14 +540,16 @@ private fun OutboundPickingBody(
                 ) {
                     Surface(
                         modifier = Modifier.weight(0.35f).fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shape = RoundedCornerShape(12.dp), 
+                        color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
                         ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = true)
                     }
                     Surface(
                         modifier = Modifier.weight(0.65f).fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shape = RoundedCornerShape(12.dp), 
+                        color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
                         GroupedQuantitySection(
@@ -591,14 +593,16 @@ private fun OutboundPickingBody(
                 ) {
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shape = RoundedCornerShape(12.dp), 
+                        color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
                         ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = false)
                     }
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        shape = RoundedCornerShape(12.dp), color = Color.White,
+                        shape = RoundedCornerShape(12.dp), 
+                        color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
                         GroupedQuantitySection(
@@ -811,8 +815,8 @@ private fun GroupedQuantitySection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Amber50, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
-                .border(1.dp, Amber300, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .background(if (state.isCurrentGroupRegistered) Color(0xFFE0E0E0) else Amber50, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                .border(1.dp, if (state.isCurrentGroupRegistered) Color(0xFFBDBDBD) else Amber300, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                 .padding(horizontal = 6.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -828,8 +832,8 @@ private fun GroupedQuantitySection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(width = 1.dp, color = Amber300)
-                .background(Color(0xFFFFF8E1))
+                .border(width = 1.dp, color = if (state.isCurrentGroupRegistered) Color(0xFFBDBDBD) else Amber300)
+                .background(if (state.isCurrentGroupRegistered) Color(0xFFF5F5F5) else Color(0xFFFFF8E1))
                 .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -926,12 +930,15 @@ private fun GroupedQuantitySection(
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(0.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Amber600, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (state.isCurrentGroupRegistered) Color(0xFF9E9E9E) else Amber600, 
+                    contentColor = Color.White
+                )
             ) {
                 if (state.isUpdating) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
                 } else {
-                    Text("登録", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(if (state.isCurrentGroupRegistered) "登録済み" else "登録", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Button(
