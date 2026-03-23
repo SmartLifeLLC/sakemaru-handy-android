@@ -58,6 +58,7 @@ data class OutboundPickingState(
     val currentGroupIndex: Int = 0,
     val totalCaseInput: String = "",
     val totalPieceInput: String = "",
+    val quantityErrorMessage: String? = null,
     val isUpdating: Boolean = false,
     val showCompletionDialog: Boolean = false,
     val isCompleting: Boolean = false,
@@ -95,6 +96,23 @@ data class OutboundPickingState(
 
     val canRegister: Boolean
         get() = !isUpdating && currentGroup != null
+
+    val hasQuantityError: Boolean
+        get() {
+            val tc = totalCaseInput.toDoubleOrNull() ?: 0.0
+            if (tc > totalCasePlanned) return true
+            val tp = totalPieceInput.toDoubleOrNull() ?: 0.0
+            if (tp > totalPiecePlanned) return true
+            
+            val group = currentGroup ?: return false
+            for (entry in group.customerEntries) {
+                val cQty = entry.caseEntry?.pickedQtyInput?.toDoubleOrNull() ?: 0.0
+                if (cQty > (entry.caseEntry?.plannedQty ?: 0.0)) return true
+                val pQty = entry.pieceEntry?.pickedQtyInput?.toDoubleOrNull() ?: 0.0
+                if (pQty > (entry.pieceEntry?.plannedQty ?: 0.0)) return true
+            }
+            return false
+        }
 
     val hasImages: Boolean
         get() = currentGroup?.images?.isNotEmpty() == true

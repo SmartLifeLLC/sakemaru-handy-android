@@ -185,7 +185,7 @@ private fun OutboundPickingHeader(
                     Text(timeText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 }
 
-                Text("完了: ${state.registeredGroupCount}/$totalPages", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                Text("${state.registeredGroupCount}/$totalPages 完了", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.DarkGray)
             }
         }
 
@@ -830,25 +830,29 @@ private fun GroupedQuantitySection(
             // ケース合計入力
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    val isCaseError = (state.totalCaseInput.toDoubleOrNull() ?: 0.0) > state.totalCasePlanned
                     CompactNumberInput(
                         value = state.totalCaseInput,
                         onValueChange = onTotalCaseInputChange,
                         enabled = !state.isUpdating,
+                        isError = isCaseError,
                         modifier = Modifier.width(56.dp).height(38.dp)
                     )
-                    Text("/${String.format("%.0f", state.totalCasePlanned)}", fontSize = 18.sp, color = Neutral500)
+                    Text("/${String.format("%.0f", state.totalCasePlanned)}", fontSize = 18.sp, color = if (isCaseError) Color.Red else Neutral500)
                 }
             }
             // バラ合計入力
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    val isPieceError = (state.totalPieceInput.toDoubleOrNull() ?: 0.0) > state.totalPiecePlanned
                     CompactNumberInput(
                         value = state.totalPieceInput,
                         onValueChange = onTotalPieceInputChange,
                         enabled = !state.isUpdating,
+                        isError = isPieceError,
                         modifier = Modifier.width(56.dp).height(38.dp)
                     )
-                    Text("/${String.format("%.0f", state.totalPiecePlanned)}", fontSize = 18.sp, color = Neutral500)
+                    Text("/${String.format("%.0f", state.totalPiecePlanned)}", fontSize = 18.sp, color = if (isPieceError) Color.Red else Neutral500)
                 }
             }
         }
@@ -892,6 +896,16 @@ private fun GroupedQuantitySection(
         }
 
         Spacer(modifier = Modifier.height(6.dp))
+
+        if (state.quantityErrorMessage != null) {
+            Text(
+                text = state.quantityErrorMessage,
+                color = TitleRed,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp)
+            )
+        }
 
         // === 登録・履歴ボタン ===
         Row(
@@ -951,14 +965,16 @@ private fun CustomerEntryRow(
         // ケース列
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (entry.caseEntry != null) {
+                val isCaseError = (entry.caseEntry.pickedQtyInput.toDoubleOrNull() ?: 0.0) > entry.caseEntry.plannedQty
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                     CompactNumberInput(
                         value = entry.caseEntry.pickedQtyInput,
                         onValueChange = onCaseQtyChange,
                         enabled = !isUpdating,
+                        isError = isCaseError,
                         modifier = Modifier.width(56.dp).height(36.dp)
                     )
-                    Text("/${String.format("%.0f", entry.caseEntry.plannedQty)}", fontSize = 18.sp, color = Neutral500)
+                    Text("/${String.format("%.0f", entry.caseEntry.plannedQty)}", fontSize = 18.sp, color = if (isCaseError) Color.Red else Neutral500)
                 }
             } else {
                 Text("—", fontSize = 13.sp, color = Neutral300)
@@ -967,14 +983,16 @@ private fun CustomerEntryRow(
         // バラ列
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             if (entry.pieceEntry != null) {
+                val isPieceError = (entry.pieceEntry.pickedQtyInput.toDoubleOrNull() ?: 0.0) > entry.pieceEntry.plannedQty
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                     CompactNumberInput(
                         value = entry.pieceEntry.pickedQtyInput,
                         onValueChange = onPieceQtyChange,
                         enabled = !isUpdating,
+                        isError = isPieceError,
                         modifier = Modifier.width(56.dp).height(36.dp)
                     )
-                    Text("/${String.format("%.0f", entry.pieceEntry.plannedQty)}", fontSize = 18.sp, color = Neutral500)
+                    Text("/${String.format("%.0f", entry.pieceEntry.plannedQty)}", fontSize = 18.sp, color = if (isPieceError) Color.Red else Neutral500)
                 }
             } else {
                 Text("—", fontSize = 13.sp, color = Neutral300)
@@ -990,6 +1008,7 @@ private fun CompactNumberInput(
     value: String,
     onValueChange: (String) -> Unit,
     enabled: Boolean,
+    isError: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var isFocused by remember { mutableStateOf(false) }
@@ -1029,10 +1048,10 @@ private fun CompactNumberInput(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White, RoundedCornerShape(4.dp))
+                    .background(if (isError) Color(0xFFFFEBEE) else Color.White, RoundedCornerShape(4.dp))
                     .border(
-                        width = if (isFocused) 2.dp else 1.dp,
-                        color = if (isFocused) Amber600 else Neutral300,
+                        width = if (isFocused || isError) 2.dp else 1.dp,
+                        color = if (isError) Color.Red else if (isFocused) Amber600 else Neutral300,
                         shape = RoundedCornerShape(4.dp)
                     )
                     .padding(horizontal = 4.dp, vertical = 2.dp),

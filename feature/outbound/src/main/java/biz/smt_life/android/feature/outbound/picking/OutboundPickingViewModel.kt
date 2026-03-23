@@ -144,10 +144,8 @@ class OutboundPickingViewModel @Inject constructor(
     fun onTotalCaseInputChange(value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
         val totalInput = value.toDoubleOrNull() ?: 0.0
-        val maxTotal = _state.value.totalCasePlanned
-        if (totalInput > maxTotal) return
 
-        _state.update { it.copy(totalCaseInput = value) }
+        _state.update { it.copy(totalCaseInput = value, quantityErrorMessage = null) }
         val group = _state.value.currentGroup ?: return
 
         var remaining = totalInput
@@ -166,10 +164,8 @@ class OutboundPickingViewModel @Inject constructor(
     fun onTotalPieceInputChange(value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
         val totalInput = value.toDoubleOrNull() ?: 0.0
-        val maxTotal = _state.value.totalPiecePlanned
-        if (totalInput > maxTotal) return
 
-        _state.update { it.copy(totalPieceInput = value) }
+        _state.update { it.copy(totalPieceInput = value, quantityErrorMessage = null) }
         val group = _state.value.currentGroup ?: return
 
         var remaining = totalInput
@@ -189,12 +185,12 @@ class OutboundPickingViewModel @Inject constructor(
 
     fun onCustomerCaseQtyChange(customerIndex: Int, value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        _state.update { it.copy(quantityErrorMessage = null) }
         val group = _state.value.currentGroup ?: return
         val entry = group.customerEntries.getOrNull(customerIndex) ?: return
         val caseEntry = entry.caseEntry ?: return
 
-        val inputQty = value.toDoubleOrNull() ?: 0.0
-        if (inputQty > caseEntry.plannedQty) return
+        // Removed hard block `if (inputQty > caseEntry.plannedQty) return` to let error show
 
         val updatedEntries = group.customerEntries.toMutableList()
         updatedEntries[customerIndex] = entry.copy(
@@ -206,12 +202,12 @@ class OutboundPickingViewModel @Inject constructor(
 
     fun onCustomerPieceQtyChange(customerIndex: Int, value: String) {
         if (value.isNotEmpty() && !value.matches(Regex("^\\d*\\.?\\d*$"))) return
+        _state.update { it.copy(quantityErrorMessage = null) }
         val group = _state.value.currentGroup ?: return
         val entry = group.customerEntries.getOrNull(customerIndex) ?: return
         val pieceEntry = entry.pieceEntry ?: return
 
-        val inputQty = value.toDoubleOrNull() ?: 0.0
-        if (inputQty > pieceEntry.plannedQty) return
+        // Removed hard block
 
         val updatedEntries = group.customerEntries.toMutableList()
         updatedEntries[customerIndex] = entry.copy(
@@ -248,6 +244,10 @@ class OutboundPickingViewModel @Inject constructor(
     // ===== Registration =====
 
     fun registerGroupedItem() {
+        if (_state.value.hasQuantityError) {
+            _state.update { it.copy(quantityErrorMessage = "入力数字エラー") }
+            return
+        }
         val group = _state.value.currentGroup ?: return
         val originalTask = _state.value.originalTask ?: return
 
