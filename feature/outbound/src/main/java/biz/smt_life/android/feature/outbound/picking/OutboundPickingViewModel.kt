@@ -133,10 +133,10 @@ class OutboundPickingViewModel @Inject constructor(
 
     private fun formatTotal(group: GroupedPickingItem, type: QuantityType): String {
         val total = when (type) {
-            QuantityType.CASE -> group.customerEntries.mapNotNull { it.caseEntry }.sumOf { it.plannedQty }
-            QuantityType.PIECE -> group.customerEntries.mapNotNull { it.pieceEntry }.sumOf { it.plannedQty }
+            QuantityType.CASE -> group.customerEntries.mapNotNull { it.caseEntry }.sumOf { it.pickedQtyInput.toDoubleOrNull() ?: 0.0 }
+            QuantityType.PIECE -> group.customerEntries.mapNotNull { it.pieceEntry }.sumOf { it.pickedQtyInput.toDoubleOrNull() ?: 0.0 }
         }
-        return if (total > 0) String.format("%.0f", total) else ""
+        return String.format("%.0f", total)
     }
 
     // ===== Total Input Handlers (auto-distribute) =====
