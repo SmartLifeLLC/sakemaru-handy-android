@@ -244,7 +244,10 @@ private fun OutboundPickingHeader(
 
         // TIER 3
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF37474F), RoundedCornerShape(6.dp))
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -252,20 +255,20 @@ private fun OutboundPickingHeader(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "前へ",
-                    tint = if (currentPage > 1) Color.Black else Color.LightGray
+                    tint = if (currentPage > 1) Color.White else Color.Gray
                 )
             }
             Text(
                 "作業番号 $currentPage/$totalPages",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.DarkGray
+                color = Color.White
             )
             IconButton(onClick = moveToNextGroup, enabled = currentPage < totalPages, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "次へ",
-                    tint = if (currentPage < totalPages) Color.Black else Color.LightGray
+                    tint = if (currentPage < totalPages) Color.White else Color.Gray
                 )
             }
         }
@@ -704,11 +707,15 @@ private fun ProductInfoSection(
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (specLine.isNotEmpty()) {
-                    Text(text = specLine, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    if (specLine.isNotEmpty()) {
+                        Text(text = specLine, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Neutral500)
+                    }
                 }
 
                 Box(
@@ -716,12 +723,13 @@ private fun ProductInfoSection(
                         .background(Amber50, RoundedCornerShape(6.dp))
                         .border(1.dp, Amber300, RoundedCornerShape(6.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.CenterStart
+                    contentAlignment = Alignment.CenterEnd
                 ) {
                     Text(
                         text = group.locationCode?.ifBlank { null } ?: "未設定",
                         fontSize = 28.sp, fontWeight = FontWeight.Bold,
-                        color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black
+                        color = if (group.locationCode.isNullOrBlank()) Neutral400 else Color.Black,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End
                     )
                 }
             }
