@@ -52,9 +52,9 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isAllRegistered }
-                        val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isAllRegistered }
-                        val completedTasks = tasks.filter { it.isAllRegistered }
+                        val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isFullyProcessed }
+                        val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isFullyProcessed }
+                        val completedTasks = tasks.filter { it.isFullyProcessed }
                             .sortedBy { it.courseName }
                         val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                             TaskListState.Empty
@@ -152,9 +152,9 @@ class PickingTasksViewModel @Inject constructor(
             val shippingDate = tokenManager.getShippingDate()
             repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
                 .onSuccess { tasks ->
-                    val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isAllRegistered }
-                    val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isAllRegistered }
-                    val completedTasks = tasks.filter { it.isAllRegistered }
+                    val pendingTasks = tasks.filter { it.registeredCount == 0 && !it.isFullyProcessed }
+                    val activeTasks = tasks.filter { it.registeredCount > 0 && !it.isFullyProcessed }
+                    val completedTasks = tasks.filter { it.isFullyProcessed }
                         .sortedBy { it.courseName }
                     val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                         TaskListState.Empty
@@ -194,8 +194,8 @@ class PickingTasksViewModel @Inject constructor(
             // Store the selected task for the next screen
             _state.update { it.copy(selectedTask = task) }
 
-            // Completed tasks: skip startTask API call, navigate directly to history
-            if (task.isAllRegistered) {
+            // Task is fully processed (all COMPLETED/SHORTAGE): navigates to History (read-only)
+            if (task.isFullyProcessed) {
                 onNavigateToHistory(task)
                 return@launch
             }
@@ -203,20 +203,13 @@ class PickingTasksViewModel @Inject constructor(
             // Start the task if not already started
             repository.startTask(task.taskId)
                 .onSuccess {
-                    // Determine navigation based on task status
-                    when {
-                        task.hasUnregisteredItems -> {
-                            // PENDING items exist → navigate to Data Input
-                            onNavigateToDataInput(task)
-                        }
-                        task.hasPickingItems -> {
-                            // Only PICKING items exist → navigate to History (editable)
-                            onNavigateToHistory(task)
-                        }
-                        else -> {
-                            // Fallback: navigate to Data Input
-                            onNavigateToDataInput(task)
-                        }
+                    // Navigate based on processing status
+                    if (task.isFullyProcessed) {
+                        onNavigateToHistory(task)
+                    } else {
+                        // If there are PENDING or PICKING items, go to Data Input
+                        // Data Input screen will show completion dialog if only PICKING items remain
+                        onNavigateToDataInput(task)
                     }
                 }
                 .onFailure { error ->
