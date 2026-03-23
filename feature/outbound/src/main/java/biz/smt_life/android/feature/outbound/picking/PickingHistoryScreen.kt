@@ -208,10 +208,9 @@ fun PickingHistoryScreen(
                         } else {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                                     Surface(
                                         onClick = onNavigateBack,
                                         shape = RoundedCornerShape(8.dp),
@@ -219,9 +218,11 @@ fun PickingHistoryScreen(
                                     ) {
                                         Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed, modifier = Modifier.padding(horizontal = 8.dp))
                                     }
-                                    Text(" | ", fontSize = 20.sp, color = Color.Gray)
+                                }
+                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                     Text(headerText, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
-                                    Text(" | ", fontSize = 20.sp, color = Color.Gray)
+                                }
+                                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
                                     Surface(
                                         onClick = { toggleOrientation() },
                                         shape = RoundedCornerShape(8.dp),
@@ -416,14 +417,14 @@ private fun GroupedHistoryItemCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "ケース: ${String.format("%.0f", item.totalCasePicked)}/${String.format("%.0f", item.totalCasePlanned)}",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         if (item.totalCasePicked < item.totalCasePlanned) {
                             Text(
                                 text = " (欠品数: ${String.format("%.0f", item.totalCasePlanned - item.totalCasePicked)})",
-                                fontSize = 13.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Red
                             )
@@ -434,14 +435,14 @@ private fun GroupedHistoryItemCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "バラ: ${String.format("%.0f", item.totalPiecePicked)}/${String.format("%.0f", item.totalPiecePlanned)}",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         if (item.totalPiecePicked < item.totalPiecePlanned) {
                             Text(
                                 text = " (欠品数: ${String.format("%.0f", item.totalPiecePlanned - item.totalPiecePicked)})",
-                                fontSize = 13.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Red
                             )
