@@ -31,7 +31,8 @@ data class PickingAreaInfo(
 @Serializable
 data class WaveInfo(
     @SerialName("wms_picking_task_id") val wmsPickingTaskId: Int,
-    @SerialName("wms_wave_id") val wmsWaveId: Int
+    @SerialName("wms_wave_id") val wmsWaveId: Int,
+    @SerialName("started_at") val startedAt: String? = null
 )
 
 @Serializable

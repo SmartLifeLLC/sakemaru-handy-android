@@ -30,6 +30,9 @@ class OutboundPickingViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(OutboundPickingState())
     val state: StateFlow<OutboundPickingState> = _state.asStateFlow()
+    
+    // Timer job to persist across configuration changes
+    private var timerJob: kotlinx.coroutines.Job? = null
 
     /**
      * Initialize the screen with a picking task.
@@ -52,6 +55,11 @@ class OutboundPickingViewModel @Inject constructor(
             grouped.indexOfFirst { group -> 
                 task.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
             }.coerceAtLeast(0)
+        }
+
+        if (!isSameTask) {
+            val initialElapsed = calculateInitialElapsed(task.startedAt)
+            _state.update { it.copy(elapsedTimeSeconds = initialElapsed) }
         }
 
         _state.update {
@@ -78,7 +86,37 @@ class OutboundPickingViewModel @Inject constructor(
                 )
             }
         }
+        
+        startTimer()
         loadWarehouseName(warehouseId)
+    }
+
+    private fun startTimer() {
+        if (timerJob != null) return
+        timerJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(1000)
+                _state.update { it.copy(elapsedTimeSeconds = it.elapsedTimeSeconds + 1) }
+            }
+        }
+    }
+
+    private fun calculateInitialElapsed(startedAt: String?): Int {
+        if (startedAt == null) return 0
+        return try {
+            val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+            sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo") // Use JST as per system default
+            val startTime = sdf.parse(startedAt)?.time ?: return 0
+            val currentTime = System.currentTimeMillis()
+            ((currentTime - startTime) / 1000).toInt().coerceAtLeast(0)
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
     }
 
     // ===== Grouping Logic =====

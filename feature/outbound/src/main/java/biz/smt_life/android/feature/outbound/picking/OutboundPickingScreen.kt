@@ -109,13 +109,7 @@ private fun OutboundPickingHeader(
     moveToPrevGroup: () -> Unit,
     moveToNextGroup: () -> Unit
 ) {
-    var elapsedTimeSeconds by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(1000)
-            elapsedTimeSeconds++
-        }
-    }
+    val elapsedTimeSeconds = state.elapsedTimeSeconds
     val mm = (elapsedTimeSeconds / 60).toString().padStart(2, '0')
     val ss = (elapsedTimeSeconds % 60).toString().padStart(2, '0')
     val timeText = "$mm:$ss"

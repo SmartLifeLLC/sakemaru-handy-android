@@ -25,7 +25,8 @@ data class PickingTask(
     val courseCode: String,
     val pickingAreaName: String,
     val pickingAreaCode: String,
-    val items: List<PickingTaskItem>
+    val items: List<PickingTaskItem>,
+    val startedAt: String? = null
 ) {
     // Status-based counts (server-controlled, computed from items)
     val totalItems: Int

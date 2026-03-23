@@ -67,7 +67,8 @@ data class OutboundPickingState(
     val isJanScannerInCamera: Boolean = false,
     val janScanResults: Map<Int, JanScanResult> = emptyMap(),
     val warehouseId: Int = 0,
-    val warehouseName: String = ""
+    val warehouseName: String = "",
+    val elapsedTimeSeconds: Int = 0
 ) {
     val currentGroup: GroupedPickingItem?
         get() = groupedItems.getOrNull(currentGroupIndex)
