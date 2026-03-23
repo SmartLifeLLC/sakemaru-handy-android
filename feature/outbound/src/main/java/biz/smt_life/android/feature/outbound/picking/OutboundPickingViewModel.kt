@@ -42,7 +42,11 @@ class OutboundPickingViewModel @Inject constructor(
         val warehouseId = tokenManager.getDefaultWarehouseId()
         val grouped = groupItemsInternal(task.items)
 
-        val startIndex = if (editItemId != null) {
+        val isSameTask = _state.value.originalTask?.taskId == task.taskId
+
+        val startIndex = if (isSameTask && _state.value.groupedItems.isNotEmpty()) {
+            _state.value.currentGroupIndex.coerceIn(0, maxOf(0, grouped.size - 1))
+        } else if (editItemId != null) {
             grouped.indexOfFirst { it.itemId == editItemId }.coerceAtLeast(0)
         } else {
             grouped.indexOfFirst { group -> 
@@ -67,8 +71,8 @@ class OutboundPickingViewModel @Inject constructor(
                     originalTask = task,
                     groupedItems = grouped,
                     currentGroupIndex = startIndex,
-                    totalCaseInput = formatTotal(targetGroup, QuantityType.CASE),
-                    totalPieceInput = formatTotal(targetGroup, QuantityType.PIECE),
+                    totalCaseInput = if (isSameTask) it.totalCaseInput else formatTotal(targetGroup, QuantityType.CASE),
+                    totalPieceInput = if (isSameTask) it.totalPieceInput else formatTotal(targetGroup, QuantityType.PIECE),
                     isLoading = false,
                     warehouseId = warehouseId
                 )
