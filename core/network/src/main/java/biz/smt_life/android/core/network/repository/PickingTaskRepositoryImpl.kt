@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -102,6 +103,14 @@ class PickingTaskRepositoryImpl @Inject constructor(
             android.util.Log.d("PickingTaskRepository", "startTask response: isSuccess=${response.isSuccess}, code=${response.code}")
 
             if (response.isSuccess) {
+                val data = response.result?.data
+                _tasksFlow.update { currentTasks ->
+                    currentTasks.map { task ->
+                        if (task.taskId == taskId) {
+                            task.copy(startedAt = data?.startedAt)
+                        } else task
+                    }
+                }
                 Result.success(Unit)
             } else {
                 val errorMessage = extractErrorMessage(response.result, "タスクの開始に失敗しました")
