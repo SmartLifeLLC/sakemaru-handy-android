@@ -36,12 +36,16 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.*
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -90,6 +94,173 @@ private val ReadonlyText = Color(0xFF888888)
 // ===== Orientation persistence =====
 private const val PREF_NAME_P21 = "p21_orientation_prefs"
 private const val PREF_KEY_IS_PORTRAIT = "p21_is_portrait"
+
+/**
+ * New 3-Tier Header for P21.
+ * Supports Portrait and Landscape variations based on the specification.
+ */
+@Composable
+private fun OutboundPickingHeader(
+    state: OutboundPickingState,
+    isPortrait: Boolean,
+    onNavigateBack: () -> Unit,
+    toggleOrientation: () -> Unit,
+    moveToPrevGroup: () -> Unit,
+    moveToNextGroup: () -> Unit
+) {
+    var elapsedTimeSeconds by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            elapsedTimeSeconds++
+        }
+    }
+    val mm = (elapsedTimeSeconds / 60).toString().padStart(2, '0')
+    val ss = (elapsedTimeSeconds % 60).toString().padStart(2, '0')
+    val timeText = "$mm:$ss"
+
+    val currentPage = state.currentGroupIndex + 1
+    val totalPages = state.totalGroupCount
+    val progress = if (totalPages > 0) currentPage.toFloat() / totalPages.toFloat() else 0f
+
+    val progressColor = Color(0xFFDD833A)
+    val bgColor = Color(0xFFE5E5E5) // Neutral200
+
+    val strokeStyle = TextStyle(
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.White,
+        drawStyle = Stroke(
+            miter = 10f,
+            width = 4f,
+            join = StrokeJoin.Round
+        )
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // TIER 1
+        if (isPortrait) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onNavigateBack, contentPadding = PaddingValues(0.dp)) {
+                    Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                }
+
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(18.dp))
+                    Text(timeText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
+
+                TextButton(onClick = toggleOrientation, contentPadding = PaddingValues(0.dp)) {
+                    Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onNavigateBack, contentPadding = PaddingValues(0.dp)) {
+                        Text("もどる", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                    }
+                    Text(" | ", fontSize = 16.sp, color = Color.Gray)
+                    TextButton(onClick = toggleOrientation, contentPadding = PaddingValues(0.dp)) {
+                        Text("画面回転", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(18.dp))
+                    Text(timeText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
+
+                Text("完了: ${state.registeredGroupCount}/$totalPages", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            }
+        }
+
+        // TIER 2
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .background(bgColor, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                    .background(progressColor, RoundedCornerShape(12.dp))
+            )
+
+            // Text overlay
+            val overlayText = if (isPortrait) "$currentPage/$totalPages" else "${(progress * 100).toInt()}%"
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = overlayText,
+                    style = strokeStyle
+                )
+                Text(
+                    text = overlayText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
+        }
+
+        // TIER 3
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = moveToPrevGroup, enabled = currentPage > 1, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "前へ",
+                    tint = if (currentPage > 1) Color.Black else Color.LightGray
+                )
+            }
+            Text(
+                "作業番号 $currentPage/$totalPages",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.DarkGray
+            )
+            IconButton(onClick = moveToNextGroup, enabled = currentPage < totalPages, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "次へ",
+                    tint = if (currentPage < totalPages) Color.Black else Color.LightGray
+                )
+            }
+        }
+    }
+}
 
 /**
  * Outbound Picking Screen (2.5.2 - 出庫データ入力).
@@ -167,64 +338,15 @@ fun OutboundPickingScreen(
     Scaffold(
         containerColor = BodyBg,
         topBar = {
-            // ===== HEADER (maintained exactly as-is) =====
-            Column {
-                TopAppBar(
-                    modifier = Modifier.height(60.dp),
-                    title = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                onClick = onNavigateBack,
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color.Transparent
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "戻る",
-                                        tint = TitleRed,
-                                        modifier = Modifier.size(30.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("もどる", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TitleRed)
-                                }
-                            }
-                            Spacer(Modifier.width(24.dp))
-                            Surface(
-                                onClick = { toggleOrientation() },
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color.Transparent
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Refresh,
-                                        contentDescription = "画面回転",
-                                        tint = AccentOrange,
-                                        modifier = Modifier.size(30.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("画面回転", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentOrange)
-                                }
-                            }
-                        }
-                    },
-                    navigationIcon = {},
-                    actions = {},
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = HeaderBg
-                    )
+            if (!state.isLoading && state.originalTask != null && state.currentGroup != null) {
+                OutboundPickingHeader(
+                    state = state,
+                    isPortrait = isPortrait,
+                    onNavigateBack = onNavigateBack,
+                    toggleOrientation = { toggleOrientation() },
+                    moveToPrevGroup = { viewModel.moveToPrevGroup() },
+                    moveToNextGroup = { viewModel.moveToNextGroup() }
                 )
-                HorizontalDivider(thickness = 2.dp, color = DividerGold)
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -381,32 +503,7 @@ private fun OutboundPickingBody(
             modifier = modifier.fillMaxSize().padding(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Progress count - compact at top in portrait
-            Surface(
-                color = AccentOrange,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = moveToPrevGroup, enabled = state.canMovePrev, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前へ", tint = if (state.canMovePrev) Color.White else Color.White.copy(alpha = 0.5f))
-                    }
-                    Text(
-                        text = "${state.currentGroupIndex + 1}/${state.groupedItems.size} (${state.registeredGroupCount}/${state.totalGroupCount}完了)",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    IconButton(onClick = moveToNextGroup, enabled = state.canMoveNext, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "次へ", tint = if (state.canMoveNext) Color.White else Color.White.copy(alpha = 0.5f))
-                    }
-                }
-            }
+
             AnimatedContent(
                 targetState = state.currentGroupIndex,
                 transitionSpec = {
@@ -457,32 +554,7 @@ private fun OutboundPickingBody(
             modifier = modifier.fillMaxSize().padding(6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Progress count - compact in landscape
-            Surface(
-                color = AccentOrange,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = moveToPrevGroup, enabled = state.canMovePrev, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "前へ", tint = if (state.canMovePrev) Color.White else Color.White.copy(alpha = 0.5f))
-                    }
-                    Text(
-                        text = "${state.currentGroupIndex + 1}/${state.groupedItems.size} (${state.registeredGroupCount}/${state.totalGroupCount}完了)",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    IconButton(onClick = moveToNextGroup, enabled = state.canMoveNext, modifier = Modifier.size(36.dp)) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "次へ", tint = if (state.canMoveNext) Color.White else Color.White.copy(alpha = 0.5f))
-                    }
-                }
-            }
+
             AnimatedContent(
                 targetState = state.currentGroupIndex,
                 transitionSpec = {
