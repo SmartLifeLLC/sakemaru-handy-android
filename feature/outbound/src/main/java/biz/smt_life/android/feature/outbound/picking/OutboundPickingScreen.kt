@@ -121,7 +121,8 @@ private fun OutboundPickingHeader(
 
     val currentPage = state.currentGroupIndex + 1
     val totalPages = state.totalGroupCount
-    val progress = if (totalPages > 0) currentPage.toFloat() / totalPages.toFloat() else 0f
+    // 進捗（％）は完了率を表す
+    val progress = if (totalPages > 0) state.registeredGroupCount.toFloat() / totalPages.toFloat() else 0f
 
     val progressColor = Color(0xFFDD833A)
     val bgColor = Color(0xFFE5E5E5) // Neutral200
