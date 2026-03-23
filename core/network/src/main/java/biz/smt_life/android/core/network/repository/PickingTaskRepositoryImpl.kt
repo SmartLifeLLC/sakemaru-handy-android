@@ -185,6 +185,15 @@ class PickingTaskRepositoryImpl @Inject constructor(
             android.util.Log.d("PickingTaskRepository", "completeTask response: isSuccess=${response.isSuccess}, code=${response.code}, errorMessage=${response.result?.errorMessage}")
 
             if (response.isSuccess) {
+                val data = response.result?.data
+                // Update local task in the flow with COMPLETED status and completion timestamp
+                _tasksFlow.update { currentTasks ->
+                    currentTasks.map { task ->
+                        if (task.taskId == taskId) {
+                            task.copy(completedAt = data?.completedAt)
+                        } else task
+                    }
+                }
                 Result.success(Unit)
             } else {
                 val errorMessage = extractErrorMessage(response.result, "タスクの完了に失敗しました")
@@ -333,7 +342,8 @@ class PickingTaskRepositoryImpl @Inject constructor(
             pickingAreaName = pickingArea.name,
             pickingAreaCode = pickingArea.code,
             items = items,
-            startedAt = startedAt ?: wave.startedAt
+            startedAt = startedAt ?: wave.startedAt,
+            completedAt = completedAt ?: wave.completedAt
             // totalItems, registeredCount, etc. are now computed properties
         )
     }

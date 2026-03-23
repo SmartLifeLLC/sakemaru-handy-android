@@ -14,7 +14,8 @@ data class PickingTaskResponse(
     @SerialName("picking_area") val pickingArea: PickingAreaInfo,
     val wave: WaveInfo,
     @SerialName("picking_list") val pickingList: List<PickingItem>,
-    @SerialName("started_at") val startedAt: String? = null
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null
 )
 
 @Serializable
@@ -33,7 +34,8 @@ data class PickingAreaInfo(
 data class WaveInfo(
     @SerialName("wms_picking_task_id") val wmsPickingTaskId: Int,
     @SerialName("wms_wave_id") val wmsWaveId: Int,
-    @SerialName("started_at") val startedAt: String? = null
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("completed_at") val completedAt: String? = null
 )
 
 @Serializable

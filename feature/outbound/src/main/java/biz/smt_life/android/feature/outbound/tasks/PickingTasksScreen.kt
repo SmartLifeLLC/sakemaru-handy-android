@@ -572,10 +572,36 @@ private fun PickingTaskCard(
             )
             // [3行] 出荷指示: X件　検品済: X件
             Text(
-                text = "出荷指示: ${task.totalItems}件　検品済: ${task.registeredCount}件",
+                text = if (task.isAllRegistered) "検品完了: ${task.totalItems}件" 
+                       else "出荷指示: ${task.totalItems}件　検品済: ${task.registeredCount}件",
                 fontSize = 13.sp,
                 color = TextGray
             )
+
+            // [4行] 開始時刻 / 完了時刻
+            if (task.startedAt != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.AccessTime,
+                        contentDescription = null,
+                        tint = TextGray,
+                        modifier = Modifier.size(13.sp.value.dp)
+                    )
+                    Text(
+                        text = buildString {
+                            append("開始: ${formatDateTime(task.startedAt)}")
+                            if (task.completedAt != null) {
+                                append("  完了: ${formatDateTime(task.completedAt)}")
+                            }
+                        },
+                        fontSize = 12.sp,
+                        color = TextGray
+                    )
+                }
+            }
         }
     }
 }
@@ -907,4 +933,30 @@ private fun PreviewTaskListWithMultipleItems() {
             isStartingTask = false
         )
     }
+}
+
+/**
+ * Format date time string from API (SQL/ISO) to a user-friendly format (MM/dd HH:mm).
+ */
+private fun formatDateTime(dateTime: String?): String {
+    if (dateTime.isNullOrBlank()) return ""
+    val formats = listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss")
+    for (pattern in formats) {
+        try {
+            val inputSdf = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+            if (pattern.contains("Z")) {
+                inputSdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            } else {
+                inputSdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo")
+            }
+            
+            val date = inputSdf.parse(dateTime) ?: continue
+            val outputSdf = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.US)
+            outputSdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo")
+            return outputSdf.format(date)
+        } catch (e: Exception) {
+            continue
+        }
+    }
+    return dateTime.split(".").firstOrNull() ?: dateTime // Fallback: strip milliseconds if any
 }
