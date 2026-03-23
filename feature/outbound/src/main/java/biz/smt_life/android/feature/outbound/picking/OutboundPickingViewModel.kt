@@ -309,6 +309,7 @@ class OutboundPickingViewModel @Inject constructor(
     private fun moveToNextGroupOrComplete() {
         val refreshedTask = _state.value.originalTask ?: return
         val grouped = groupItemsInternal(refreshedTask.items)
+        val currentIndex = _state.value.currentGroupIndex
 
         if (refreshedTask.isFullyProcessed) {
             _state.update {
@@ -321,15 +322,21 @@ class OutboundPickingViewModel @Inject constructor(
                 )
             }
         } else {
-            val nextPendingIndex = grouped.indexOfFirst { group -> 
-                refreshedTask.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
-            }.coerceAtLeast(0)
+            // Sequential movement: move to the next index first.
+            // If already at the last index, jump back to the first PENDING item.
+            val targetIndex = if (currentIndex < (grouped.size - 1)) {
+                currentIndex + 1
+            } else {
+                grouped.indexOfFirst { group -> 
+                    refreshedTask.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
+                }.coerceAtLeast(0)
+            }
             
-            val targetGroup = grouped[nextPendingIndex]
+            val targetGroup = grouped[targetIndex]
             _state.update {
                 it.copy(
                     groupedItems = grouped,
-                    currentGroupIndex = nextPendingIndex,
+                    currentGroupIndex = targetIndex,
                     totalCaseInput = formatTotal(targetGroup, QuantityType.CASE),
                     totalPieceInput = formatTotal(targetGroup, QuantityType.PIECE),
                     isUpdating = false
