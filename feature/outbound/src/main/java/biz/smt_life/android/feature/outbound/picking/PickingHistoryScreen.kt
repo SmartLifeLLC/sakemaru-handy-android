@@ -338,23 +338,6 @@ private fun HistoryListContent(
                 )
             }
             item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = onNavigateBack,
-                    shape = RoundedCornerShape(6.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentOrange),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("もどる", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
                 Spacer(Modifier.height(16.dp))
             }
         }
