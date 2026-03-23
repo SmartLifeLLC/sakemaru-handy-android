@@ -340,6 +340,7 @@ fun OutboundPickingScreen(
     if (state.showJanScannerDialog && state.currentGroup != null) {
         JanCodeScannerDialog(
             expectedJanCode = state.currentGroup!!.janCode,
+            isInCamera = state.isJanScannerInCamera,
             onResult = { code, match -> viewModel.onJanScanResult(code, match) },
             onDismiss = { viewModel.dismissJanScannerDialog() }
         )
