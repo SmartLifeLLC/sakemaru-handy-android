@@ -71,7 +71,7 @@ class OutboundPickingViewModel @Inject constructor(
 
         _state.update {
             if (grouped.isEmpty()) {
-                it.copy(
+                val newState = it.copy(
                     originalTask = task,
                     groupedItems = emptyList(),
                     currentGroupIndex = 0,
@@ -80,6 +80,11 @@ class OutboundPickingViewModel @Inject constructor(
                     isLoading = false,
                     warehouseId = warehouseId
                 )
+                // If opening a task that is already finished locally but not completed on server
+                if (task.completedAt == null && !newState.isCompleting) {
+                    completeTask(onSuccess = {})
+                }
+                newState
             } else {
                 val targetGroup = grouped[startIndex]
                 it.copy(
@@ -377,6 +382,10 @@ class OutboundPickingViewModel @Inject constructor(
                     totalPieceInput = "",
                     isUpdating = false
                 )
+            }
+            // Auto-complete to notify the server that the work (or edit) is finished
+            if (refreshedTask.completedAt == null && !_state.value.isCompleting) {
+                completeTask(onSuccess = {})
             }
         } else {
             // Sequential movement: move to the next index first.
