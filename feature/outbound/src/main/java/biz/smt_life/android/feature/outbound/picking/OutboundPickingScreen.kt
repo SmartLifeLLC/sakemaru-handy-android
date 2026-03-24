@@ -449,7 +449,7 @@ fun OutboundPickingScreen(
                                 )
                                 Spacer(Modifier.height(16.dp))
                                 OutlinedButton(
-                                    onClick = onHistoryClick,
+                                    onClick = onNavigateToHistory,
                                     shape = RoundedCornerShape(8.dp),
                                     modifier = Modifier.fillMaxWidth().height(48.dp),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Amber700),
