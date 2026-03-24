@@ -343,7 +343,8 @@ class PickingTaskRepositoryImpl @Inject constructor(
             pickingAreaCode = pickingArea.code,
             items = items,
             startedAt = startedAt ?: wave.startedAt,
-            completedAt = completedAt ?: wave.completedAt
+            completedAt = completedAt ?: wave.completedAt,
+            isEditable = isEditable
             // totalItems, registeredCount, etc. are now computed properties
         )
     }

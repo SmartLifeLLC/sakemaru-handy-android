@@ -95,8 +95,11 @@ data class OutboundPickingState(
     val canMoveNext: Boolean
         get() = currentGroupIndex < (groupedItems.size - 1)
 
+    val isEditable: Boolean
+        get() = originalTask?.isEditable ?: true
+
     val canRegister: Boolean
-        get() = !isUpdating && currentGroup != null
+        get() = !isUpdating && isEditable && currentGroup != null
 
     val hasQuantityError: Boolean
         get() {

@@ -15,7 +15,8 @@ data class PickingTaskResponse(
     val wave: WaveInfo,
     @SerialName("picking_list") val pickingList: List<PickingItem>,
     @SerialName("started_at") val startedAt: String? = null,
-    @SerialName("completed_at") val completedAt: String? = null
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("is_editable") val isEditable: Boolean = true
 )
 
 @Serializable

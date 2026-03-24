@@ -505,6 +505,7 @@ private fun OutboundPickingBody(
     modifier: Modifier = Modifier
 ) {
     val group = state.currentGroup!!
+    val isEditable = state.isEditable
 
     if (isPortrait) {
         Column(
@@ -538,7 +539,24 @@ private fun OutboundPickingBody(
                         color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
-                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = true)
+                        Column {
+                            if (!isEditable) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = Color(0xFFFFF3E0)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Filled.Lock, null, tint = Color(0xFFE65100), modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("読取専用: 欠品処理中または出荷済みのため変更できません", fontSize = 11.sp, color = Color(0xFFB71C1C), fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = true)
+                        }
                     }
                     Surface(
                         modifier = Modifier.weight(0.65f).fillMaxWidth(),
@@ -591,7 +609,25 @@ private fun OutboundPickingBody(
                         color = if (state.isCurrentGroupRegistered) Color(0xFFEEEEEE) else Color.White,
                         shadowElevation = 1.dp, border = BorderStroke(1.dp, Neutral200)
                     ) {
-                        ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = false)
+                        Column {
+                            if (!isEditable) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = Color(0xFFFFF3E0)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(Icons.Filled.Lock, null, tint = Color(0xFFE65100), modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("読取専用（編集不可）", fontSize = 14.sp, color = Color(0xFFB71C1C), fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                            ProductInfoSection(group = targetGroup, hasImages = state.hasImages, onImageClick = onImageClick, onJanScanClick = onJanScanClick, janScanResult = state.currentJanScanResult, isPortrait = false)
+                        }
                     }
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -840,7 +876,7 @@ private fun GroupedQuantitySection(
                     CompactNumberInput(
                         value = state.totalCaseInput,
                         onValueChange = onTotalCaseInputChange,
-                        enabled = !state.isUpdating,
+                        enabled = !state.isUpdating && state.isEditable,
                         isError = isCaseError,
                         modifier = Modifier.width(56.dp).height(38.dp)
                     )
@@ -854,7 +890,7 @@ private fun GroupedQuantitySection(
                     CompactNumberInput(
                         value = state.totalPieceInput,
                         onValueChange = onTotalPieceInputChange,
-                        enabled = !state.isUpdating,
+                        enabled = !state.isUpdating && state.isEditable,
                         isError = isPieceError,
                         modifier = Modifier.width(56.dp).height(38.dp)
                     )
@@ -895,7 +931,7 @@ private fun GroupedQuantitySection(
                         entry = entry,
                         onCaseQtyChange = { onCustomerCaseQtyChange(index, it) },
                         onPieceQtyChange = { onCustomerPieceQtyChange(index, it) },
-                        isUpdating = state.isUpdating
+                        isUpdating = state.isUpdating || !state.isEditable
                     )
                 }
             }
