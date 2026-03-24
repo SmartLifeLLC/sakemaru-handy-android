@@ -77,7 +77,7 @@ data class PickingHistoryState(
      * In this mode, hide delete/confirm buttons.
      */
     val isReadOnlyMode: Boolean
-        get() = task != null && task.isFullyProcessed
+        get() = task != null && !task.isEditable
 
     /**
      * Whether the confirm-all button should be enabled.

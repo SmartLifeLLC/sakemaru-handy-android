@@ -194,8 +194,8 @@ class PickingTasksViewModel @Inject constructor(
             // Store the selected task for the next screen
             _state.update { it.copy(selectedTask = task) }
 
-            // Task has a completion timestamp: navigates to History (read-only if isEditable=false)
-            if (task.completedAt != null) {
+            // If task is completed and NOT editable: navigate to History directly
+            if (task.completedAt != null && !task.isEditable) {
                 onNavigateToHistory(task)
                 return@launch
             }
@@ -203,8 +203,8 @@ class PickingTasksViewModel @Inject constructor(
             // Start the task if not already started
             repository.startTask(task.taskId)
                 .onSuccess {
-                    // Navigate based on processing status
-                    if (task.completedAt != null) {
+                    // Navigate based on processing status. If not editable, go to History.
+                    if (task.completedAt != null && !task.isEditable) {
                         onNavigateToHistory(task)
                     } else {
                         // If not completed, go to Data Input
