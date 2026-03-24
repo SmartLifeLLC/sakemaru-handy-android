@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.material3.OutlinedButton
@@ -446,6 +447,18 @@ fun OutboundPickingScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF212529)
                                 )
+                                Spacer(Modifier.height(16.dp))
+                                OutlinedButton(
+                                    onClick = onHistoryClick,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Amber700),
+                                    border = BorderStroke(1.dp, Amber300)
+                                ) {
+                                    Icon(Icons.Filled.History, null, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("履歴を表示して修正する", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                }
                             } else {
                                 // 全商品登録完了
                                 Text(
