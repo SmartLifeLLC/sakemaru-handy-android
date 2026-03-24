@@ -63,7 +63,7 @@ data class PickingTask(
         get() = pickingCount > 0
 
     val isFullyProcessed: Boolean
-        get() = pendingCount == 0 && pickingCount == 0 && completedOrShortageCount == totalItems
+        get() = completedAt != null || (pendingCount == 0 && pickingCount == 0 && completedOrShortageCount == totalItems)
 
     /** 全アイテムが登録済み（出荷指示数 == 検品済み）。P20完了タブの判定に使用 */
     val isAllRegistered: Boolean

@@ -438,7 +438,7 @@ fun OutboundPickingScreen(
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(Modifier.height(8.dp))
-                            if (state.originalTask?.isFullyProcessed == true) {
+                            if (state.originalTask?.completedAt != null) {
                                 // 作業済（全アイテムCOMPLETED/SHORTAGE）
                                 Text(
                                     text = "作業が完了しました。",
