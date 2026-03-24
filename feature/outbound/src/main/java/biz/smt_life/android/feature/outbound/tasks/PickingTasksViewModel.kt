@@ -194,8 +194,8 @@ class PickingTasksViewModel @Inject constructor(
             // Store the selected task for the next screen
             _state.update { it.copy(selectedTask = task) }
 
-            // If task is completed and NOT editable: navigate to History directly
-            if (task.completedAt != null && !task.isEditable) {
+            // If task is NOT editable (already shipped or in shortage processing), navigate to History directly
+            if (!task.isEditable) {
                 onNavigateToHistory(task)
                 return@launch
             }
