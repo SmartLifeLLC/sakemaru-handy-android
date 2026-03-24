@@ -43,7 +43,14 @@ class OutboundPickingViewModel @Inject constructor(
      */
     fun initialize(task: PickingTask, editItemId: Int? = null) {
         val warehouseId = tokenManager.getDefaultWarehouseId()
-        val grouped = groupItemsInternal(task.items)
+        val allGroups = groupItemsInternal(task.items)
+        val grouped = if (editItemId != null) {
+            allGroups
+        } else {
+            allGroups.filter { group -> 
+                task.items.any { it.itemId == group.itemId && it.status == ItemStatus.PENDING }
+            }
+        }
 
         val isSameTask = _state.value.originalTask?.taskId == task.taskId
 
@@ -357,7 +364,7 @@ class OutboundPickingViewModel @Inject constructor(
         val grouped = groupItemsInternal(refreshedTask.items)
         val currentIndex = _state.value.currentGroupIndex
 
-        if (refreshedTask.isFullyProcessed) {
+        if (refreshedTask.isAllRegistered) {
             _state.update {
                 it.copy(
                     groupedItems = emptyList(),
