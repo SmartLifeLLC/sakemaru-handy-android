@@ -65,7 +65,7 @@ class OutboundPickingViewModel @Inject constructor(
         }
 
         if (!isSameTask) {
-            val initialElapsed = calculateInitialElapsed(task.startedAt)
+            val initialElapsed = calculateInitialElapsed(task.startedAt, task.completedAt)
             _state.update { it.copy(elapsedTimeSeconds = initialElapsed) }
         }
 
@@ -103,30 +103,34 @@ class OutboundPickingViewModel @Inject constructor(
         timerJob = viewModelScope.launch {
             while (true) {
                 kotlinx.coroutines.delay(1000)
-                _state.update { it.copy(elapsedTimeSeconds = it.elapsedTimeSeconds + 1) }
+                // Only increment if not completed yet
+                if (_state.value.originalTask?.completedAt == null) {
+                    _state.update { it.copy(elapsedTimeSeconds = it.elapsedTimeSeconds + 1) }
+                }
             }
         }
     }
 
-    private fun calculateInitialElapsed(startedAt: String?): Int {
+    private fun calculateInitialElapsed(startedAt: String?, completedAt: String?): Int {
         if (startedAt.isNullOrBlank()) return 0
         val formats = listOf("yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss")
-        for (pattern in formats) {
-            try {
-                val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
-                if (pattern.contains("Z")) {
-                    sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-                } else {
-                    sdf.timeZone = java.util.TimeZone.getTimeZone("Asia/Tokyo")
-                }
-                val startTime = sdf.parse(startedAt)?.time ?: continue
-                val currentTime = System.currentTimeMillis()
-                return ((currentTime - startTime) / 1000).toInt().coerceAtLeast(0)
-            } catch (e: Exception) {
-                // Try next
+        
+        fun parseDate(dateStr: String?): Long? {
+            if (dateStr.isNullOrBlank()) return null
+            for (pattern in formats) {
+                try {
+                    val sdf = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+                    sdf.timeZone = if (pattern.contains("Z")) java.util.TimeZone.getTimeZone("UTC") else java.util.TimeZone.getTimeZone("Asia/Tokyo")
+                    return sdf.parse(dateStr)?.time
+                } catch (e: Exception) {}
             }
+            return null
         }
-        return 0
+
+        val startTime = parseDate(startedAt) ?: return 0
+        val endTime = parseDate(completedAt) ?: System.currentTimeMillis()
+        
+        return ((endTime - startTime) / 1000).toInt().coerceAtLeast(0)
     }
 
     override fun onCleared() {
