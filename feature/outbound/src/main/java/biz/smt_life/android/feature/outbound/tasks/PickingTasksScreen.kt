@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.CardDefaults
@@ -585,7 +586,7 @@ private fun PickingTaskCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.AccessTime,
+                        imageVector = Icons.Filled.AccessTime,
                         contentDescription = null,
                         tint = TextGray,
                         modifier = Modifier.size(13.sp.value.dp)

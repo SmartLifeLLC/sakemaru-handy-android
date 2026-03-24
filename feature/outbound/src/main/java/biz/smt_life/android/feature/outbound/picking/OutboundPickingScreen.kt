@@ -176,7 +176,7 @@ private fun OutboundPickingHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(18.dp))
+                    Icon(imageVector = Icons.Filled.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(18.dp))
                     Text(timeText, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 }
 
@@ -231,7 +231,7 @@ private fun OutboundPickingHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.Filled.AccessTime, contentDescription = "Timer", tint = Color.DarkGray, modifier = Modifier.size(16.dp))
                     Text(timeText, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 }
             }
