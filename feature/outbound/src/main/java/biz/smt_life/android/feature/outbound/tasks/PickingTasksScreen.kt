@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -19,12 +20,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -51,6 +54,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -147,6 +151,18 @@ fun PickingTasksScreen(
     val activity = context as? Activity
     val prefs = remember { context.getSharedPreferences(PREF_NAME_ORIENTATION, Context.MODE_PRIVATE) }
     var isPortrait by remember { mutableStateOf(prefs.getBoolean(PREF_KEY_IS_PORTRAIT, false)) }
+
+    // P20表示時に毎回サーバから最新情報を取得
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(isPortrait) {
         activity?.requestedOrientation = if (isPortrait) {
@@ -328,7 +344,7 @@ fun PickingTasksScreen(
                             Box(modifier = Modifier.weight(1f)) {
                                 TaskListContent(
                                     tasks = displayTasks,
-                                    isRefreshing = false,
+                                    isRefreshing = state.isRefreshing,
                                     onRefresh = { viewModel.refresh() },
                                     onTaskClick = { task ->
                                         isStartingTask = true
@@ -373,7 +389,30 @@ private fun LoadingContent() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        CircularProgressIndicator()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFFFFF8E1),
+                modifier = Modifier.size(72.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(40.dp),
+                        color = HeaderOrange,
+                        strokeWidth = 4.dp
+                    )
+                }
+            }
+            Text(
+                text = "データを読み込み中...",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = TextGray
+            )
+        }
     }
 }
 
@@ -429,7 +468,8 @@ private fun TaskListContent(
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        indicator = {} // カスタムオーバーレイを使用するため標準インジケーターを非表示
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -445,7 +485,7 @@ private fun TaskListContent(
                             task = task,
                             onClick = { onTaskClick(task) },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !isStartingTask
+                            enabled = !isStartingTask && !isRefreshing
                         )
                     }
                 }
@@ -463,7 +503,42 @@ private fun TaskListContent(
                             task = task,
                             onClick = { onTaskClick(task) },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !isStartingTask
+                            enabled = !isStartingTask && !isRefreshing
+                        )
+                    }
+                }
+            }
+        }
+
+        // リフレッシュ中のオーバーレイ表示
+        if (isRefreshing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.wrapContentSize()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = HeaderOrange,
+                            strokeWidth = 3.dp
+                        )
+                        Text(
+                            text = "更新中...",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF333333)
                         )
                     }
                 }
@@ -528,7 +603,20 @@ private fun PickingTaskCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                if (task.isAllRegistered) {
+                if (task.isAllRegistered && !task.isEditable) {
+                    Surface(
+                        color = Color(0xFFFFEBEE),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Text(
+                            text = "編集不可",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD32F2F),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                } else if (task.isAllRegistered) {
                     Surface(
                         color = Color(0xFF757575),
                         shape = RoundedCornerShape(20.dp)

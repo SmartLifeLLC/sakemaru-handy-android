@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,6 +32,10 @@ class PickingTasksViewModel @Inject constructor(
     private val incomingRepository: IncomingRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+
+    private companion object {
+        const val MIN_LOADING_DURATION_MS = 1000L
+    }
 
     private val _state = MutableStateFlow(PickingTasksState())
     val state: StateFlow<PickingTasksState> = _state.asStateFlow()
@@ -118,10 +124,49 @@ class PickingTasksViewModel @Inject constructor(
     }
 
     /**
-     * Refresh tasks.
+     * Refresh tasks from server.
+     * If data already exists, shows overlay loading instead of replacing the list.
      */
     fun refresh() {
-        loadMyAreaTasks()
+        val hasData = _state.value.tasksState is TaskListState.Success
+        if (hasData) {
+            refreshWithOverlay()
+        } else {
+            loadMyAreaTasks()
+        }
+    }
+
+    private fun refreshWithOverlay() {
+        val warehouseId = tokenManager.getDefaultWarehouseId()
+        val pickerId = tokenManager.getPickerId()
+        if (warehouseId <= 0 || pickerId <= 0) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshing = true) }
+
+            val shippingDate = tokenManager.getShippingDate()
+            // API呼び出しと最低1秒待ちを並列実行
+            val minDelay = async { delay(MIN_LOADING_DURATION_MS) }
+            val result = repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
+            minDelay.await()
+
+            result
+                .onSuccess { tasks ->
+                    val pendingTasks = tasks.filter { it.registeredCount == 0 && it.completedAt == null }
+                    val activeTasks = tasks.filter { it.registeredCount > 0 && it.completedAt == null }
+                    val completedTasks = tasks.filter { it.completedAt != null }
+                        .sortedBy { it.courseName }
+                    val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
+                        TaskListState.Empty
+                    } else {
+                        TaskListState.Success(pendingTasks, activeTasks, completedTasks)
+                    }
+                    _state.update { it.copy(tasksState = newState, isRefreshing = false) }
+                }
+                .onFailure {
+                    _state.update { it.copy(isRefreshing = false) }
+                }
+        }
     }
 
     /**

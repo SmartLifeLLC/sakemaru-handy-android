@@ -11,6 +11,7 @@ import biz.smt_life.android.core.domain.model.PickingTask
  */
 data class PickingTasksState(
     val tasksState: TaskListState = TaskListState.Loading,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     val selectedTask: PickingTask? = null, // Task selected for navigation to picking screen
     val warehouseName: String = "",
