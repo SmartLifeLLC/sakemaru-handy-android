@@ -28,11 +28,23 @@ class IncomingRepositoryImpl @Inject constructor(
     private val errorMapper: ErrorMapper
 ) : IncomingRepository {
 
+    private var warehousesCache: List<IncomingWarehouse>? = null
+    private var warehousesCacheTime: Long = 0L
+    private companion object {
+        const val WAREHOUSES_CACHE_TTL_MS = 5 * 60 * 1000L // 5分
+    }
+
     override suspend fun getWarehouses(): Result<List<IncomingWarehouse>> {
+        val now = System.currentTimeMillis()
+        warehousesCache?.takeIf { now - warehousesCacheTime < WAREHOUSES_CACHE_TTL_MS }?.let {
+            return Result.success(it)
+        }
         return try {
             val response = incomingApi.getWarehouses()
             if (response.isSuccess && response.result?.data != null) {
                 val warehouses = response.result.data.map { it.toDomain() }
+                warehousesCache = warehouses
+                warehousesCacheTime = now
                 Result.success(warehouses)
             } else {
                 Result.failure(Exception(extractErrorMessage(response.result, "倉庫一覧の取得に失敗しました")))

@@ -112,7 +112,7 @@ private fun OutboundPickingHeader(
     moveToNextGroup: () -> Unit
 ) {
     val elapsedTimeSeconds = state.elapsedTimeSeconds
-    val mm = (elapsedTimeSeconds / 60).toString().padStart(2, '0')
+    val mm = (elapsedTimeSeconds / 60).toString().padStart(3, '0')
     val ss = (elapsedTimeSeconds % 60).toString().padStart(2, '0')
     val timeText = "$mm:$ss"
 

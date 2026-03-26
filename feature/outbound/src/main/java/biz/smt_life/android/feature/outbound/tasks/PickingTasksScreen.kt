@@ -432,15 +432,6 @@ private fun TaskListContent(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // 案内文言
-            Text(
-                text = "配送コースを選択してください",
-                fontSize = 14.sp,
-                color = TextGray,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp, start = 16.dp, bottom = 12.dp)
-            )
 
             if (isPortrait) {
                 // Portrait: 1列リスト表示
@@ -530,7 +521,7 @@ private fun PickingTaskCard(
                 )
                 Text(
                     text = task.courseName,
-                    fontSize = 16.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.titleColor,
                     maxLines = 1,
@@ -565,19 +556,25 @@ private fun PickingTaskCard(
                     }
                 }
             }
-            // [2行] エリア説明
-            Text(
-                text = task.pickingAreaName,
-                fontSize = 13.sp,
-                color = TextGray
-            )
-            // [3行] 出荷指示: X件　検品済: X件
-            Text(
-                text = if (task.isAllRegistered) "検品完了: ${task.totalItems}件" 
-                       else "出荷指示: ${task.totalItems}件　検品済: ${task.registeredCount}件",
-                fontSize = 13.sp,
-                color = TextGray
-            )
+            // [2行] エリア : エリア名  +  xx/xx件完了（右寄せ）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "エリア : ${task.pickingAreaName}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF212529)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "${task.registeredCount} / ${task.totalItems} 件完了",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF212529)
+                )
+            }
 
             // [4行] 開始時刻 / 完了時刻
             if (task.startedAt != null) {

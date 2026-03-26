@@ -80,8 +80,8 @@ class OutboundPickingViewModel @Inject constructor(
                     isLoading = false,
                     warehouseId = warehouseId
                 )
-                // If opening a task that is already finished locally but not completed on server
-                if (task.completedAt == null && !newState.isCompleting) {
+                // If opening a task that is already finished locally, notify server
+                if (!newState.isCompleting) {
                     completeTask(onSuccess = {})
                 }
                 newState
@@ -384,7 +384,7 @@ class OutboundPickingViewModel @Inject constructor(
                 )
             }
             // Auto-complete to notify the server that the work (or edit) is finished
-            if (refreshedTask.completedAt == null && !_state.value.isCompleting) {
+            if (!_state.value.isCompleting) {
                 completeTask(onSuccess = {})
             }
         } else {
