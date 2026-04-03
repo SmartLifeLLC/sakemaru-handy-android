@@ -21,7 +21,7 @@
 
 ## 概要
 
-DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、Androidハンディ端末（1080x2040）向けに移植・最適化する。既存のプレースホルダー実装（InboundScreen/InboundViewModel）を、5画面構成（倉庫選択→商品リスト→スケジュールリスト→入庫入力→入庫履歴）に置き換える。
+DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、Androidハンディ端末（1080x2040）向けに移植・最適化する。既存のプレースホルダー実装（InboundScreen/InboundViewModel）を、5画面構成（倉庫選択→商品リスト→スケジュールリスト→入荷入力→入荷履歴）に置き換える。
 
 ## 使用API
 
@@ -29,8 +29,8 @@ DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、
 |----------|---------------|------|
 | POST | `/api/auth/login` | ログイン（トークン取得） |
 | GET | `/api/master/warehouses` | 倉庫マスタ一覧取得 |
-| GET | `/api/incoming/schedules` | 入庫予定一覧取得（商品リスト） |
-| GET | `/api/incoming/schedules/{id}` | 入庫予定詳細取得 |
+| GET | `/api/incoming/schedules` | 入荷予定一覧取得（商品リスト） |
+| GET | `/api/incoming/schedules/{id}` | 入荷予定詳細取得 |
 | GET | `/api/incoming/work-items` | 作業データ一覧取得（履歴） |
 | POST | `/api/incoming/work-items` | 入荷作業開始 |
 | PUT | `/api/incoming/work-items/{id}` | 作業データ更新 |
@@ -44,7 +44,7 @@ DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、
 - portrait / landscape 対応
 - テーマ: NoActionBar + Compose TopAppBar
 - 画面構成: Scaffold + TopAppBar + FunctionKeyBar
-- 既存出庫機能（PickingTask系）のアーキテクチャパターンを踏襲
+- 既存出荷機能（PickingTask系）のアーキテクチャパターンを踏襲
   - Single Source of Truth: StateFlow
   - ErrorMapper → NetworkException
   - Idempotency-Key ヘッダー
@@ -109,8 +109,8 @@ DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、
 | P3: P10 倉庫選択画面 | 完了 | 2026-02-19 | WarehouseSelectionScreen作成 |
 | P4: P11 商品リスト画面 | 完了 | 2026-02-19 | ProductListScreen作成 |
 | P5: P12 スケジュールリスト画面 | 完了 | 2026-02-19 | ScheduleListScreen作成 |
-| P6: P13 入庫入力画面 | 完了 | 2026-02-19 | IncomingInputScreen作成 |
-| P7: P14 入庫履歴画面 | 完了 | 2026-02-19 | HistoryScreen作成 |
+| P6: P13 入荷入力画面 | 完了 | 2026-02-19 | IncomingInputScreen作成 |
+| P7: P14 入荷履歴画面 | 完了 | 2026-02-19 | HistoryScreen作成 |
 | P8: ナビゲーション・結合 | 完了 | 2026-02-19 | Routes/NavHost/DI登録完了・ビルド成功 |
 | P9: 旧コード削除・クリーンアップ | 完了 | 2026-02-19 | NavHost参照削除済み・旧ファイルはmodule内に残存(影響なし) |
 | P10: pages.md 更新 | 完了 | 2026-02-19 | 未実装マーク削除済み |
@@ -130,7 +130,7 @@ DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、
 - work-items: 一覧取得OK (status=all)
 - start work: schedule_id=1286 → work_item_id=1, status=WORKING
 - update work: qty=1, date=2026-02-19 更新OK
-- complete work: 入庫確定成功
+- complete work: 入荷確定成功
 - locations: warehouse_id=91 で50件取得
 - **全エンドポイント正常動作確認済み**
 
@@ -192,24 +192,24 @@ DENSOハンディ端末で実装済みの入荷処理機能（P10〜P14）を、
 - 実績:
   - `ScheduleListScreen.kt` — 商品サマリー、合計数量バー、スケジュールカード(ステータスバッジ、タップ不可制御)
 
-### P6: P13 入庫入力画面
+### P6: P13 入荷入力画面
 - 完了日: 2026-02-19
 - 実績:
   - `IncomingInputScreen.kt` — 数量入力、賞味期限(DatePicker)、ロケーション(オートコンプリート)
   - 新規フロー: startWork→updateWork→completeWork
   - 編集フロー: updateWorkのみ
 
-### P7: P14 入庫履歴画面
+### P7: P14 入荷履歴画面
 - 完了日: 2026-02-19
 - 実績:
-  - `HistoryScreen.kt` — 本日の入庫履歴、ステータスバッジ(カラーコーディング)、編集可否判定
+  - `HistoryScreen.kt` — 本日の入荷履歴、ステータスバッジ(カラーコーディング)、編集可否判定
 
 ### P8: ナビゲーション・結合
 - 完了日: 2026-02-19
 - 実績:
   - `Routes.kt` — IncomingWarehouseSelection〜IncomingHistory 5ルート追加
   - `HandyNavHost.kt` — 5画面composable登録、共有ViewModel(parentEntry scope)
-  - メイン画面 入庫ボタン → P10遷移に変更
+  - メイン画面 入荷ボタン → P10遷移に変更
   - `assembleDebug` ビルド成功
 
 ### P9: 旧コード削除・クリーンアップ

@@ -101,7 +101,7 @@ private fun courseCardColors(task: PickingTask): CourseCardColors = when {
         backgroundPressed = Color(0xFFEEEEEE),
         borderPressed    = Color(0xFF9E9E9E)
     )
-    task.registeredCount > 0 -> CourseCardColors(  // 作業中（PICKING/COMPLETED/SHORTAGE件あり）
+    task.registeredGroupCount > 0 -> CourseCardColors(  // 作業中（PICKING/COMPLETED/SHORTAGE件あり）
         background       = Color(0xFFE8F5E9),
         border           = Color(0xFF4CAF50),
         titleColor       = Color(0xFF2E7D32),
@@ -120,7 +120,7 @@ private fun courseCardColors(task: PickingTask): CourseCardColors = when {
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 /**
- * Picking Tasks screen per spec 2.5.1 出庫処理 > ピッキングリスト選択.
+ * Picking Tasks screen per spec 2.5.1 出荷処理 > ピッキングリスト選択.
  *
  * Features:
  * - Shows only "My tasks" (私の担当) - tasks assigned to current picker
@@ -629,7 +629,7 @@ private fun PickingTaskCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
-                } else if (task.registeredCount > 0) {
+                } else if (task.registeredGroupCount > 0) {
                     Surface(
                         color = Color(0xFF4CAF50),
                         shape = RoundedCornerShape(20.dp)
@@ -657,7 +657,7 @@ private fun PickingTaskCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "${task.registeredCount} / ${task.totalItems} 件完了",
+                    text = "${task.registeredGroupCount} / ${task.totalGroupCount} 件完了",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF212529)

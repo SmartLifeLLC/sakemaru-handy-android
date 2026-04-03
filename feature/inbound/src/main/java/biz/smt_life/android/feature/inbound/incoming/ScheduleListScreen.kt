@@ -59,7 +59,7 @@ fun ScheduleListScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "入庫処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
+                                text = "入荷処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AccentGreen
@@ -151,7 +151,7 @@ fun ScheduleListScreen(
                             Text("${product.totalExpectedQuantity}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("入庫済", fontSize = 12.sp, color = TextSecond)
+                            Text("入荷済", fontSize = 12.sp, color = TextSecond)
                             Text("${product.totalReceivedQuantity}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

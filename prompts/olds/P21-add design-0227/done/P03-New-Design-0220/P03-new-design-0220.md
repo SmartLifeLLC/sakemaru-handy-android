@@ -20,7 +20,7 @@
 │ Header (高さ固定: 50dp)                      │
 ├────────────┬────────────────────────────────┤
 │            │  メニューグリッド               │
-│  サイドバー │  Row1: [入庫(span2)] [出庫(span2)] │
+│  サイドバー │  Row1: [入荷(span2)] [出荷(span2)] │
 │  (幅固定   │  Row2: [移動] [棚卸] [ロケ検索] │
 │   280dp)   │                                │
 └────────────┴────────────────────────────────┘
@@ -67,8 +67,8 @@
 
 | カード名 | サイズ | ボトムボーダー色 | 円背景色 | アイコン色 | アイコン |
 |----------|--------|-----------------|----------|-----------|------|
-| 入庫処理 (00) | 大（Row1 左半分） | `#1976D2` | `#E3F2FD` | `#1976D2` | ↓ |
-| 出庫処理 (00) | 大（Row1 右半分） | `#D32F2F` | `#FFEBEE` | `#D32F2F` | ↑ |
+| 入荷処理 (00) | 大（Row1 左半分） | `#1976D2` | `#E3F2FD` | `#1976D2` | ↓ |
+| 出荷処理 (00) | 大（Row1 右半分） | `#D32F2F` | `#FFEBEE` | `#D32F2F` | ↑ |
 | 移動処理 | 小（Row2 左） | `#388E3C` | `#E8F5E9` | `#388E3C` | ⇄ |
 | 棚卸処理 (00) | 小（Row2 中） | `#F57C00` | `#FFF3E0` | `#F57C00` | 📋 |
 | ロケ検索 | 小（Row2 右） | `#7B1FA2` | `#F3E5F5` | `#7B1FA2` | 📍 |
@@ -119,8 +119,8 @@ fun MainMenuScreen(
     currentDate: String,               // "2025/12/19(金)" 形式の文字列
     warehouseName: String,             // 倉庫名
     operatorName: String,              // 担当者名
-    onInboundClick: () -> Unit,        // 入庫処理
-    onOutboundClick: () -> Unit,       // 出庫処理
+    onInboundClick: () -> Unit,        // 入荷処理
+    onOutboundClick: () -> Unit,       // 出荷処理
     onTransferClick: () -> Unit,       // 移動処理
     onInventoryClick: () -> Unit,      // 棚卸処理
     onLocationSearchClick: () -> Unit, // ロケ検索

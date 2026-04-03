@@ -65,7 +65,7 @@ fun HistoryScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "入庫処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
+                                text = "入荷処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AccentGreen
@@ -101,7 +101,7 @@ fun HistoryScreen(
         ) {
             // Header
             Text(
-                text = "本日の入庫履歴",
+                text = "本日の入荷履歴",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
@@ -116,7 +116,7 @@ fun HistoryScreen(
                 }
                 state.historyItems.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("本日の入庫履歴はありません", color = ReadonlyText)
+                        Text("本日の入荷履歴はありません", color = ReadonlyText)
                     }
                 }
                 else -> {
@@ -220,7 +220,7 @@ private fun HistoryCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "入庫: ${workItem.workArrivalDate}",
+                            text = "入荷: ${workItem.workArrivalDate}",
                             fontSize = 11.sp,
                             color = TextSecond
                         )

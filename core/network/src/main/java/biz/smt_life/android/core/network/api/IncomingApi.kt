@@ -17,7 +17,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
- * Retrofit interface for Incoming (入庫) API endpoints.
+ * Retrofit interface for Incoming (入荷) API endpoints.
  * Security: Requires X-API-Key and Authorization Bearer token.
  */
 interface IncomingApi {

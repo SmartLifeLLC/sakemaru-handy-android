@@ -19,7 +19,7 @@
 
 ## 概要
 
-P21（出庫データ入力画面）に Portrait/Landscape 切り替え機能を追加。TopAppBar に回転ボタンを配置し、Portrait 時は縦レイアウト（上:商品情報30% / 下:数量入力70%）で表示する。前回の向き設定を DataStore で記憶する。
+P21（出荷データ入力画面）に Portrait/Landscape 切り替え機能を追加。TopAppBar に回転ボタンを配置し、Portrait 時は縦レイアウト（上:商品情報30% / 下:数量入力70%）で表示する。前回の向き設定を DataStore で記憶する。
 
 ## 重要な設計制約
 

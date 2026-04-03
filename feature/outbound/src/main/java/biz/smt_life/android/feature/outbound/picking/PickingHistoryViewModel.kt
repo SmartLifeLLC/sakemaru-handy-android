@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for Picking History screen (2.5.3 - 出庫処理＞履歴).
+ * ViewModel for Picking History screen (2.5.3 - 出荷処理＞履歴).
  *
  * Responsibilities:
  * - Observe and display PICKING items from the task via repository flow

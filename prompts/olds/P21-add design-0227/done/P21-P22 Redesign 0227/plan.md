@@ -1,4 +1,4 @@
-# P21 出庫データ入力 Body リデザイン 作業計画
+# P21 出荷データ入力 Body リデザイン 作業計画
 
 ## 前提
 
@@ -6,7 +6,7 @@
 - API仕様: `prompts/api.md`
 - デザイン仕様: `prompts/design.md`
 - 画面一覧: `prompts/pages.md`
-- HTMLリファレンス: `file:///C:/Users/ninpe/Downloads/ht_inventory_yoko_standalone%20(1).html` の出庫入力画面
+- HTMLリファレンス: `file:///C:/Users/ninpe/Downloads/ht_inventory_yoko_standalone%20(1).html` の出荷入力画面
 
 ### 完了済みの作業・現在の状況
 - P21は機能完全実装済み（API連携、ナビゲーション、ViewModel全て動作）
@@ -27,7 +27,7 @@
 ## P1: P21 Body リデザイン
 
 ### 目的
-OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、HTMLリファレンスの出庫入力画面デザインに合わせてリデザインする。
+OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、HTMLリファレンスの出荷入力画面デザインに合わせてリデザインする。
 
 ### 変更方針
 
@@ -39,7 +39,7 @@ OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、
 ├────────────────┬─────────────────┤
 │ ItemInfoCard   │ QuantityInput   │
 │ (商品名,伝票, │ Card            │
-│  容量,JAN,ロケ)│ (受注数,出庫数) │
+│  容量,JAN,ロケ)│ (受注数,出荷数) │
 ├────────────────┴─────────────────┤
 │ BottomBar (画像/コース/履歴/前/登録/次) │
 └──────────────────────────────────┘
@@ -52,7 +52,7 @@ OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、
 │ ├商品名+画像btn│ 履歴リスト       │
 │ ├ロケ/伝票(2col)│ ├amber-50カード │
 │ ├受注数(readonly)│├商品名+コード  │
-│ ├出庫数(editable)││出庫/受注数    │
+│ ├出荷数(editable)││出荷/受注数    │
 │ └[前へ][登録][次へ]│└削除ボタン   │
 │ (bottomBar廃止) │                 │
 └────────────────┴─────────────────┘
@@ -76,9 +76,9 @@ OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、
 - ケース行: [ケース label (44dp)] [readonly input (80dp)]
 - バラ行: [バラ label (44dp)] [readonly input (80dp)]
 
-**d. 出庫数 (editable)**
+**d. 出荷数 (editable)**
 - neutral-300 border, rounded-lg, p=6dp
-- ラベル "出庫数": 14sp bold neutral-500
+- ラベル "出荷数": 14sp bold neutral-500
 - ケース行: [ケース label (44dp)] [editable input (80dp)]
 - バラ行: [バラ label (44dp)] [editable input (80dp)]
 
@@ -98,7 +98,7 @@ OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、
 - アイテムカード: p=4dp, rounded-lg, amber-50 bg, amber-200 border
   - 商品名: 16sp bold
   - コード/ロケ: 11sp neutral-600, font-mono
-  - 出庫数/受注数: 11sp neutral-500
+  - 出荷数/受注数: 11sp neutral-500
   - 削除ボタン: 28x28dp, red-50 bg, red-300 border, trash icon
 
 **c. データソース**
@@ -107,7 +107,7 @@ OutboundPickingScreen.kt の Body 部分（Scaffold content + bottomBar）を、
 
 #### 4. 削除するコンポーネント
 - `ItemInformationCard` — 左ペインに新UIとして再構築
-- `QuantityInputCard` — 左ペインの受注数/出庫数セクションに統合
+- `QuantityInputCard` — 左ペインの受注数/出荷数セクションに統合
 - `OutboundPickingBottomBar` — 左ペインのボタン行に統合
 - `InfoRow` — 不要
 

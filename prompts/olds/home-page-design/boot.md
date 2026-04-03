@@ -19,7 +19,7 @@
 
 ## 概要
 
-P03 メイン画面（MainScreen）の各メニューカード（入庫・出庫・移動・棚卸・ロケ検索）の上部ストライプ色をすべて緑に統一する。
+P03 メイン画面（MainScreen）の各メニューカード（入荷・出荷・移動・棚卸・ロケ検索）の上部ストライプ色をすべて緑に統一する。
 
 ## 使用API
 
@@ -59,8 +59,8 @@ P03 メイン画面（MainScreen）の各メニューカード（入庫・出庫
 
 | ボタン | 現在色 | カラーコード |
 |--------|--------|-------------|
-| 入庫 | Blue | `Color(0xFF2196F3)` |
-| 出庫 | Pink/Red | `Color(0xFFE91E63)` |
+| 入荷 | Blue | `Color(0xFF2196F3)` |
+| 出荷 | Pink/Red | `Color(0xFFE91E63)` |
 | 移動 | Purple | `Color(0xFF9C27B0)` |
 | 棚卸 | Orange | `Color(0xFFFF9800)` |
 | ロケ検索 | Blue Grey | `Color(0xFF607D8B)` |

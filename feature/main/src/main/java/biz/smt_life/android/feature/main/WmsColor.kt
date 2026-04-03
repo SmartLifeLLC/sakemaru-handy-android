@@ -6,12 +6,12 @@ object WmsColor {
     // ヘッダー背景
     val HeaderBackground = Color(0xFF1A2634)
 
-    // 入庫カード
+    // 入荷カード
     val InboundBorder   = Color(0xFF1976D2)
     val InboundCircleBg = Color(0xFFE3F2FD)
     val InboundIcon     = Color(0xFF1976D2)
 
-    // 出庫カード
+    // 出荷カード
     val OutboundBorder   = Color(0xFFD32F2F)
     val OutboundCircleBg = Color(0xFFFFEBEE)
     val OutboundIcon     = Color(0xFFD32F2F)

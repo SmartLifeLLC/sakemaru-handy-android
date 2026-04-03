@@ -21,13 +21,13 @@
 
 ## 概要
 
-P21（出庫データ入力）のBody部分を、HTMLリファレンス（ht_inventory_yoko_standalone.html）の出庫入力画面デザインに合わせてリデザイン。ヘッダーは現行を維持し、Body（コンテンツ領域）のみ変更する。
+P21（出荷データ入力）のBody部分を、HTMLリファレンス（ht_inventory_yoko_standalone.html）の出荷入力画面デザインに合わせてリデザイン。ヘッダーは現行を維持し、Body（コンテンツ領域）のみ変更する。
 
 ## HTMLリファレンスデザインの要点
 
 ### レイアウト変更（現行 → HTML準拠）
 - **現行**: 左ペイン(商品情報カード) + 右ペイン(数量入力カード) + BottomBar(6ボタン)
-- **HTML**: 左ペイン(商品情報+ロケ/伝票+受注数/出庫数+ボタン) + 右ペイン(履歴リスト)
+- **HTML**: 左ペイン(商品情報+ロケ/伝票+受注数/出荷数+ボタン) + 右ペイン(履歴リスト)
 
 ### 左ペイン（w-1/2）
 - 白背景カード(rounded-xl, shadow-sm, border neutral-200)
@@ -35,7 +35,7 @@ P21（出庫データ入力）のBody部分を、HTMLリファレンス（ht_inv
 - 画像ボタン(amber-50 bg, amber-200 border, amber-600 icon)
 - ロケーション・伝票番号: 2カラムグリッド(amber-50 bg, amber-300 border, font-mono)
 - 受注数（readonly, neutral-50 bg）: ケース/バラ行
-- 出庫数（editable, neutral-300 border）: ケース/バラ行
+- 出荷数（editable, neutral-300 border）: ケース/バラ行
 - ボタン行: 前へ(disabled style) / 登録(amber-600 bg) / 次へ(amber-50 bg, amber-300 border)
 
 ### 右ペイン（w-1/2）
@@ -43,7 +43,7 @@ P21（出庫データ入力）のBody部分を、HTMLリファレンス（ht_inv
 - 白背景カード(rounded-xl, shadow-sm, border neutral-200)
 - 空状態: アイコン + "履歴はありません"
 - 履歴アイテム: amber-50 bg, amber-200 border, rounded-lg
-  - 商品名(16sp bold) + コード/ロケ(11sp) + 出庫/受注数(11sp) + 得意先名(11sp)
+  - 商品名(16sp bold) + コード/ロケ(11sp) + 出荷/受注数(11sp) + 得意先名(11sp)
   - 削除ボタン(red-50 bg, red-300 border, trash icon)
 
 ### カラースキーム（Body部分のみ）
@@ -139,7 +139,7 @@ P21（出庫データ入力）のBody部分を、HTMLリファレンス（ht_inv
 - 実績:
   - OutboundPickingScreen.kt を1166行にリデザイン（旧896行）
   - ヘッダー(TopAppBar + badges)は完全維持
-  - Body: 左ペイン(商品情報+ロケ/伝票+受注数/出庫数+ボタン) + 右ペイン(履歴リスト)
+  - Body: 左ペイン(商品情報+ロケ/伝票+受注数/出荷数+ボタン) + 右ペイン(履歴リスト)
   - BottomBar廃止、ボタン(前へ/登録/次へ)は左ペイン内に統合
   - 削除コンポーネント: ItemInformationCard, QuantityInputCard, OutboundPickingBottomBar, InfoRow
   - 新規コンポーネント: OutboundPickingBody, HistoryItemRow

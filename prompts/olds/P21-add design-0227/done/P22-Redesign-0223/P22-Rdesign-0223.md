@@ -1,5 +1,5 @@
 # Claude Code 작업지시서
-## P22 履歴画面 — P21 出庫画面 디자인 통일
+## P22 履歴画面 — P21 出荷画面 디자인 통일
 ### `sakemaru-handy-android`
 
 ---
@@ -9,7 +9,7 @@
 | 항목 | 내용 |
 |------|------|
 | **대상 프로젝트** | `sakemaru-handy-android` |
-| **기준 화면 (P21)** | 出庫画面 |
+| **기준 화면 (P21)** | 出荷画面 |
 | **변경 화면 (P22)** | 履歴画面 |
 | **작업 내용** | P22의 UI 색상·톤·컴포넌트 스타일을 P21에 맞게 통일 |
 | **헤더** | P22의 기존 헤더 디자인 **그대로 유지** (변경 금지) |
@@ -28,17 +28,17 @@ cat sakemaru-handy-android/pages.md
 ```
 
 pages.md 에서 아래 정보를 확인한다:
-- P21 (出庫画面) 의 파일명 / 화면 구성 설명
+- P21 (出荷画面) 의 파일명 / 화면 구성 설명
 - P22 (履歴画面) 의 파일명 / 화면 구성 설명
 
 ---
 
-### 0-2. P21 — 出庫画面 현재 구현 파악
+### 0-2. P21 — 出荷画面 현재 구현 파악
 
 ```bash
 # pages.md에서 확인한 P21 파일명으로 검색
 find sakemaru-handy-android -type f -name "*.kt" | \
-  xargs grep -l "出庫\|Outbound\|outbound" 2>/dev/null
+  xargs grep -l "出荷\|Outbound\|outbound" 2>/dev/null
 
 find sakemaru-handy-android -type f -name "*.xml" | \
   xargs grep -l "outbound\|shukko" 2>/dev/null
@@ -208,7 +208,7 @@ grep -n "color=" <P22_XML파일경로>
 | 항목 | 내용 |
 |------|------|
 | 화면 정의 | `sakemaru-handy-android/pages.md` |
-| 기준 화면 | P21 出庫画面 (코드에서 직접 값 추출) |
+| 기준 화면 | P21 出荷画面 (코드에서 직접 값 추출) |
 | 변경 화면 | P22 履歴画面 |
 | 헤더 | P22 기존 헤더 유지 |
 

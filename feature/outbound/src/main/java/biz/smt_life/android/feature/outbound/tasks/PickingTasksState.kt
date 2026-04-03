@@ -3,7 +3,7 @@ package biz.smt_life.android.feature.outbound.tasks
 import biz.smt_life.android.core.domain.model.PickingTask
 
 /**
- * UI state for Picking Tasks screen per spec 2.5.1 出庫処理.
+ * UI state for Picking Tasks screen per spec 2.5.1 出荷処理.
  * Shows only "My tasks" (私の担当) - tasks assigned to current picker.
  *
  * Note: warehouseId and pickerId are managed by TokenManager (session data),

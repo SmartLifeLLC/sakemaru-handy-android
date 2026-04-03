@@ -37,7 +37,7 @@ fun HistoryBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "入庫履歴",
+                    text = "入荷履歴",
                     style = MaterialTheme.typography.titleMedium
                 )
 

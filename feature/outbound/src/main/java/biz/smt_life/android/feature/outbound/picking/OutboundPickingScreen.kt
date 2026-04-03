@@ -272,7 +272,7 @@ private fun OutboundPickingHeader(
 }
 
 /**
- * Outbound Picking Screen (2.5.2 - 出庫データ入力).
+ * Outbound Picking Screen (2.5.2 - 出荷データ入力).
  * Header is maintained from existing design.
  * Body redesigned to match HTML reference:
  * - Left pane: Product info + location/slip + order qty + ship qty + action buttons
@@ -1437,7 +1437,7 @@ private fun PreviewOutboundPickingBody() {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Inventory2, null, tint = AccentOrange, modifier = Modifier.size(22.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("出庫", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                Text("出荷", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                                 Spacer(Modifier.width(8.dp))
                                 Surface(color = BadgeGreen, shape = RoundedCornerShape(20.dp)) {
                                     Text("Cコース（深夜便）", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
@@ -1529,7 +1529,7 @@ private fun PreviewOutboundPickingBodyPortrait() {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Filled.Inventory2, null, tint = AccentOrange, modifier = Modifier.size(22.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("出庫", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TitleRed)
+                                Text("出荷", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TitleRed)
                                 Spacer(Modifier.width(8.dp))
                                 Surface(color = BadgeGreen, shape = RoundedCornerShape(20.dp)) {
                                     Text("Cコース（深夜便）", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))

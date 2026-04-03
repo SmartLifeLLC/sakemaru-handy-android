@@ -29,7 +29,7 @@
 `PickingHistoryScreen.kt` の本文（ヘッダー以外）を P21 スタイルに統一する。
 
 ### 変更禁止
-- `TopAppBar`（ヘッダー）: `title = { Text("出庫履歴") }` + 戻るボタン → そのまま
+- `TopAppBar`（ヘッダー）: `title = { Text("出荷履歴") }` + 戻るボタン → そのまま
 - ViewModel・ロジック・ナビゲーション
 
 ### 色定数の追加（ファイル先頭）
@@ -167,10 +167,10 @@ Text("履歴は参照のみ...", fontSize = 14.sp, color = ReadonlyText)
 #### 8. 空状態テキスト
 ```kotlin
 // Before
-Text(text = "出庫履歴がありません", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+Text(text = "出荷履歴がありません", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
 // After
-Text(text = "出庫履歴がありません", fontSize = 16.sp, color = ReadonlyText)
+Text(text = "出荷履歴がありません", fontSize = 16.sp, color = ReadonlyText)
 ```
 
 #### 9. ConfirmAllDialog — 確定ボタン

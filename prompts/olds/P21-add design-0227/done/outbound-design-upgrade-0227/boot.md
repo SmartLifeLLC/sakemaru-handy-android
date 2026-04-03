@@ -21,7 +21,7 @@
 
 ## 概要
 
-出庫処理3画面（P20コース選択、P21データ入力、P22履歴）のUIデザインを、HTMLリファレンス（03_menu02_01〜03.html）に合わせてアップグレードする。機能・API連携は実装済みのため、UIスタイリングのみ変更。
+出荷処理3画面（P20コース選択、P21データ入力、P22履歴）のUIデザインを、HTMLリファレンス（03_menu02_01〜03.html）に合わせてアップグレードする。機能・API連携は実装済みのため、UIスタイリングのみ変更。
 
 ## 使用API
 
@@ -53,18 +53,18 @@
 |------|-------------|
 | P20 コース選択 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu02_01.html` |
 | P21 データ入力 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu02_02.html` |
-| P22 出庫履歴 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu02_03.html` |
-| 参考: 入庫入力 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu01_01.html` |
+| P22 出荷履歴 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu02_03.html` |
+| 参考: 入荷入力 | `C:\Users\ninpe\Desktop\00.쭈작업\02_01.SmartLife\08.Handy\html\Denso02\03_menu01_01.html` |
 
 ## 対象ファイル
 
 ### 既存変更（UI変更のみ）
 - `feature/outbound/tasks/PickingTasksScreen.kt` — P20 コース選択画面
 - `feature/outbound/picking/OutboundPickingScreen.kt` — P21 データ入力画面
-- `feature/outbound/picking/PickingHistoryScreen.kt` — P22 出庫履歴画面
+- `feature/outbound/picking/PickingHistoryScreen.kt` — P22 出荷履歴画面
 
 ### 共通コンポーネント（新規作成 or 既存変更）
-- 出庫用共通UIコンポーネント（NavBar、FooterButton、3Dボタンスタイル等）
+- 出荷用共通UIコンポーネント（NavBar、FooterButton、3Dボタンスタイル等）
 
 ### 参照のみ（変更禁止）
 - `feature/outbound/tasks/PickingTasksViewModel.kt` — ビジネスロジック変更なし
@@ -86,7 +86,7 @@
 | P1: 現状分析・共通スタイル定義 | 完了 | 2026-02-27 | OutboundDesignSystem.kt新規作成 |
 | P2: P20コース選択画面デザイン変更 | 完了 | 2026-02-27 | PickingTasksScreen.kt全面書換 |
 | P3: P21データ入力画面デザイン変更 | 完了 | 2026-02-27 | OutboundPickingScreen.kt全面書換 |
-| P4: P22出庫履歴画面デザイン変更 | 完了 | 2026-02-27 | PickingHistoryScreen.kt全面書換 |
+| P4: P22出荷履歴画面デザイン変更 | 完了 | 2026-02-27 | PickingHistoryScreen.kt全面書換 |
 | P5: 結合確認 | 完了 | 2026-02-27 | compileDebugKotlin BUILD SUCCESSFUL |
 
 ---
@@ -150,7 +150,7 @@
   - OutboundPickingFooter: 6ボタン（登録/履歴/選択/次へ/画像/削除）カラーコーディング
   - HandyNavHost.kt更新: onNavigateToMain対応
 
-### P4: P22出庫履歴画面デザイン変更
+### P4: P22出荷履歴画面デザイン変更
 - 完了日: 2026-02-27
 - 実績:
   - `PickingHistoryScreen.kt` 全面書換

@@ -1,4 +1,4 @@
-# 入庫処理画面群 緑テーマ リデザイン 作業計画
+# 入荷処理画面群 緑テーマ リデザイン 作業計画
 
 ## 前提
 
@@ -9,8 +9,8 @@
 - 色仕様: `prompts/P10-Redesign-0223/P10-Redesign-0223.md`
 
 ### 完了済みの作業・現在の状況
-- P20〜P22（出庫）の緑・オレンジテーマリデザイン完了済み
-- P10〜P14（入庫）は全画面が `MaterialTheme.colorScheme.*` のデフォルト色のまま
+- P20〜P22（出荷）の緑・オレンジテーマリデザイン完了済み
+- P10〜P14（入荷）は全画面が `MaterialTheme.colorScheme.*` のデフォルト色のまま
 
 ---
 
@@ -91,7 +91,7 @@ import androidx.compose.ui.graphics.Color
 |------|------|--------|
 | `Scaffold containerColor` | デフォルト | `BodyBg` |
 | `TopAppBar containerColor` | デフォルト | `HeaderBg` |
-| TopAppBar title | `Text(倉庫名 + 入庫処理)` | アイコン + 同テキスト（緑） |
+| TopAppBar title | `Text(倉庫名 + 入荷処理)` | アイコン + 同テキスト（緑） |
 | タイトル色 | デフォルト | `AccentGreen`, 18sp, Bold |
 | Inventory2 アイコン | なし | `AccentGreen`, 22dp |
 | 戻るボタン色 | デフォルト | `AccentGreen` |
@@ -118,7 +118,7 @@ import androidx.compose.ui.graphics.Color
 |------|------|--------|
 | `Scaffold containerColor` | デフォルト | `BodyBg` |
 | `TopAppBar containerColor` | デフォルト | `HeaderBg` |
-| TopAppBar title | 倉庫名 + 入庫処理 | アイコン + 同テキスト（緑） |
+| TopAppBar title | 倉庫名 + 入荷処理 | アイコン + 同テキスト（緑） |
 | 戻るボタン色 | デフォルト | `AccentGreen` |
 | ヘッダー下線 | なし | `HorizontalDivider(1dp, DividerGreen)` |
 | 商品サマリーCard | `CardDefaults.cardColors(surfaceVariant)` | `OutlinedCard(border=CardBorder 1dp)` |
@@ -149,14 +149,14 @@ import androidx.compose.ui.graphics.Color
 |------|------|--------|
 | `Scaffold containerColor` | デフォルト | `BodyBg` |
 | `TopAppBar containerColor` | デフォルト | `HeaderBg` |
-| TopAppBar title | `倉庫名 入庫処理` | アイコン + 同テキスト（緑） |
+| TopAppBar title | `倉庫名 入荷処理` | アイコン + 同テキスト（緑） |
 | 戻るボタン色 | デフォルト | `AccentGreen` |
 | ヘッダー下線 | なし | `HorizontalDivider(1dp, DividerGreen)` |
 | 商品情報Card | `CardDefaults.cardColors(surfaceVariant)` | `OutlinedCard(border=CardBorder 1dp, radius=12dp)` |
 | 商品名 | デフォルト | `TextPrimary`, Bold |
 | JAN/Code テキスト | `onSurfaceVariant` | `TextSecond` |
 | 入荷日テキスト | デフォルト | `TextSecond` |
-| 入庫数量ラベル | デフォルト | `TextPrimary` |
+| 入荷数量ラベル | デフォルト | `TextPrimary` |
 | 賞味期限ラベル | デフォルト | `TextPrimary` |
 | カレンダーアイコン | デフォルト | `AccentGreen` |
 | ロケーションラベル | デフォルト | `TextPrimary` |
@@ -178,15 +178,15 @@ import androidx.compose.ui.graphics.Color
 |------|------|--------|
 | `Scaffold containerColor` | なし（デフォルト） | `BodyBg` |
 | `TopAppBar containerColor` | なし | `HeaderBg` |
-| TopAppBar title | `倉庫名 入庫処理` | アイコン + 同テキスト（緑） |
+| TopAppBar title | `倉庫名 入荷処理` | アイコン + 同テキスト（緑） |
 | 戻るボタン色 | デフォルト | `AccentGreen` |
 | ヘッダー下線 | なし | `HorizontalDivider(1dp, DividerGreen)` |
-| "本日の入庫履歴" テキスト | デフォルト | `AccentGreen`, Bold |
+| "本日の入荷履歴" テキスト | デフォルト | `AccentGreen`, Bold |
 | HistoryCard | `Card(elevation=2dp)` | `OutlinedCard(bg=HistCardBg, border=HistCardBdr 1dp, radius=10dp)` |
 | コード/JAN テキスト | `onSurfaceVariant` | `TextSecond` |
 | 商品名 | デフォルト | `TextPrimary`, Bold |
 | 倉庫名テキスト | `onSurfaceVariant` | `TextSecond` |
-| 入庫日テキスト | `onSurfaceVariant` | `TextSecond` |
+| 入荷日テキスト | `onSurfaceVariant` | `TextSecond` |
 | 数量テキスト | デフォルト | `TextPrimary` |
 | WorkStatusBadge WORKING | `tertiary.copy(alpha=0.15)` + tertiary | `AccentGreen` + `Color.White` |
 | WorkStatusBadge COMPLETED | `primary.copy(alpha=0.15)` + primary | `DarkGreen` + `Color.White` |

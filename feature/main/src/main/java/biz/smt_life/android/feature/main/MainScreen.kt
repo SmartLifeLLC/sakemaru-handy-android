@@ -488,7 +488,7 @@ private fun ReadyContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                 MenuCard(
-                    label = "入庫処理",
+                    label = "入荷処理",
                     bottomBorderColor = WmsColor.InboundBorder,
                     circleBg = WmsColor.InboundCircleBg,
                     iconColor = WmsColor.InboundIcon,
@@ -498,7 +498,7 @@ private fun ReadyContent(
                     showIcon = false
                 )
                 MenuCard(
-                    label = "出庫処理",
+                    label = "出荷処理",
                     bottomBorderColor = WmsColor.OutboundBorder,
                     circleBg = WmsColor.OutboundCircleBg,
                     iconColor = WmsColor.OutboundIcon,
@@ -726,7 +726,7 @@ private fun ReadyContent(
                         .padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Row 1: 入庫処理, 出庫処理
+                    // Row 1: 入荷処理, 出荷処理
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -734,7 +734,7 @@ private fun ReadyContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         MenuCard(
-                            label = "入庫処理",
+                            label = "入荷処理",
                             bottomBorderColor = WmsColor.InboundBorder,
                             circleBg = WmsColor.InboundCircleBg,
                             iconColor = WmsColor.InboundIcon,
@@ -743,7 +743,7 @@ private fun ReadyContent(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                         MenuCard(
-                            label = "出庫処理",
+                            label = "出荷処理",
                             bottomBorderColor = WmsColor.OutboundBorder,
                             circleBg = WmsColor.OutboundCircleBg,
                             iconColor = WmsColor.OutboundIcon,

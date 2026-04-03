@@ -6,7 +6,7 @@ import biz.smt_life.android.core.domain.model.IncomingWorkItem
 import biz.smt_life.android.core.domain.model.Location
 
 /**
- * Repository interface for Incoming (入庫) feature.
+ * Repository interface for Incoming (入荷) feature.
  * Provides access to incoming schedules, work items, and locations.
  */
 interface IncomingRepository {
@@ -58,7 +58,7 @@ interface IncomingRepository {
     ): Result<IncomingWorkItem>
 
     /**
-     * Complete a work item (入庫確定).
+     * Complete a work item (入荷確定).
      */
     suspend fun completeWork(id: Int): Result<Unit>
 

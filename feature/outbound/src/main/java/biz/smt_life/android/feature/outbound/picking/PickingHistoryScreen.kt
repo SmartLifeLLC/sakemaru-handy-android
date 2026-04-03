@@ -79,7 +79,7 @@ private val ReadonlyText = Color(0xFF888888)
 private val BadgeGreen   = Color(0xFF27AE60)
 
 /**
- * Picking History Screen (2.5.3 - 出庫処理＞履歴).
+ * Picking History Screen (2.5.3 - 出荷処理＞履歴).
  *
  * Two modes:
  * - Editable mode: show PICKING items with delete (F3) and confirm-all (F4) buttons
@@ -266,7 +266,7 @@ fun PickingHistoryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "出庫履歴がありません",
+                        text = "出荷履歴がありません",
                         fontSize = 16.sp,
                         color = ReadonlyText
                     )

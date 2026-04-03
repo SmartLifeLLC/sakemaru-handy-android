@@ -212,7 +212,7 @@ class IncomingViewModel @Inject constructor(
                             .onSuccess {
                                 repository.completeWork(workItem.id)
                                     .onSuccess {
-                                        _state.update { it.copy(isSubmitting = false, successMessage = "入庫を確定しました") }
+                                        _state.update { it.copy(isSubmitting = false, successMessage = "入荷を確定しました") }
                                         refreshAfterSubmit()
                                     }
                                     .onFailure { e ->

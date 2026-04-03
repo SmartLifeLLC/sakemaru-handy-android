@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * API response/request models for Incoming (入庫) feature.
+ * API response/request models for Incoming (入荷) feature.
  */
 
 // ─── Warehouse ───

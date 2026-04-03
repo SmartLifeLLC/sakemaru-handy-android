@@ -165,7 +165,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 )
                 Result.success(updatedItem)
             } else {
-                val errorMessage = extractErrorMessage(response.result, "出庫数量の更新に失敗しました")
+                val errorMessage = extractErrorMessage(response.result, "出荷数量の更新に失敗しました")
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {
@@ -224,7 +224,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 refreshTask(taskId, warehouseId, pickerId)
                 Result.success(Unit)
             } else {
-                val errorMessage = extractErrorMessage(response.result, "出庫履歴のキャンセルに失敗しました")
+                val errorMessage = extractErrorMessage(response.result, "出荷履歴のキャンセルに失敗しました")
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {

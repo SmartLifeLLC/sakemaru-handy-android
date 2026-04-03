@@ -47,6 +47,16 @@ data class PickingTask(
     val registeredCount: Int
         get() = items.count { it.status != ItemStatus.PENDING }
 
+    // Group-based counts (grouped by itemId, matching P21 display)
+    /** 商品グループ数（itemIdベース）。P21のページ数と一致する。 */
+    val totalGroupCount: Int
+        get() = items.map { it.itemId }.distinct().size
+
+    /** 登録済みグループ数（グループ内全アイテムが非PENDING）。P21の登録済み件数と一致する。 */
+    val registeredGroupCount: Int
+        get() = items.groupBy { it.itemId }
+            .count { (_, groupItems) -> groupItems.all { it.status != ItemStatus.PENDING } }
+
     // Completed items for legacy UI (items with picked_qty > 0 or status COMPLETED/SHORTAGE)
     val completedItems: Int
         get() = items.count { it.isCompleted }

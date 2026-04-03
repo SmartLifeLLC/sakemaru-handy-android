@@ -84,7 +84,7 @@ fun IncomingInputScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "入庫処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
+                                text = "入荷処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AccentGreen
@@ -158,7 +158,7 @@ fun IncomingInputScreen(
                 // Quantity input
                 Column {
                     Text(
-                        text = "入庫数量  入庫予定: $expectedQty",
+                        text = "入荷数量  入荷予定: $expectedQty",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = TextPrimary

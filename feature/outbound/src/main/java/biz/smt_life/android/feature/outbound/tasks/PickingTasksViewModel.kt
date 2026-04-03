@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for Picking Tasks screen per spec 2.5.1 出庫処理.
+ * ViewModel for Picking Tasks screen per spec 2.5.1 出荷処理.
  * Shows only "My tasks" (私の担当) - tasks assigned to current picker.
  *
  * Responsibilities:
@@ -58,8 +58,8 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        val pendingTasks = tasks.filter { it.registeredCount == 0 && it.completedAt == null }
-                        val activeTasks = tasks.filter { it.registeredCount > 0 && it.completedAt == null }
+                        val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                        val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
                         val completedTasks = tasks.filter { it.completedAt != null }
                             .sortedBy { it.courseName }
                         val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
@@ -152,8 +152,8 @@ class PickingTasksViewModel @Inject constructor(
 
             result
                 .onSuccess { tasks ->
-                    val pendingTasks = tasks.filter { it.registeredCount == 0 && it.completedAt == null }
-                    val activeTasks = tasks.filter { it.registeredCount > 0 && it.completedAt == null }
+                    val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                    val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
                     val completedTasks = tasks.filter { it.completedAt != null }
                         .sortedBy { it.courseName }
                     val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
@@ -197,8 +197,8 @@ class PickingTasksViewModel @Inject constructor(
             val shippingDate = tokenManager.getShippingDate()
             repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
                 .onSuccess { tasks ->
-                    val pendingTasks = tasks.filter { it.registeredCount == 0 && it.completedAt == null }
-                    val activeTasks = tasks.filter { it.registeredCount > 0 && it.completedAt == null }
+                    val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                    val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
                     val completedTasks = tasks.filter { it.completedAt != null }
                         .sortedBy { it.courseName }
                     val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {

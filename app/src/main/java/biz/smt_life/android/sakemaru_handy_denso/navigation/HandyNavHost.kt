@@ -312,7 +312,7 @@ fun HandyNavHost(
             }
         }
 
-        // Picking History screen (2.5.3 - 出庫処理＞履歴)
+        // Picking History screen (2.5.3 - 出荷処理＞履歴)
         composable(
             route = Routes.PickingHistory.route,
             arguments = listOf(

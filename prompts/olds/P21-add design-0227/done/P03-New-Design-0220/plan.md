@@ -43,12 +43,12 @@ object WmsColor {
     // ヘッダー背景
     val HeaderBackground = Color(0xFF1A2634)
 
-    // 入庫カード
+    // 入荷カード
     val InboundBorder   = Color(0xFF1976D2)
     val InboundCircleBg = Color(0xFFE3F2FD)
     val InboundIcon     = Color(0xFF1976D2)
 
-    // 出庫カード
+    // 出荷カード
     val OutboundBorder   = Color(0xFFD32F2F)
     val OutboundCircleBg = Color(0xFFFFEBEE)
     val OutboundIcon     = Color(0xFFD32F2F)
@@ -96,7 +96,7 @@ object WmsColor {
 │ Header (高さ 50dp)  #1A2634                  │
 │  [<] メインメニュー       担当: 山田太郎 [→|] │
 ├────────────┬────────────────────────────────┤
-│            │  Row1: [入庫処理] [出庫処理]    │
+│            │  Row1: [入荷処理] [出荷処理]    │
 │  サイドバー │  Row2: [移動] [棚卸] [ロケ検索] │
 │  280dp     │                                │
 │  ・日付     │                                │
@@ -134,8 +134,8 @@ object WmsColor {
 
 | カード | サイズ | ボトムボーダー色 | 円背景 | アイコン色 | アイコン |
 |--------|--------|-----------------|--------|-----------|---------|
-| 入庫処理 | Row1 左半分（weight=1f） | `InboundBorder` | `InboundCircleBg` | `InboundIcon` | `Icons.Default.Download` |
-| 出庫処理 | Row1 右半分（weight=1f） | `OutboundBorder` | `OutboundCircleBg` | `OutboundIcon` | `Icons.Default.Upload` |
+| 入荷処理 | Row1 左半分（weight=1f） | `InboundBorder` | `InboundCircleBg` | `InboundIcon` | `Icons.Default.Download` |
+| 出荷処理 | Row1 右半分（weight=1f） | `OutboundBorder` | `OutboundCircleBg` | `OutboundIcon` | `Icons.Default.Upload` |
 | 移動処理 | Row2 1/3（weight=1f） | `MoveBorder` | `MoveCircleBg` | `MoveIcon` | `Icons.Default.SwapHoriz` |
 | 棚卸処理 | Row2 1/3（weight=1f） | `InventoryBorder` | `InventoryCircleBg` | `InventoryIcon` | `Icons.Default.Inventory` または `ListAlt` |
 | ロケ検索 | Row2 1/3（weight=1f） | `LocationBorder` | `LocationCircleBg` | `LocationIcon` | `Icons.Default.LocationOn` |
@@ -163,8 +163,8 @@ Box(fillMaxSize) {
             Column(Modifier.weight(1f).fillMaxHeight().padding(8.dp)) {
                 // Row1
                 Row(Modifier.weight(1f)) {
-                    MenuCard(入庫処理, weight=1f)
-                    MenuCard(出庫処理, weight=1f)
+                    MenuCard(入荷処理, weight=1f)
+                    MenuCard(出荷処理, weight=1f)
                 }
                 Spacer(8.dp)
                 // Row2
@@ -211,7 +211,7 @@ Box(fillMaxSize) {
 - [ ] ヘッダー背景色が `#1A2634` になっている
 - [ ] サイドバーが 280dp 固定幅で表示されている
 - [ ] 倉庫名ボックスに青色ボーダー・背景がついている
-- [ ] Row1 に 2 カード（入庫・出庫）が等幅で表示されている
+- [ ] Row1 に 2 カード（入荷・出荷）が等幅で表示されている
 - [ ] Row2 に 3 カード（移動・棚卸・ロケ検索）が等幅で表示されている
 - [ ] 各カードにボトムボーダーが表示されている
 - [ ] アイコン円が各カードに正しく表示されている

@@ -1,7 +1,7 @@
 package biz.smt_life.android.core.domain.model
 
 /**
- * Domain models for Incoming (入庫) feature.
+ * Domain models for Incoming (入荷) feature.
  * Used by P10-P14 screens.
  */
 

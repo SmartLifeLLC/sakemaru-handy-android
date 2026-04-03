@@ -21,7 +21,7 @@
 
 ## 概要
 
-`sakemaru-handy-android` の入庫処理（P10〜P14）のコードは実装済みだが、APIとの実際の疎通・ビルド・画面遷移・動作を検証し、問題があれば修正する。
+`sakemaru-handy-android` の入荷処理（P10〜P14）のコードは実装済みだが、APIとの実際の疎通・ビルド・画面遷移・動作を検証し、問題があれば修正する。
 
 ## 現在の実装状況（調査済み）
 
@@ -44,7 +44,7 @@
 | メソッド | エンドポイント | 用途 |
 |----------|---------------|------|
 | GET | `/api/master/warehouses` | 倉庫一覧（P10） |
-| GET | `/api/incoming/schedules` | 入庫予定一覧（P11） |
+| GET | `/api/incoming/schedules` | 入荷予定一覧（P11） |
 | GET | `/api/incoming/work-items` | 作業データ一覧（P11作業中判定・P14履歴） |
 | POST | `/api/incoming/work-items` | 入荷作業開始（P13） |
 | PUT | `/api/incoming/work-items/{id}` | 作業データ更新（P13） |
@@ -101,12 +101,12 @@
 ### API テスト結果（2026-02-22 実施済み）
 - 認証: token=`67|O4z...`、picker_id=4、default_warehouse_id=91
 - 倉庫一覧: 30件取得成功（ID=91: 華むすびの蔵センター）
-- 入庫予定: warehouse_id=91 で商品リスト取得成功（schedule_id=1198 など複数）
+- 入荷予定: warehouse_id=91 で商品リスト取得成功（schedule_id=1198 など複数）
 - 作業データ一覧: WORKING/all とも正常応答（現在は空）
 - ロケーション: 複数取得成功（Z 00 105 など）
 - POST 作業開始: work_id=3 作成成功（WORKING状態）
 - PUT 作業更新: work_id=3 数量=5 に更新成功
-- POST 作業完了: work_id=3 完了確定成功（「入庫を確定しました」）
+- POST 作業完了: work_id=3 完了確定成功（「入荷を確定しました」）
 - **全API正常。エラーなし。**
 
 ### ビルド結果

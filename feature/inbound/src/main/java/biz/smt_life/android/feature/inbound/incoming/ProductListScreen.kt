@@ -67,7 +67,7 @@ fun ProductListScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "入庫処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
+                                text = "入荷処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = AccentGreen
@@ -131,7 +131,7 @@ fun ProductListScreen(
                 }
                 state.products.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("入庫予定がありません", color = ReadonlyText)
+                        Text("入荷予定がありません", color = ReadonlyText)
                     }
                 }
                 else -> {

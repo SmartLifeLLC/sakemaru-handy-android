@@ -1,4 +1,4 @@
-# P21 出庫データ入力 UIリデザイン 作業計画
+# P21 出荷データ入力 UIリデザイン 作業計画
 
 ## 前提
 
@@ -19,7 +19,7 @@
 ### 現行レイアウト構造
 ```
 Scaffold(
-  TopAppBar("出庫データ入力")  ← 標準スタイル、装飾なし
+  TopAppBar("出荷データ入力")  ← 標準スタイル、装飾なし
   BottomBar(商品の画像 | コース変更 | 履歴 | 前へ | 登録 | 次へ)
   Body → Row {
     左カラム (weight=1): CourseHeaderCard + ItemInformationCard
@@ -36,7 +36,7 @@ Scaffold(
 | 進捗 | `state.registeredCount` / `state.totalCount` |
 | 商品名 | `state.currentItem?.itemName` |
 | 商品規格 | `.volume`, `.capacityCase`, `.janCode`, `.slipNumber` |
-| 出庫数量（入力） | `state.pickedQtyInput` |
+| 出荷数量（入力） | `state.pickedQtyInput` |
 | 出荷数量（受注） | `state.currentItem?.plannedQty` |
 | 数量タイプ | `state.quantityTypeLabel` |
 | 更新中 | `state.isUpdating` |
@@ -87,7 +87,7 @@ private val ReadonlyText = Color(0xFF888888)   // 読み取り専用テキスト
 変更前:
 ```kotlin
 TopAppBar(
-    title = { Text("出庫データ入力") },
+    title = { Text("出荷データ入力") },
     navigationIcon = { /* ArrowBack */ },
     actions = { /* Home */ }
 )
@@ -107,7 +107,7 @@ Column {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "出庫",
+                    text = "出荷",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TitleRed
@@ -306,14 +306,14 @@ private fun QuantityInputCard(...) {
 
             HorizontalDivider(color = Color(0xFFEEEEEE))
 
-            // --- 出庫数量（入力）---
+            // --- 出荷数量（入力）---
             Column {
-                Text(text = "出庫数量", fontSize = 12.sp, color = AccentOrange, fontWeight = FontWeight.Bold)
+                Text(text = "出荷数量", fontSize = 12.sp, color = AccentOrange, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = pickedQtyInput,
                     onValueChange = onPickedQtyChange,
-                    label = { Text("出庫数量 ($quantityType)", color = AccentOrange) },
+                    label = { Text("出荷数量 ($quantityType)", color = AccentOrange) },
                     enabled = !isUpdating,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,

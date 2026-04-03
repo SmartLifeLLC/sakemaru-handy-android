@@ -9,8 +9,8 @@
 - 機能仕様: `prompts/incoming/incoming-spec.md`
 
 ### 完了済みの作業・現在の状況
-- 出庫処理（P20〜P22）は実装済み・動作中
-- 入庫処理は旧プレースホルダー実装あり（InboundScreen/InboundViewModel/InboundState）
+- 出荷処理（P20〜P22）は実装済み・動作中
+- 入荷処理は旧プレースホルダー実装あり（InboundScreen/InboundViewModel/InboundState）
   - 旧APIは `/items`, `/inbound/entries` 等のダミーエンドポイント
   - FakeInboundRepository でモックデータ利用
 - 新仕様では5画面構成（P10〜P14）に全面刷新
@@ -27,8 +27,8 @@
 | P3 | P10 倉庫選択画面 | WarehouseSelectionScreen | 倉庫一覧表示・選択遷移動作 |
 | P4 | P11 商品リスト画面 | ProductListScreen | 商品一覧表示・検索・遷移動作 |
 | P5 | P12 スケジュールリスト画面 | ScheduleListScreen | スケジュール一覧表示・選択動作 |
-| P6 | P13 入庫入力画面 | IncomingInputScreen | 入庫登録フロー完動 |
-| P7 | P14 入庫履歴画面 | HistoryScreen | 履歴表示・編集遷移動作 |
+| P6 | P13 入荷入力画面 | IncomingInputScreen | 入荷登録フロー完動 |
+| P7 | P14 入荷履歴画面 | HistoryScreen | 履歴表示・編集遷移動作 |
 | P8 | ナビゲーション・結合 | Routes/NavHost/DI登録 | 全画面遷移フロー動作 |
 | P9 | 旧コード削除 | 不要ファイル削除 | ビルド成功・旧コード残存なし |
 | P10 | pages.md 更新 | 画面一覧の更新 | P10〜P14が正しく記載 |
@@ -52,9 +52,9 @@
 |---|----------|---------------|-----------|---------|
 | 1 | POST | `/api/auth/login` | code, password | トークン取得 |
 | 2 | GET | `/api/master/warehouses` | - | 倉庫リスト（id, code, name） |
-| 3 | GET | `/api/incoming/schedules` | warehouse_id | 入庫予定リスト |
+| 3 | GET | `/api/incoming/schedules` | warehouse_id | 入荷予定リスト |
 | 4 | GET | `/api/incoming/schedules` | warehouse_id, search=テスト | 検索結果 |
-| 5 | GET | `/api/incoming/schedules/{id}` | id=テスト#3の結果 | 入庫予定詳細 |
+| 5 | GET | `/api/incoming/schedules/{id}` | id=テスト#3の結果 | 入荷予定詳細 |
 | 6 | GET | `/api/incoming/work-items` | warehouse_id, status=all | 作業データリスト |
 | 7 | POST | `/api/incoming/work-items` | incoming_schedule_id, picker_id, warehouse_id | 作業データ作成 |
 | 8 | PUT | `/api/incoming/work-items/{id}` | work_quantity, work_arrival_date | 作業データ更新 |
@@ -302,7 +302,7 @@ interface IncomingRepository {
 ## P3: P10 倉庫選択画面
 
 ### 目的
-入庫処理の起点画面。倉庫マスタ一覧を表示し、作業対象倉庫を選択する。
+入荷処理の起点画面。倉庫マスタ一覧を表示し、作業対象倉庫を選択する。
 
 ### 実装内容
 
@@ -341,7 +341,7 @@ val isLoadingWarehouses: Boolean
 ## P4: P11 商品リスト画面
 
 ### 目的
-選択倉庫の入庫予定商品一覧を表示。検索・バーコードスキャン対応。
+選択倉庫の入荷予定商品一覧を表示。検索・バーコードスキャン対応。
 
 ### 実装内容
 
@@ -353,7 +353,7 @@ val isLoadingWarehouses: Boolean
 - `GET /api/incoming/work-items?warehouse_id={id}&picker_id={pickerId}&status=WORKING` — 作業中判定
 
 #### UI仕様（incoming-spec.md P11参照）
-- TopAppBar: `← {倉庫名} 入庫処理`
+- TopAppBar: `← {倉庫名} 入荷処理`
 - 検索バー: 300msデバウンス、バーコードスキャン対応
 - 商品カードリスト（LazyColumn）:
   - JANコード、商品コード、商品名
@@ -386,7 +386,7 @@ val workingScheduleIds: Set<Int>
 ## P5: P12 スケジュールリスト画面
 
 ### 目的
-選択商品の入庫スケジュール一覧を表示。倉庫別の予定数量・残数量を確認する。
+選択商品の入荷スケジュール一覧を表示。倉庫別の予定数量・残数量を確認する。
 
 ### 実装内容
 
@@ -397,9 +397,9 @@ val workingScheduleIds: Set<Int>
 - なし（P11で取得済みデータを使用）
 
 #### UI仕様（incoming-spec.md P12参照）
-- TopAppBar: `← {倉庫名} 入庫処理`
+- TopAppBar: `← {倉庫名} 入荷処理`
 - 商品サマリーヘッダー（名前・JAN・容量・画像）
-- 合計数量バー（合計予定数・入庫済数）
+- 合計数量バー（合計予定数・入荷済数）
 - スケジュールリスト（LazyColumn）:
   - 倉庫名・予定日・ロケーション（1行）
   - ステータスバッジ（確定済/連携済/キャンセル → タップ不可・薄暗い背景）
@@ -424,10 +424,10 @@ val workingScheduleIds: Set<Int>
 
 ---
 
-## P6: P13 入庫入力画面
+## P6: P13 入荷入力画面
 
 ### 目的
-入庫数量・賞味期限・ロケーションを入力して登録する。
+入荷数量・賞味期限・ロケーションを入力して登録する。
 
 ### 実装内容
 
@@ -441,10 +441,10 @@ val workingScheduleIds: Set<Int>
 - `GET /api/incoming/locations?warehouse_id={id}&search={query}` — ロケーション検索
 
 #### UI仕様（incoming-spec.md P13参照）
-- TopAppBar: `← {倉庫名} 入庫処理`
+- TopAppBar: `← {倉庫名} 入荷処理`
 - 商品情報ヘッダー（名前・JAN・商品コード）
 - 入荷日表示（本日）
-- 入庫数量入力（予定数表示付き、バリデーション: > 0 ≤ 残数量）
+- 入荷数量入力（予定数表示付き、バリデーション: > 0 ≤ 残数量）
 - 賞味期限入力（YYYY-MM-DD、カレンダーピッカー付き）
 - ロケーション検索（オートコンプリート、300msデバウンス）
 - FunctionKeyBar: F1:賞味期限カレンダー, F2:戻る, F3:登録
@@ -469,22 +469,22 @@ val workingScheduleIds: Set<Int>
 #### 入力フィールド仕様
 | フィールド | バリデーション | 備考 |
 |-----------|-------------|------|
-| 入庫数量 | > 0 ≤ 残数量 | フォーカス時全選択 |
+| 入荷数量 | > 0 ≤ 残数量 | フォーカス時全選択 |
 | 賞味期限 | YYYY-MM-DD形式 | 任意、カレンダーピッカー有 |
 | ロケーション | なし | オートコンプリート |
 
 ### 完了条件
-- 新規入庫登録が正常に完了すること（3ステップAPI）
+- 新規入荷登録が正常に完了すること（3ステップAPI）
 - 編集フローが正常に動作すること
 - ロケーション検索・選択が動作すること
 - バリデーションエラーが適切に表示されること
 
 ---
 
-## P7: P14 入庫履歴画面
+## P7: P14 入荷履歴画面
 
 ### 目的
-本日の入庫作業履歴を表示し、編集可能なアイテムを選択してP13へ遷移する。
+本日の入荷作業履歴を表示し、編集可能なアイテムを選択してP13へ遷移する。
 
 ### 実装内容
 
@@ -495,12 +495,12 @@ val workingScheduleIds: Set<Int>
 - `GET /api/incoming/work-items?warehouse_id={id}&picker_id={pickerId}&status=all&from_date={today}`
 
 #### UI仕様（incoming-spec.md P14参照）
-- TopAppBar: `← {倉庫名} 入庫処理`
-- 「本日の入庫履歴」ヘッダー
+- TopAppBar: `← {倉庫名} 入荷処理`
+- 「本日の入荷履歴」ヘッダー
 - 履歴カードリスト（LazyColumn）:
   - JANコード、商品コード、商品名
   - 倉庫名
-  - 予定日、入庫日
+  - 予定日、入荷日
   - ステータスバッジ（カラーコーディング: 作業中=tertiary, 完了=primary, キャンセル=error）
   - 数量（右端大きく）
 - FunctionKeyBar: F2:戻る, F3:リスト（P11へ）
@@ -560,16 +560,16 @@ composable(Routes.IncomingHistory.route) { ... }
 ```
 
 #### MainScreen 変更
-- 「入庫処理」ボタンの遷移先を `Routes.Inbound` → `Routes.IncomingWarehouseSelection` に変更
+- 「入荷処理」ボタンの遷移先を `Routes.Inbound` → `Routes.IncomingWarehouseSelection` に変更
 
 #### 結合テスト手順
-1. P03 → P10: 入庫処理ボタン → 倉庫一覧表示
+1. P03 → P10: 入荷処理ボタン → 倉庫一覧表示
 2. P10 → P11: 倉庫選択 → 商品一覧表示
 3. P11 → P12: 商品選択 → スケジュール一覧表示
-4. P12 → P13: スケジュール選択 → 入庫入力表示
+4. P12 → P13: スケジュール選択 → 入荷入力表示
 5. P13 → P12: 登録成功 → スケジュール一覧（数量更新）
 6. P11 → P14: F3 → 履歴表示
-7. P14 → P13: 編集タップ → 入庫入力（プリフィル）
+7. P14 → P13: 編集タップ → 入荷入力（プリフィル）
 8. 各画面 F2: 戻る → 前画面
 
 ### 完了条件
@@ -617,7 +617,7 @@ composable(Routes.IncomingHistory.route) { ... }
 ## P10: pages.md 更新
 
 ### 目的
-実装した入庫処理画面（P10〜P14）の情報を `prompts/pages.md` に反映する。
+実装した入荷処理画面（P10〜P14）の情報を `prompts/pages.md` に反映する。
 
 ### 更新内容
 
@@ -638,7 +638,7 @@ composable(Routes.IncomingHistory.route) { ... }
 - 画面解像度 1080x2040 / 420dpi / portrait・landscape対応 を前提にUI設計
 - NoActionBar テーマ + Compose TopAppBar パターンを踏襲
 - FunctionKeyBar の配置パターンを踏襲（F1〜F4）
-- 既存出庫機能のアーキテクチャパターンを踏襲
+- 既存出荷機能のアーキテクチャパターンを踏襲
   - Single Source of Truth (StateFlow)
   - ErrorMapper → NetworkException
   - Idempotency-Key ヘッダー（POST時）
@@ -652,7 +652,7 @@ composable(Routes.IncomingHistory.route) { ... }
 - 全PhaseのAPIテストが成功
 - P10〜P14 の全画面が正常動作
 - 全遷移フロー（P03→P10→P11→P12→P13→P12、P11→P14→P13）が動作
-- 入庫登録フロー（新規・編集）が正常完了
+- 入荷登録フロー（新規・編集）が正常完了
 - 旧コードが削除済み
 - ビルド成功
 - pages.md が更新済み

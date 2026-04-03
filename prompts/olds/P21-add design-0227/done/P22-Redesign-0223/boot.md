@@ -20,7 +20,7 @@
 
 ## 概要
 
-P22（出庫履歴画面 = PickingHistoryScreen）のUIを P21（出庫データ入力画面）のデザインに統一する。
+P22（出荷履歴画面 = PickingHistoryScreen）のUIを P21（出荷データ入力画面）のデザインに統一する。
 ヘッダーは変更禁止。ロジック・API・ViewModel・ナビゲーションは一切変更しない。UIファイルのみ変更。
 
 ---
@@ -36,7 +36,7 @@ P22（出庫履歴画面 = PickingHistoryScreen）のUIを P21（出庫データ
 - 画面解像度: 1080 x 2400, 420dpi, portrait/landscape対応
 - API Level 33
 - テーマ: NoActionBar + Compose TopAppBar
-- **ヘッダー（TopAppBar "出庫履歴" + 戻るボタン）変更禁止**
+- **ヘッダー（TopAppBar "出荷履歴" + 戻るボタン）変更禁止**
 - **ViewModel・ロジック・ナビゲーション変更禁止**
 - UIファイル（PickingHistoryScreen.kt）のみ変更対象
 

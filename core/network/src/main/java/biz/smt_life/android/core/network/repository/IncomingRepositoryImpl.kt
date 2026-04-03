@@ -61,7 +61,7 @@ class IncomingRepositoryImpl @Inject constructor(
                 val products = response.result.data.map { it.toDomain() }
                 Result.success(products)
             } else {
-                Result.failure(Exception(extractErrorMessage(response.result, "入庫予定の取得に失敗しました")))
+                Result.failure(Exception(extractErrorMessage(response.result, "入荷予定の取得に失敗しました")))
             }
         } catch (e: Exception) {
             Result.failure(errorMapper.mapException(e))
@@ -145,7 +145,7 @@ class IncomingRepositoryImpl @Inject constructor(
             if (response.isSuccess) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(extractErrorMessage(response.result, "入庫確定に失敗しました")))
+                Result.failure(Exception(extractErrorMessage(response.result, "入荷確定に失敗しました")))
             }
         } catch (e: Exception) {
             Result.failure(errorMapper.mapException(e))

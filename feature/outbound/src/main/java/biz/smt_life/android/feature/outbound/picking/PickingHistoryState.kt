@@ -4,7 +4,7 @@ import biz.smt_life.android.core.domain.model.PickingTask
 import biz.smt_life.android.core.domain.model.PickingTaskItem
 
 /**
- * UI State for Picking History screen (2.5.3 - 出庫処理＞履歴).
+ * UI State for Picking History screen (2.5.3 - 出荷処理＞履歴).
  *
  * Display modes:
  * - Editable mode: at least one PICKING item exists, show delete & confirm buttons
