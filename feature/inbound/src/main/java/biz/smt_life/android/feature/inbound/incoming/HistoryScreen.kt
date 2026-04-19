@@ -2,40 +2,46 @@ package biz.smt_life.android.feature.inbound.incoming
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import biz.smt_life.android.core.domain.model.IncomingWorkItem
-import biz.smt_life.android.core.domain.model.IncomingWorkStatus
-import biz.smt_life.android.core.domain.model.IncomingScheduleStatus
 
-// ─── Color definitions ────────────────────────────────────────────────────────
-private val AccentGreen  = Color(0xFF27AE60)
-private val DarkGreen    = Color(0xFF1A7A4A)
-private val BodyBg       = Color.White
-private val HeaderBg     = Color(0xFFF0FFF4)
-private val DividerGreen = Color(0xFFD5F5E3)
-private val HistCardBg   = Color(0xFFF0FFF4)
-private val HistCardBdr  = Color(0xFFA5D6A7)
-private val TextPrimary  = Color(0xFF212529)
-private val TextSecond   = Color(0xFF555555)
-private val ReadonlyText = Color(0xFF888888)
-private val DeleteRed    = Color(0xFFE74C3C)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     viewModel: IncomingViewModel,
@@ -43,55 +49,65 @@ fun HistoryScreen(
     onNavigateToProductList: () -> Unit,
     onNavigateToInput: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadHistory()
     }
 
     Scaffold(
-        containerColor = BodyBg,
+        containerColor = IncomingBodyBg,
         topBar = {
             Column {
-                TopAppBar(
-                    modifier = Modifier.height(60.dp),
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Inventory2,
-                                contentDescription = null,
-                                tint = AccentGreen,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "入荷処理 ｜ ${state.selectedWarehouse?.name ?: ""}",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AccentGreen
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "戻る",
-                                tint = AccentGreen
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = HeaderBg)
-                )
-                HorizontalDivider(thickness = 1.dp, color = DividerGreen)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "戻る",
+                            tint = IncomingTitleRed
+                        )
+                        Text("戻る", color = IncomingTitleRed, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        text = "本日の入荷履歴",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = IncomingTitleRed
+                    )
+                    TextButton(onClick = onNavigateToProductList) {
+                        Icon(Icons.Filled.History, contentDescription = "商品一覧", tint = IncomingAccentOrange)
+                        Text("商品一覧", color = IncomingAccentOrange, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    state.selectedWarehouse?.let { warehouse ->
+                        IncomingCompactChip(
+                            text = "作業倉庫 ${warehouse.name}",
+                            background = IncomingAmber50,
+                            border = IncomingAmber200,
+                            contentColor = IncomingAmber700
+                        )
+                    }
+                    if (state.historyItems.isNotEmpty()) {
+                        IncomingCompactChip(text = "履歴 ${state.historyItems.size}件")
+                    }
+                }
+                HorizontalDivider(thickness = 2.dp, color = IncomingDividerGold)
             }
-        },
-        bottomBar = {
-            FunctionKeyBar(
-                f2 = FunctionKeyAction("戻る", onNavigateBack),
-                f3 = FunctionKeyAction("リスト", onNavigateToProductList),
-                centerAligned = true
-            )
         }
     ) { padding ->
         Column(
@@ -99,43 +115,33 @@ fun HistoryScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Header
-            Text(
-                text = "本日の入荷履歴",
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentGreen
-            )
-
             when {
                 state.isLoadingHistory -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AccentGreen)
+                        CircularProgressIndicator(color = IncomingAccentOrange)
                     }
                 }
+
                 state.historyItems.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("本日の入荷履歴はありません", color = ReadonlyText)
+                        Text("本日の入荷履歴はありません", color = IncomingReadonlyText)
                     }
                 }
+
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(state.historyItems) { workItem ->
+                        items(state.historyItems, key = { it.id }) { workItem ->
                             HistoryCard(
                                 workItem = workItem,
                                 onClick = {
-                                    if (isEditable(workItem)) {
-                                        viewModel.selectHistoryItem(workItem)
+                                    if (viewModel.selectHistoryItem(workItem)) {
                                         onNavigateToInput()
                                     }
-                                },
-                                onPrint = {},
-                                onDelete = {}
+                                }
                             )
                         }
                     }
@@ -143,50 +149,45 @@ fun HistoryScreen(
             }
         }
 
-        // Error snackbar
         state.errorMessage?.let { message ->
             Snackbar(
                 modifier = Modifier.padding(16.dp),
                 action = {
-                    TextButton(onClick = { viewModel.clearError() }) {
-                        Text("閉じる", color = AccentGreen)
+                    TextButton(onClick = viewModel::clearError) {
+                        Text("閉じる", color = IncomingAccentOrange)
                     }
                 }
-            ) { Text(message) }
+            ) {
+                Text(message)
+            }
         }
     }
-}
-
-private fun isEditable(workItem: IncomingWorkItem): Boolean {
-    if (workItem.status == IncomingWorkStatus.CANCELLED) return false
-    return workItem.status == IncomingWorkStatus.WORKING || workItem.status == IncomingWorkStatus.COMPLETED
 }
 
 @Composable
 private fun HistoryCard(
     workItem: IncomingWorkItem,
-    onClick: () -> Unit,
-    onPrint: () -> Unit,
-    onDelete: () -> Unit
+    onClick: () -> Unit
 ) {
-    val editable = isEditable(workItem)
+    val editable = workItem.canEditFromHistory
+    val schedule = workItem.schedule
 
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
             .alpha(if (editable) 1f else 0.6f)
             .then(if (editable) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, HistCardBdr),
-        colors = CardDefaults.outlinedCardColors(containerColor = HistCardBg),
-        elevation = CardDefaults.outlinedCardElevation(
-            defaultElevation = if (editable) 1.dp else 0.dp
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            width = if (editable) 2.dp else 1.dp,
+            color = if (editable) IncomingAccentOrange else IncomingNeutral200
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -194,72 +195,45 @@ private fun HistoryCard(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    val schedule = workItem.schedule
-                    if (schedule != null) {
-                        Text(
-                            text = "JAN: -  Code: ${schedule.itemCode}",
-                            fontSize = 11.sp,
-                            color = TextSecond
-                        )
-                        Text(
-                            text = schedule.itemName,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
-                        Text(
-                            text = schedule.warehouseName,
-                            fontSize = 12.sp,
-                            color = TextSecond
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = schedule?.itemName.orEmpty(),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = IncomingTextPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "JAN ${schedule?.primaryJanCode ?: "-"} / 商品コード ${schedule?.itemCode.orEmpty()}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = IncomingNeutral500
+                    )
+                    Text(
+                        text = "入荷対象倉庫 ${schedule?.warehouseName.orEmpty()}",
+                        fontSize = 12.sp,
+                        color = IncomingNeutral500
+                    )
+                    Text(
+                        text = "入荷日 ${workItem.workArrivalDate.orEmpty()}",
+                        fontSize = 12.sp,
+                        color = IncomingNeutral500
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    HistoryStatusBadge(workItem.status.name)
+                    Surface(
+                        color = IncomingAccentOrange.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(
-                            text = "入荷: ${workItem.workArrivalDate}",
-                            fontSize = 11.sp,
-                            color = TextSecond
+                            text = "${workItem.workQuantity}",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = IncomingAccentOrange
                         )
-                        WorkStatusBadge(workItem.status)
                     }
-                }
-
-                // Quantity
-                Text(
-                    text = "${workItem.workQuantity}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onPrint,
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    border = BorderStroke(1.dp, AccentGreen)
-                ) {
-                    Text("印刷", fontSize = 12.sp, color = AccentGreen)
-                }
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = onDelete,
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeleteRed)
-                ) {
-                    Text("削除", fontSize = 12.sp, color = Color.White)
                 }
             }
         }
@@ -267,22 +241,24 @@ private fun HistoryCard(
 }
 
 @Composable
-private fun WorkStatusBadge(status: IncomingWorkStatus) {
-    val (text, color) = when (status) {
-        IncomingWorkStatus.WORKING   -> "作業中" to AccentGreen
-        IncomingWorkStatus.COMPLETED -> "完了" to DarkGreen
-        IncomingWorkStatus.CANCELLED -> "キャンセル" to DeleteRed
+private fun HistoryStatusBadge(status: String) {
+    val (text, color) = when (status.uppercase()) {
+        "WORKING" -> "作業中" to IncomingWarningOrange
+        "COMPLETED" -> "完了" to IncomingBadgeGreen
+        "CANCELLED" -> "キャンセル" to IncomingWarningRed
+        else -> status to IncomingNeutral500
     }
+
     Surface(
-        color = color,
-        shape = RoundedCornerShape(20.dp)
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-            fontSize = 11.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = color
         )
     }
 }

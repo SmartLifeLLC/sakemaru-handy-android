@@ -10,15 +10,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +37,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -80,6 +86,7 @@ fun MainRoute(
     onNavigateToWarehouseSettings: () -> Unit,
     onNavigateToInbound: () -> Unit,
     onNavigateToOutbound: () -> Unit,
+    onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
     onNavigateToLocationSearch: () -> Unit,
@@ -99,6 +106,7 @@ fun MainRoute(
         onNavigateToWarehouseSettings = onNavigateToWarehouseSettings,
         onNavigateToInbound = onNavigateToInbound,
         onNavigateToOutbound = onNavigateToOutbound,
+        onNavigateToProxyShipment = onNavigateToProxyShipment,
         onNavigateToMove = onNavigateToMove,
         onNavigateToInventory = onNavigateToInventory,
         onNavigateToLocationSearch = onNavigateToLocationSearch,
@@ -119,6 +127,7 @@ fun MainScreen(
     onNavigateToWarehouseSettings: () -> Unit,
     onNavigateToInbound: () -> Unit,
     onNavigateToOutbound: () -> Unit,
+    onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
     onNavigateToLocationSearch: () -> Unit,
@@ -156,6 +165,7 @@ fun MainScreen(
             onSelectShippingDate = onSelectShippingDate,
             onNavigateToInbound = onNavigateToInbound,
             onNavigateToOutbound = onNavigateToOutbound,
+            onNavigateToProxyShipment = onNavigateToProxyShipment,
             onNavigateToMove = onNavigateToMove,
             onNavigateToInventory = onNavigateToInventory,
             onNavigateToLocationSearch = onNavigateToLocationSearch,
@@ -204,6 +214,7 @@ private fun ReadyContent(
     onSelectShippingDate: (String) -> Unit = {},
     onNavigateToInbound: () -> Unit,
     onNavigateToOutbound: () -> Unit,
+    onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
     onNavigateToLocationSearch: () -> Unit,
@@ -263,32 +274,37 @@ private fun ReadyContent(
                 } else if (availableWarehouses.isEmpty()) {
                     Text("倉庫が見つかりません")
                 } else {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        availableWarehouses.forEach { wh ->
-                            val isSelected = wh.id.toString() == warehouse.id
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelectWarehouse(wh) },
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                       else MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text(
-                                        text = wh.name,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "コード: ${wh.code}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                    val useTwoColumns = !isPortrait && availableWarehouses.size > 1
+
+                    if (useTwoColumns) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 320.dp),
+                            contentPadding = PaddingValues(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(availableWarehouses, key = { it.id }) { wh ->
+                                WarehouseDialogItem(
+                                    warehouse = wh,
+                                    isSelected = wh.id.toString() == warehouse.id,
+                                    onClick = { onSelectWarehouse(wh) }
+                                )
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            availableWarehouses.forEach { wh ->
+                                WarehouseDialogItem(
+                                    warehouse = wh,
+                                    isSelected = wh.id.toString() == warehouse.id,
+                                    onClick = { onSelectWarehouse(wh) }
+                                )
                             }
                         }
                     }
@@ -504,6 +520,16 @@ private fun ReadyContent(
                     iconColor = WmsColor.OutboundIcon,
                     icon = Icons.Default.ArrowUpward,
                     onClick = onNavigateToOutbound,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    showIcon = false
+                )
+                MenuCard(
+                    label = "横持出荷",
+                    bottomBorderColor = WmsColor.ProxyShipmentBorder,
+                    circleBg = WmsColor.ProxyShipmentCircleBg,
+                    iconColor = WmsColor.ProxyShipmentIcon,
+                    icon = Icons.Default.LocalShipping,
+                    onClick = onNavigateToProxyShipment,
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     showIcon = false
                 )
@@ -726,7 +752,7 @@ private fun ReadyContent(
                         .padding(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Row 1: 入荷処理, 出荷処理
+                    // Row 1: 入荷処理, 出荷処理, 横持出荷
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -749,6 +775,15 @@ private fun ReadyContent(
                             iconColor = WmsColor.OutboundIcon,
                             icon = Icons.Default.ArrowUpward,
                             onClick = onNavigateToOutbound,
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                        )
+                        MenuCard(
+                            label = "横持出荷",
+                            bottomBorderColor = WmsColor.ProxyShipmentBorder,
+                            circleBg = WmsColor.ProxyShipmentCircleBg,
+                            iconColor = WmsColor.ProxyShipmentIcon,
+                            icon = Icons.Default.LocalShipping,
+                            onClick = onNavigateToProxyShipment,
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                     }
@@ -790,6 +825,35 @@ private fun ReadyContent(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WarehouseDialogItem(
+    warehouse: biz.smt_life.android.core.domain.model.IncomingWarehouse,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = warehouse.name,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = "コード: ${warehouse.code}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -907,6 +971,7 @@ private fun MainScreenLoadingPreview() {
             onNavigateToWarehouseSettings = {},
             onNavigateToInbound = {},
             onNavigateToOutbound = {},
+            onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
             onNavigateToLocationSearch = {},
@@ -939,6 +1004,7 @@ private fun MainScreenReadyPreview() {
             onNavigateToWarehouseSettings = {},
             onNavigateToInbound = {},
             onNavigateToOutbound = {},
+            onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
             onNavigateToLocationSearch = {},
@@ -962,6 +1028,7 @@ private fun MainScreenErrorPreview() {
             onNavigateToWarehouseSettings = {},
             onNavigateToInbound = {},
             onNavigateToOutbound = {},
+            onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
             onNavigateToLocationSearch = {},

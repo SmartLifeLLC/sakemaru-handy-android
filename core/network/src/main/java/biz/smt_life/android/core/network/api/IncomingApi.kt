@@ -1,12 +1,11 @@
 package biz.smt_life.android.core.network.api
 
 import biz.smt_life.android.core.network.model.ApiEnvelope
-import biz.smt_life.android.core.network.model.IncomingScheduleProductResponse
+import biz.smt_life.android.core.network.model.IncomingProductResponse
 import biz.smt_life.android.core.network.model.IncomingWorkItemResponse
 import biz.smt_life.android.core.network.model.LocationResponse
-import biz.smt_life.android.core.network.model.ScheduleDetailResponse
 import biz.smt_life.android.core.network.model.StartWorkRequest
-import biz.smt_life.android.core.network.model.UpdateWorkRequest
+import biz.smt_life.android.core.network.model.UpdateWorkItemRequest
 import biz.smt_life.android.core.network.model.WarehouseResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -16,12 +15,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/**
- * Retrofit interface for Incoming (入荷) API endpoints.
- * Security: Requires X-API-Key and Authorization Bearer token.
- */
 interface IncomingApi {
-
     @GET("/api/master/warehouses")
     suspend fun getWarehouses(): ApiEnvelope<List<WarehouseResponse>>
 
@@ -29,12 +23,12 @@ interface IncomingApi {
     suspend fun getSchedules(
         @Query("warehouse_id") warehouseId: Int,
         @Query("search") search: String? = null
-    ): ApiEnvelope<List<IncomingScheduleProductResponse>>
+    ): ApiEnvelope<List<IncomingProductResponse>>
 
     @GET("/api/incoming/schedules/{id}")
     suspend fun getScheduleDetail(
         @Path("id") id: Int
-    ): ApiEnvelope<ScheduleDetailResponse>
+    ): ApiEnvelope<IncomingProductResponse>
 
     @GET("/api/incoming/work-items")
     suspend fun getWorkItems(
@@ -52,23 +46,23 @@ interface IncomingApi {
     ): ApiEnvelope<IncomingWorkItemResponse>
 
     @PUT("/api/incoming/work-items/{id}")
-    suspend fun updateWork(
+    suspend fun updateWorkItem(
         @Path("id") id: Int,
-        @Body request: UpdateWorkRequest
+        @Body request: UpdateWorkItemRequest
     ): ApiEnvelope<IncomingWorkItemResponse>
 
-    @DELETE("/api/incoming/work-items/{id}")
-    suspend fun cancelWork(
+    @POST("/api/incoming/work-items/{id}/complete")
+    suspend fun completeWorkItem(
         @Path("id") id: Int
     ): ApiEnvelope<Unit?>
 
-    @POST("/api/incoming/work-items/{id}/complete")
-    suspend fun completeWork(
+    @DELETE("/api/incoming/work-items/{id}")
+    suspend fun cancelWorkItem(
         @Path("id") id: Int
     ): ApiEnvelope<Unit?>
 
     @GET("/api/incoming/locations")
-    suspend fun getLocations(
+    suspend fun searchLocations(
         @Query("warehouse_id") warehouseId: Int,
         @Query("search") search: String? = null,
         @Query("limit") limit: Int? = null

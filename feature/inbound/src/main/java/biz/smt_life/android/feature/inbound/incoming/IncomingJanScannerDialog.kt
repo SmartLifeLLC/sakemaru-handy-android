@@ -1,14 +1,7 @@
-package biz.smt_life.android.feature.outbound.picking
+package biz.smt_life.android.feature.inbound.incoming
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import android.media.ToneGenerator
-import android.media.AudioManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,17 +11,39 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,38 +52,27 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
-private const val TAG = "JanCodeScanner"
+private const val IncomingJanScannerTag = "IncomingJanScanner"
 
-/**
- * JAN code scanner dialog using CameraX + ML Kit.
- * Shows camera preview with scan line overlay.
- * Auto-captures barcode and compares with expected JAN code.
- *
- * Handles runtime camera permission request internally.
- */
 @Composable
-fun JanCodeScannerDialog(
-    expectedJanCode: String? = null,
-    expectedJanCodes: List<String> = expectedJanCode?.let(::listOf) ?: emptyList(),
+fun IncomingJanScannerDialog(
     isInCamera: Boolean = false,
-    onResult: (scannedCode: String, isMatch: Boolean) -> Unit,
+    onScan: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var scannedCode by remember { mutableStateOf<String?>(null) }
-    var isMatch by remember { mutableStateOf<Boolean?>(null) }
     var isScanning by remember { mutableStateOf(true) }
-
-    // Camera permission state
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
-                context, Manifest.permission.CAMERA
+                context,
+                Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
@@ -79,7 +83,6 @@ fun JanCodeScannerDialog(
         hasCameraPermission = granted
     }
 
-    // Request permission on first composition if not granted
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -98,19 +101,18 @@ fun JanCodeScannerDialog(
                 .wrapContentHeight()
         ) {
             Column {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFFDFBF2))
+                        .background(IncomingHeaderBg)
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "JAN確認",
+                        text = if (isInCamera) "JAN検索 IN" else "JAN検索 OUT",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFC0392B)
+                        color = IncomingTitleRed
                     )
                     Spacer(Modifier.weight(1f))
                     IconButton(
@@ -118,17 +120,16 @@ fun JanCodeScannerDialog(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Close,
+                            imageVector = Icons.Default.Close,
                             contentDescription = "閉じる",
-                            tint = Color(0xFFC0392B),
+                            tint = IncomingTitleRed,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                HorizontalDivider(color = Color(0xFFF9A825), thickness = 2.dp)
+                HorizontalDivider(color = IncomingDividerGold, thickness = 2.dp)
 
-                // Camera preview area
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -137,13 +138,12 @@ fun JanCodeScannerDialog(
                 ) {
                     when {
                         !hasCameraPermission -> {
-                            // Permission not granted
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(16.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
                             ) {
                                 Text(
                                     text = "カメラの権限が必要です",
@@ -153,38 +153,24 @@ fun JanCodeScannerDialog(
                                 )
                                 Spacer(Modifier.height(12.dp))
                                 Button(
-                                    onClick = {
-                                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFD97706)
-                                    )
+                                    onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = IncomingAccentOrange)
                                 ) {
                                     Text("権限を許可する", fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
+
                         isScanning -> {
-                            CameraPreviewWithScanner(
+                            IncomingCameraPreviewWithScanner(
                                 isInCamera = isInCamera,
                                 onBarcodeDetected = { code ->
                                     if (isScanning) {
                                         isScanning = false
-                                        scannedCode = code
-                                        val match = expectedJanCodes.isNotEmpty() && expectedJanCodes.any { it == code }
-                                        isMatch = match
-                                        onResult(code, match)
-
-                                        // Vibrate and sound on mismatch
-                                        if (!match) {
-                                            vibrateDevice(context)
-                                            playErrorSound()
-                                        }
+                                        onScan(code)
                                     }
                                 }
                             )
-
-                            // Scan line overlay
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -196,73 +182,25 @@ fun JanCodeScannerDialog(
                     }
                 }
 
-                // Result display
-                if (scannedCode != null) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "読取: $scannedCode",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (isMatch == true) {
-                            Surface(
-                                color = Color(0xFF27AE60),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = "JAN一致",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                )
-                            }
-                        } else if (isMatch == false) {
-                            Surface(
-                                color = Color(0xFFE74C3C),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = "不一致",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                )
-                            }
-                        }
+                Text(
+                    text = "JANコードをかざすと検索します",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = IncomingNeutral500
+                )
 
-                        Spacer(Modifier.height(4.dp))
-
-                        // Retry button
-                        Button(
-                            onClick = {
-                                scannedCode = null
-                                isMatch = null
-                                isScanning = true
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706))
-                        ) {
-                            Text("再スキャン", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-
-                // Close button
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("閉じる", color = Color(0xFFE67E22), fontWeight = FontWeight.Bold)
+                        Text("閉じる", color = IncomingAccentOrange, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -271,25 +209,21 @@ fun JanCodeScannerDialog(
 }
 
 @Composable
-private fun CameraPreviewWithScanner(
+private fun IncomingCameraPreviewWithScanner(
     isInCamera: Boolean,
     onBarcodeDetected: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner = remember { BarcodeScanning.getClient() }
-
-    // Track camera provider for cleanup
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
 
-    // Clean up camera when composable leaves composition
     DisposableEffect(Unit) {
         onDispose {
             try {
                 cameraProvider?.unbindAll()
             } catch (e: Exception) {
-                Log.w(TAG, "Error unbinding camera", e)
+                Log.w(IncomingJanScannerTag, "Error unbinding camera", e)
             }
             executor.shutdown()
             scanner.close()
@@ -299,7 +233,6 @@ private fun CameraPreviewWithScanner(
     AndroidView(
         factory = { ctx ->
             val previewView = PreviewView(ctx).apply {
-                // Use COMPATIBLE mode (TextureView) for better compatibility inside Dialog
                 implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 scaleType = PreviewView.ScaleType.FILL_CENTER
             }
@@ -330,13 +263,12 @@ private fun CameraPreviewWithScanner(
                                         scanner.process(image)
                                             .addOnSuccessListener { barcodes ->
                                                 for (barcode in barcodes) {
-                                                    if (barcode.format == Barcode.FORMAT_EAN_13 ||
+                                                    if (
+                                                        barcode.format == Barcode.FORMAT_EAN_13 ||
                                                         barcode.format == Barcode.FORMAT_EAN_8 ||
                                                         barcode.format == Barcode.FORMAT_UPC_A
                                                     ) {
-                                                        barcode.rawValue?.let { code ->
-                                                            onBarcodeDetected(code)
-                                                        }
+                                                        barcode.rawValue?.let(onBarcodeDetected)
                                                     }
                                                 }
                                             }
@@ -347,13 +279,17 @@ private fun CameraPreviewWithScanner(
                                         imageProxy.close()
                                     }
                                 } catch (e: Exception) {
-                                    Log.w(TAG, "Error analyzing image", e)
+                                    Log.w(IncomingJanScannerTag, "Error analyzing image", e)
                                     imageProxy.close()
                                 }
                             }
                         }
 
-                    val cameraSelector = if (isInCamera) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                    val cameraSelector = if (isInCamera) {
+                        CameraSelector.DEFAULT_FRONT_CAMERA
+                    } else {
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    }
 
                     provider.unbindAll()
                     provider.bindToLifecycle(
@@ -362,9 +298,8 @@ private fun CameraPreviewWithScanner(
                         preview,
                         imageAnalysis
                     )
-                    Log.d(TAG, "Camera bound successfully")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Camera init failed", e)
+                    Log.e(IncomingJanScannerTag, "Camera init failed", e)
                 }
             }, ContextCompat.getMainExecutor(ctx))
 
@@ -372,30 +307,4 @@ private fun CameraPreviewWithScanner(
         },
         modifier = Modifier.fillMaxSize()
     )
-}
-
-private fun vibrateDevice(context: Context) {
-    try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator?.vibrate(
-                VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE)
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            vibrator?.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE))
-        }
-    } catch (_: Exception) {
-        // Vibration not available
-    }
-}
-
-private fun playErrorSound() {
-    try {
-        val toneGenerator = ToneGenerator(AudioManager.STREAM_ALARM, 100)
-        toneGenerator.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 500)
-    } catch (_: Exception) {
-        // Sound not available
-    }
 }

@@ -6,29 +6,20 @@ import biz.smt_life.android.core.domain.model.IncomingWarehouse
 import biz.smt_life.android.core.domain.model.IncomingWorkItem
 import biz.smt_life.android.core.domain.model.Location
 
-/**
- * Shared state for all incoming screens (P10-P14).
- */
 data class IncomingState(
-    // Session
     val pickerId: Int? = null,
     val pickerName: String? = null,
-
-    // P10: Warehouse selection
     val warehouses: List<IncomingWarehouse> = emptyList(),
     val selectedWarehouse: IncomingWarehouse? = null,
     val isLoadingWarehouses: Boolean = false,
-
-    // P11: Product list
     val products: List<IncomingProduct> = emptyList(),
     val searchQuery: String = "",
-    val isSearching: Boolean = false,
+    val selectedProductIndex: Int = 0,
     val workingScheduleIds: Set<Int> = emptySet(),
-
-    // P12: Schedule list
+    val isLoadingProducts: Boolean = false,
+    val isSearching: Boolean = false,
     val selectedProduct: IncomingProduct? = null,
-
-    // P13: Input
+    val selectedScheduleIndex: Int = 0,
     val selectedSchedule: IncomingSchedule? = null,
     val currentWorkItem: IncomingWorkItem? = null,
     val isFromHistory: Boolean = false,
@@ -39,13 +30,10 @@ data class IncomingState(
     val inputLocation: Location? = null,
     val locationSuggestions: List<Location> = emptyList(),
     val isLoadingLocations: Boolean = false,
-    val isSubmitting: Boolean = false,
-
-    // P14: History
     val historyItems: List<IncomingWorkItem> = emptyList(),
+    val selectedHistoryIndex: Int = 0,
     val isLoadingHistory: Boolean = false,
-
-    // Common
+    val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
 )

@@ -16,6 +16,11 @@ object WmsColor {
     val OutboundCircleBg = Color(0xFFFFEBEE)
     val OutboundIcon     = Color(0xFFD32F2F)
 
+    // 横持出荷カード
+    val ProxyShipmentBorder   = Color(0xFF00897B)
+    val ProxyShipmentCircleBg = Color(0xFFE0F2F1)
+    val ProxyShipmentIcon     = Color(0xFF00897B)
+
     // 移動カード
     val MoveBorder   = Color(0xFF388E3C)
     val MoveCircleBg = Color(0xFFE8F5E9)
