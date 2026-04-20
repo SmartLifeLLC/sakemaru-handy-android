@@ -75,6 +75,24 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun checkConnection(): Result<Unit> {
+        return try {
+            authService.login(code = "", password = "", deviceId = "")
+            Result.success(Unit)
+        } catch (e: HttpException) {
+            // 4xx系（422 Validation, 401 Unauthorized等）= サーバに到達できている
+            if (e.code() in 400..499) {
+                Result.success(Unit)
+            } else {
+                Result.failure(e)
+            }
+        } catch (e: IOException) {
+            Result.failure(e)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun validateSession(): Result<AuthResult> {
         return try {
             val response = authService.me()

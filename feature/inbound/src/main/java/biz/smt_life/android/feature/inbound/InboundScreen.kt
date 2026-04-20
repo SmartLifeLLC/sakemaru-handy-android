@@ -35,7 +35,7 @@ fun InboundScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("入庫") },
+                title = { Text("入荷") },
                 actions = {
                     TextButton(onClick = viewModel::toggleHistorySheet) {
                         Text("履歴 (${state.history.size})")

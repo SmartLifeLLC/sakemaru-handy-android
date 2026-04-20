@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,12 +44,13 @@ class PickingTaskRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int): Result<List<PickingTask>> {
+    override suspend fun getMyAreaTasks(warehouseId: Int, pickerId: Int, shippingDate: String?): Result<List<PickingTask>> {
         return try {
-            android.util.Log.d("PickingTaskRepository", "getMyAreaTasks called with warehouseId=$warehouseId, pickerId=$pickerId")
+            android.util.Log.d("PickingTaskRepository", "getMyAreaTasks called with warehouseId=$warehouseId, pickerId=$pickerId, shippingDate=$shippingDate")
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = pickerId
+                pickerId = pickerId,
+                shippingDate = shippingDate
             )
             android.util.Log.d("PickingTaskRepository", "API response: isSuccess=${response.isSuccess}, code=${response.code}, data=${response.result?.data?.size ?: 0} items, errorMessage=${response.result?.errorMessage}")
 
@@ -67,11 +69,12 @@ class PickingTaskRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllTasks(warehouseId: Int): Result<List<PickingTask>> {
+    override suspend fun getAllTasks(warehouseId: Int, shippingDate: String?): Result<List<PickingTask>> {
         return try {
             val response = pickingApi.getPickingTasks(
                 warehouseId = warehouseId,
-                pickerId = 0 // No picker filter for "All Courses"
+                pickerId = 0, // No picker filter for "All Courses"
+                shippingDate = shippingDate
             )
 
             if (response.isSuccess && response.result?.data != null) {
@@ -100,6 +103,14 @@ class PickingTaskRepositoryImpl @Inject constructor(
             android.util.Log.d("PickingTaskRepository", "startTask response: isSuccess=${response.isSuccess}, code=${response.code}")
 
             if (response.isSuccess) {
+                val data = response.result?.data
+                _tasksFlow.update { currentTasks ->
+                    currentTasks.map { task ->
+                        if (task.taskId == taskId) {
+                            task.copy(startedAt = data?.startedAt)
+                        } else task
+                    }
+                }
                 Result.success(Unit)
             } else {
                 val errorMessage = extractErrorMessage(response.result, "タスクの開始に失敗しました")
@@ -154,7 +165,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 )
                 Result.success(updatedItem)
             } else {
-                val errorMessage = extractErrorMessage(response.result, "出庫数量の更新に失敗しました")
+                val errorMessage = extractErrorMessage(response.result, "出荷数量の更新に失敗しました")
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {
@@ -174,6 +185,15 @@ class PickingTaskRepositoryImpl @Inject constructor(
             android.util.Log.d("PickingTaskRepository", "completeTask response: isSuccess=${response.isSuccess}, code=${response.code}, errorMessage=${response.result?.errorMessage}")
 
             if (response.isSuccess) {
+                val data = response.result?.data
+                // Update local task in the flow with COMPLETED status and completion timestamp
+                _tasksFlow.update { currentTasks ->
+                    currentTasks.map { task ->
+                        if (task.taskId == taskId) {
+                            task.copy(completedAt = data?.completedAt)
+                        } else task
+                    }
+                }
                 Result.success(Unit)
             } else {
                 val errorMessage = extractErrorMessage(response.result, "タスクの完了に失敗しました")
@@ -204,7 +224,7 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 refreshTask(taskId, warehouseId, pickerId)
                 Result.success(Unit)
             } else {
-                val errorMessage = extractErrorMessage(response.result, "出庫履歴のキャンセルに失敗しました")
+                val errorMessage = extractErrorMessage(response.result, "出荷履歴のキャンセルに失敗しました")
                 Result.failure(NetworkException.ValidationError(errorMessage))
             }
         } catch (e: Exception) {
@@ -307,7 +327,10 @@ class PickingTaskRepositoryImpl @Inject constructor(
                 pickedQty = item.pickedQty.toDoubleOrNull() ?: 0.0,
                 status = biz.smt_life.android.core.domain.model.ItemStatus.fromString(item.status),
                 walkingOrder = item.walkingOrder,
-                slipNumber = item.slipNumber
+                slipNumber = item.slipNumber,
+                customerName = item.customerName,
+                customerCode = item.customerCode,
+                locationCode = item.location?.code
             )
         }
 
@@ -318,7 +341,10 @@ class PickingTaskRepositoryImpl @Inject constructor(
             courseCode = course.code,
             pickingAreaName = pickingArea.name,
             pickingAreaCode = pickingArea.code,
-            items = items
+            items = items,
+            startedAt = startedAt ?: wave.startedAt,
+            completedAt = completedAt ?: wave.completedAt,
+            isEditable = isEditable
             // totalItems, registeredCount, etc. are now computed properties
         )
     }

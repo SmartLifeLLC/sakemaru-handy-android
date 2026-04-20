@@ -14,7 +14,7 @@ import androidx.core.content.edit
  */
 @Singleton
 class TokenManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -58,6 +58,22 @@ class TokenManager @Inject constructor(
         return sharedPreferences.getInt(KEY_WAREHOUSE_ID, -1)
     }
 
+    fun setDefaultWarehouseId(warehouseId: Int) {
+        sharedPreferences.edit {
+            putInt(KEY_WAREHOUSE_ID, warehouseId)
+        }
+    }
+
+    fun getShippingDate(): String? {
+        return sharedPreferences.getString(KEY_SHIPPING_DATE, null)
+    }
+
+    fun setShippingDate(date: String) {
+        sharedPreferences.edit {
+            putString(KEY_SHIPPING_DATE, date)
+        }
+    }
+
     fun clearAuth() {
         sharedPreferences.edit {
             remove(KEY_TOKEN)
@@ -65,6 +81,7 @@ class TokenManager @Inject constructor(
             remove(KEY_PICKER_CODE)
             remove(KEY_PICKER_NAME)
             remove(KEY_WAREHOUSE_ID)
+            remove(KEY_SHIPPING_DATE)
         }
     }
 
@@ -76,5 +93,6 @@ class TokenManager @Inject constructor(
         private const val KEY_PICKER_CODE = "picker_code"
         private const val KEY_PICKER_NAME = "picker_name"
         private const val KEY_WAREHOUSE_ID = "default_warehouse_id"
+        private const val KEY_SHIPPING_DATE = "shipping_date"
     }
 }

@@ -5,5 +5,12 @@ data class LoginState(
     val password: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    val isCheckingConnection: Boolean = false,
+    val connectionResult: ConnectionResult? = null
 )
+
+enum class ConnectionResult {
+    SUCCESS,
+    FAILURE
+}

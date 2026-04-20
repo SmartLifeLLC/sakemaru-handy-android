@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import biz.smt_life.android.core.domain.model.PickingTask
 import biz.smt_life.android.core.domain.model.PickingTaskItem
+import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.network.NetworkException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for Picking History screen (2.5.3 - 出庫処理＞履歴).
+ * ViewModel for Picking History screen (2.5.3 - 出荷処理＞履歴).
  *
  * Responsibilities:
  * - Observe and display PICKING items from the task via repository flow
@@ -26,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PickingHistoryViewModel @Inject constructor(
     private val pickingTaskRepository: PickingTaskRepository,
+    private val incomingRepository: IncomingRepository,
     private val tokenManager: biz.smt_life.android.core.ui.TokenManager
 ) : ViewModel() {
 
@@ -56,6 +58,21 @@ class PickingHistoryViewModel @Inject constructor(
                     )
                 }
             }
+        }
+        loadWarehouseName(currentWarehouseId)
+    }
+
+    /**
+     * Load warehouse name from master data for header display.
+     * Errors are silently ignored — warehouse name is optional display info.
+     */
+    private fun loadWarehouseName(warehouseId: Int) {
+        viewModelScope.launch {
+            incomingRepository.getWarehouses()
+                .onSuccess { warehouses ->
+                    val name = warehouses.firstOrNull { it.id == warehouseId }?.name ?: ""
+                    _state.update { it.copy(warehouseName = name) }
+                }
         }
     }
 

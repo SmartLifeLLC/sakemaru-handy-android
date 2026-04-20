@@ -1,5 +1,7 @@
 package biz.smt_life.android.sakemaru_handy_denso.navigation
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,13 +27,15 @@ import biz.smt_life.android.feature.inbound.incoming.IncomingInputScreen
 import biz.smt_life.android.feature.inbound.incoming.IncomingViewModel
 import biz.smt_life.android.feature.inbound.incoming.ProductListScreen
 import biz.smt_life.android.feature.inbound.incoming.ScheduleListScreen
-import biz.smt_life.android.feature.inbound.incoming.WarehouseSelectionScreen
 import biz.smt_life.android.feature.login.LoginScreen
 import biz.smt_life.android.feature.main.MainRoute
 import biz.smt_life.android.feature.outbound.tasks.PickingTasksScreen
 import biz.smt_life.android.feature.outbound.tasks.PickingTasksViewModel
 import biz.smt_life.android.feature.outbound.picking.OutboundPickingScreen
 import biz.smt_life.android.feature.outbound.picking.PickingHistoryScreen
+import biz.smt_life.android.feature.outbound.proxyshipment.ProxyShipmentListScreen
+import biz.smt_life.android.feature.outbound.proxyshipment.ProxyShipmentPickingScreen
+import biz.smt_life.android.feature.outbound.proxyshipment.ProxyShipmentResultScreen
 import biz.smt_life.android.feature.settings.SettingsScreen
 
 @Composable
@@ -81,7 +86,9 @@ fun HandyNavHost(
                     navController.navigate(Routes.WarehouseSettings.route)
                 },
                 onNavigateToInbound = {
-                    navController.navigate(Routes.IncomingWarehouseSelection.route)
+                    navController.navigate(Routes.IncomingProductList.route) {
+                        launchSingleTop = true
+                    }
                 },
                 onNavigateToOutbound = {
                     // Navigate directly to PickingList (Course Selection)
@@ -89,6 +96,9 @@ fun HandyNavHost(
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onNavigateToProxyShipment = {
+                    navController.navigate(Routes.ProxyShipmentList.route)
                 },
                 onNavigateToMove = {
                     navController.navigate(Routes.Move.route)
@@ -107,39 +117,20 @@ fun HandyNavHost(
             )
         }
 
-        // ─── Incoming routes (P10-P14) ───
+        // ─── Incoming routes ───
 
-        // P10: Warehouse Selection
-        composable(Routes.IncomingWarehouseSelection.route) { backStackEntry ->
-            val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
-            }
-            val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
-
-            WarehouseSelectionScreen(
-                viewModel = incomingViewModel,
-                onNavigateBack = { navController.popBackStack() },
-                onWarehouseSelected = {
-                    navController.navigate(Routes.IncomingProductList.route)
-                },
-                onLogout = {
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // P11: Product List
         composable(Routes.IncomingProductList.route) { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+                navController.getBackStackEntry(Routes.IncomingProductList.route)
             }
             val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
 
             ProductListScreen(
                 viewModel = incomingViewModel,
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = {
+                    incomingViewModel.resetToWarehouseSelection()
+                    navController.popBackStack()
+                },
                 onProductSelected = {
                     navController.navigate(Routes.IncomingScheduleList.route)
                 },
@@ -149,10 +140,9 @@ fun HandyNavHost(
             )
         }
 
-        // P12: Schedule List
         composable(Routes.IncomingScheduleList.route) { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+                navController.getBackStackEntry(Routes.IncomingProductList.route)
             }
             val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
 
@@ -168,10 +158,9 @@ fun HandyNavHost(
             )
         }
 
-        // P13: Incoming Input
         composable(Routes.IncomingInput.route) { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+                navController.getBackStackEntry(Routes.IncomingProductList.route)
             }
             val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
 
@@ -179,16 +168,17 @@ fun HandyNavHost(
                 viewModel = incomingViewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onSubmitSuccess = {
-                    // Pop back to schedule list (P12)
-                    navController.popBackStack()
+                    navController.navigate(Routes.IncomingScheduleList.route) {
+                        popUpTo(Routes.IncomingProductList.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
-        // P14: History
         composable(Routes.IncomingHistory.route) { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(Routes.IncomingWarehouseSelection.route)
+                navController.getBackStackEntry(Routes.IncomingProductList.route)
             }
             val incomingViewModel: IncomingViewModel = hiltViewModel(parentEntry)
 
@@ -233,10 +223,21 @@ fun HandyNavHost(
             arguments = listOf(
                 navArgument("taskId") {
                     type = NavType.IntType
+                },
+                navArgument("editItemId") {
+                    type = NavType.IntType
+                    defaultValue = -1
                 }
             )
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val editItemId = backStackEntry.arguments?.getInt("editItemId")?.takeIf { it > 0 }
+            val context = LocalContext.current
+            val activity = context as? Activity
+
+            fun restoreLandscape() {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
 
             // Get the shared ViewModel from the parent navigation entry
             val parentEntry = remember(backStackEntry) {
@@ -267,35 +268,38 @@ fun HandyNavHost(
             } else {
                 OutboundPickingScreen(
                     task = task,
+                    editItemId = editItemId,
                     onNavigateBack = {
-                        pickingTasksViewModel.clearSelectedTask()
+                        restoreLandscape()
+                        // Don't clear selectedTask - P22 may still need it for edit navigation
                         navController.popBackStack()
                     },
                     onNavigateToCourseList = {
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
-                        navController.popBackStack()
+                        navController.popBackStack(Routes.PickingList.route, inclusive = false)
                     },
                     onNavigateToHistory = {
-                        // Navigate to PickingHistory screen (2.5.3)
                         navController.navigate(Routes.PickingHistory.createRoute(taskId))
                     },
                     onNavigateToMain = {
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         navController.navigate(Routes.Main.route) {
                             popUpTo(Routes.PickingList.route) { inclusive = true }
                         }
                     },
                     onTaskCompleted = {
-                        // Task completed successfully - navigate back to course list and refresh
+                        restoreLandscape()
                         pickingTasksViewModel.clearSelectedTask()
                         pickingTasksViewModel.refresh()
-                        navController.popBackStack()
+                        navController.popBackStack(Routes.PickingList.route, inclusive = false)
                     }
                 )
             }
         }
 
-        // Picking History screen (2.5.3 - 出庫処理＞履歴)
+        // Picking History screen (2.5.3 - 出荷処理＞履歴)
         composable(
             route = Routes.PickingHistory.route,
             arguments = listOf(
@@ -305,6 +309,12 @@ fun HandyNavHost(
             )
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val context = LocalContext.current
+            val activity = context as? Activity
+
+            fun restoreLandscape() {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
 
             // Get the shared ViewModel from the parent navigation entry
             val parentEntry = remember(backStackEntry) {
@@ -318,17 +328,109 @@ fun HandyNavHost(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onHistoryConfirmed = {
-                    // All items confirmed - navigate back to course list and refresh
+                onNavigateToMain = {
+                    restoreLandscape()
                     pickingTasksViewModel.clearSelectedTask()
-                    pickingTasksViewModel.refresh()
-                    navController.popBackStack()
+                    navController.navigate(Routes.Main.route) {
+                        popUpTo(Routes.PickingList.route) { inclusive = true }
+                    }
+                },
+                onItemClick = { item ->
+                    // Navigate to P21 (edit mode) for this item, replacing History screen
+                    navController.navigate(Routes.OutboundPicking.createRoute(taskId, item.itemId)) {
+                        popUpTo(Routes.PickingHistory.route) { inclusive = true }
+                    }
                 }
             )
         }
 
         composable(Routes.SlipEntry.route) {
             // TODO: Implement SlipEntryScreen (stub for now)
+        }
+
+        composable(Routes.Move.route) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("移動処理は未実装です")
+                    Button(onClick = { navController.popBackStack() }) {
+                        Text("戻る")
+                    }
+                }
+            }
+        }
+
+        composable(Routes.ProxyShipmentList.route) {
+            ProxyShipmentListScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPicking = { shipmentDate, courseKey ->
+                    navController.navigate(Routes.ProxyShipmentPicking.createRoute(shipmentDate, courseKey))
+                }
+            )
+        }
+
+        composable(
+            route = Routes.ProxyShipmentPicking.route,
+            arguments = listOf(
+                navArgument("shipmentDate") {
+                    type = NavType.StringType
+                },
+                navArgument("courseKey") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val shipmentDate = backStackEntry.arguments?.getString("shipmentDate") ?: return@composable
+            val courseKey = backStackEntry.arguments?.getString("courseKey") ?: return@composable
+            ProxyShipmentPickingScreen(
+                shipmentDate = shipmentDate,
+                courseKey = courseKey,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToList = {
+                    navController.popBackStack(Routes.ProxyShipmentList.route, false)
+                },
+                onNavigateToResult = {
+                    navController.navigate(Routes.ProxyShipmentResult.createRoute(it)) {
+                        popUpTo(Routes.ProxyShipmentPicking.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Routes.ProxyShipmentResult.route,
+            arguments = listOf(
+                navArgument("allocationId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+            val allocationId = backStackEntry.arguments?.getInt("allocationId") ?: return@composable
+            val context = LocalContext.current
+            val activity = context as? Activity
+
+            fun restoreLandscape() {
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
+
+            ProxyShipmentResultScreen(
+                allocationId = allocationId,
+                onNavigateToList = {
+                    restoreLandscape()
+                    navController.popBackStack(Routes.ProxyShipmentList.route, false)
+                },
+                onNavigateToMain = {
+                    restoreLandscape()
+                    navController.navigate(Routes.Main.route) {
+                        popUpTo(Routes.ProxyShipmentList.route) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

@@ -162,7 +162,7 @@ class InboundViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isAdding = false,
-                            successMessage = "入庫を追加しました",
+                            successMessage = "入荷を追加しました",
                             selectedItem = null,
                             qtyCase = "0",
                             qtyEach = "0",

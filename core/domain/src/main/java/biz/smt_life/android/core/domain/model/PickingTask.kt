@@ -25,7 +25,10 @@ data class PickingTask(
     val courseCode: String,
     val pickingAreaName: String,
     val pickingAreaCode: String,
-    val items: List<PickingTaskItem>
+    val items: List<PickingTaskItem>,
+    val startedAt: String? = null,
+    val completedAt: String? = null,
+    val isEditable: Boolean = true
 ) {
     // Status-based counts (server-controlled, computed from items)
     val totalItems: Int
@@ -44,6 +47,16 @@ data class PickingTask(
     val registeredCount: Int
         get() = items.count { it.status != ItemStatus.PENDING }
 
+    // Group-based counts (grouped by itemId, matching P21 display)
+    /** 商品グループ数（itemIdベース）。P21のページ数と一致する。 */
+    val totalGroupCount: Int
+        get() = items.map { it.itemId }.distinct().size
+
+    /** 登録済みグループ数（グループ内全アイテムが非PENDING）。P21の登録済み件数と一致する。 */
+    val registeredGroupCount: Int
+        get() = items.groupBy { it.itemId }
+            .count { (_, groupItems) -> groupItems.all { it.status != ItemStatus.PENDING } }
+
     // Completed items for legacy UI (items with picked_qty > 0 or status COMPLETED/SHORTAGE)
     val completedItems: Int
         get() = items.count { it.isCompleted }
@@ -60,7 +73,11 @@ data class PickingTask(
         get() = pickingCount > 0
 
     val isFullyProcessed: Boolean
-        get() = pendingCount == 0 && pickingCount == 0 && completedOrShortageCount == totalItems
+        get() = completedAt != null || (pendingCount == 0 && pickingCount == 0 && completedOrShortageCount == totalItems)
+
+    /** 全アイテムが登録済み（出荷指示数 == 検品済み）。P20完了タブの判定に使用 */
+    val isAllRegistered: Boolean
+        get() = totalItems > 0 && pendingCount == 0
 
     // Legacy properties (still used for UI display)
     val isCompleted: Boolean
@@ -98,7 +115,10 @@ data class PickingTaskItem(
     val pickedQty: Double,
     val status: ItemStatus, // Server-controlled status
     val walkingOrder: Int,
-    val slipNumber: Int
+    val slipNumber: Int,
+    val customerName: String? = null,
+    val customerCode: String? = null,
+    val locationCode: String? = null
 ) {
     val isCompleted: Boolean
         get() = status == ItemStatus.COMPLETED || status == ItemStatus.SHORTAGE

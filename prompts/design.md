@@ -22,7 +22,7 @@
 |---------|---------|
 | システムActionBar | `themes.xml` で `NoActionBar` を指定して非表示 |
 | 各画面ヘッダー | Compose の `Scaffold` + `TopAppBar` で独自実装 |
-| 下部バー | `FunctionKeyBar` でファンクションキーを表示（入庫・出庫画面） |
+| 下部バー | `FunctionKeyBar` でファンクションキーを表示（入荷・出荷画面） |
 
 ## 画面構成パターン
 

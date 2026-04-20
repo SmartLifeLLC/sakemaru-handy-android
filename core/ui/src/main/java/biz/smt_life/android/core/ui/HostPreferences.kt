@@ -22,7 +22,7 @@ private val Context.hostDataStore: DataStore<Preferences> by preferencesDataStor
  */
 @Singleton
 class HostPreferences @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val dataStore = context.hostDataStore
 
@@ -43,6 +43,14 @@ class HostPreferences @Inject constructor(
 
     companion object {
         private val BASE_URL_KEY = stringPreferencesKey("base_url")
-        val DEFAULT_BASE_URL = "https://${BuildConfig.API_HOST}/"
+        val DEFAULT_BASE_URL: String = run {
+            val host = BuildConfig.API_HOST
+            val scheme = if (host.startsWith("10.0.2.2") || host.startsWith("localhost") || host.startsWith("127.0.0.1")) {
+                "http"
+            } else {
+                "https"
+            }
+            "$scheme://$host/"
+        }
     }
 }

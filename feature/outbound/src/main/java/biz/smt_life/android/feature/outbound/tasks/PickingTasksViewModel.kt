@@ -2,6 +2,7 @@ package biz.smt_life.android.feature.outbound.tasks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.network.NetworkException
 import biz.smt_life.android.core.ui.TokenManager
@@ -10,11 +11,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for Picking Tasks screen per spec 2.5.1 出庫処理.
+ * ViewModel for Picking Tasks screen per spec 2.5.1 出荷処理.
  * Shows only "My tasks" (私の担当) - tasks assigned to current picker.
  *
  * Responsibilities:
@@ -26,8 +29,13 @@ import javax.inject.Inject
 @HiltViewModel
 class PickingTasksViewModel @Inject constructor(
     private val repository: PickingTaskRepository,
+    private val incomingRepository: IncomingRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+
+    private companion object {
+        const val MIN_LOADING_DURATION_MS = 1000L
+    }
 
     private val _state = MutableStateFlow(PickingTasksState())
     val state: StateFlow<PickingTasksState> = _state.asStateFlow()
@@ -50,10 +58,14 @@ class PickingTasksViewModel @Inject constructor(
                     if (currentState.tasksState is TaskListState.Success ||
                         currentState.tasksState is TaskListState.Empty
                     ) {
-                        val newState = if (tasks.isEmpty()) {
+                        val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                        val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
+                        val completedTasks = tasks.filter { it.completedAt != null }
+                            .sortedBy { it.courseName }
+                        val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                             TaskListState.Empty
                         } else {
-                            TaskListState.Success(tasks)
+                            TaskListState.Success(pendingTasks, activeTasks, completedTasks)
                         }
                         currentState.copy(tasksState = newState)
                     } else {
@@ -92,15 +104,69 @@ class PickingTasksViewModel @Inject constructor(
             return
         }
 
-        // Load My tasks
+        // Load warehouse name and tasks concurrently
+        loadWarehouseName(warehouseId)
         loadMyAreaTasks()
     }
 
     /**
-     * Refresh tasks.
+     * Load warehouse name from master data and store in state.
+     */
+    private fun loadWarehouseName(warehouseId: Int) {
+        viewModelScope.launch {
+            incomingRepository.getWarehouses()
+                .onSuccess { warehouses ->
+                    val name = warehouses.firstOrNull { it.id == warehouseId }?.name ?: ""
+                    _state.update { it.copy(warehouseName = name) }
+                }
+                // Silently ignore errors — warehouse name is optional display info
+        }
+    }
+
+    /**
+     * Refresh tasks from server.
+     * If data already exists, shows overlay loading instead of replacing the list.
      */
     fun refresh() {
-        loadMyAreaTasks()
+        val hasData = _state.value.tasksState is TaskListState.Success
+        if (hasData) {
+            refreshWithOverlay()
+        } else {
+            loadMyAreaTasks()
+        }
+    }
+
+    private fun refreshWithOverlay() {
+        val warehouseId = tokenManager.getDefaultWarehouseId()
+        val pickerId = tokenManager.getPickerId()
+        if (warehouseId <= 0 || pickerId <= 0) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshing = true) }
+
+            val shippingDate = tokenManager.getShippingDate()
+            // API呼び出しと最低1秒待ちを並列実行
+            val minDelay = async { delay(MIN_LOADING_DURATION_MS) }
+            val result = repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
+            minDelay.await()
+
+            result
+                .onSuccess { tasks ->
+                    val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                    val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
+                    val completedTasks = tasks.filter { it.completedAt != null }
+                        .sortedBy { it.courseName }
+                    val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
+                        TaskListState.Empty
+                    } else {
+                        TaskListState.Success(pendingTasks, activeTasks, completedTasks)
+                    }
+                    _state.update { it.copy(tasksState = newState, isRefreshing = false) }
+                }
+                .onFailure {
+                    _state.update { it.copy(isRefreshing = false) }
+                }
+        }
     }
 
     /**
@@ -128,12 +194,17 @@ class PickingTasksViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(tasksState = TaskListState.Loading) }
 
-            repository.getMyAreaTasks(warehouseId, pickerId)
+            val shippingDate = tokenManager.getShippingDate()
+            repository.getMyAreaTasks(warehouseId, pickerId, shippingDate)
                 .onSuccess { tasks ->
-                    val newState = if (tasks.isEmpty()) {
+                    val pendingTasks = tasks.filter { it.registeredGroupCount == 0 && it.completedAt == null }
+                    val activeTasks = tasks.filter { it.registeredGroupCount > 0 && it.completedAt == null }
+                    val completedTasks = tasks.filter { it.completedAt != null }
+                        .sortedBy { it.courseName }
+                    val newState = if (pendingTasks.isEmpty() && activeTasks.isEmpty() && completedTasks.isEmpty()) {
                         TaskListState.Empty
                     } else {
-                        TaskListState.Success(tasks)
+                        TaskListState.Success(pendingTasks, activeTasks, completedTasks)
                     }
                     _state.update { it.copy(tasksState = newState) }
                 }
@@ -168,27 +239,21 @@ class PickingTasksViewModel @Inject constructor(
             // Store the selected task for the next screen
             _state.update { it.copy(selectedTask = task) }
 
-            // Start the task if not already started (server will be idempotent)
+            // If task is completed: navigate to History directly (even if editable, History is the gateway to editing)
+            if (task.completedAt != null) {
+                onNavigateToHistory(task)
+                return@launch
+            }
+
+            // Start the task if not already started
             repository.startTask(task.taskId)
                 .onSuccess {
-                    // Determine navigation based on task status
-                    when {
-                        task.hasUnregisteredItems -> {
-                            // PENDING items exist → navigate to Data Input
-                            onNavigateToDataInput(task)
-                        }
-                        task.hasPickingItems -> {
-                            // Only PICKING items exist → navigate to History (editable)
-                            onNavigateToHistory(task)
-                        }
-                        task.isFullyProcessed -> {
-                            // All COMPLETED/SHORTAGE → navigate to History (read-only)
-                            onNavigateToHistory(task)
-                        }
-                        else -> {
-                            // Fallback: navigate to Data Input
-                            onNavigateToDataInput(task)
-                        }
+                    // Navigate based on processing status. If completed, go to History.
+                    if (task.completedAt != null) {
+                        onNavigateToHistory(task)
+                    } else {
+                        // If not completed, go to Data Input
+                        onNavigateToDataInput(task)
                     }
                 }
                 .onFailure { error ->
@@ -209,6 +274,10 @@ class PickingTasksViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         selectTask(task, onSuccess, onSuccess, onError)
+    }
+
+    fun selectTab(tab: TaskTab) {
+        _state.update { it.copy(selectedTab = tab) }
     }
 
     /**

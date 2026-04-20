@@ -235,12 +235,12 @@
 
 ## 3. Incoming（入荷作業関連）
 
-### 3-1. GET `/api/incoming/schedules` -- 入庫予定一覧取得
+### 3-1. GET `/api/incoming/schedules` -- 入荷予定一覧取得
 
 | 項目 | 内容 |
 |---|---|
-| **Summary** | 入庫予定一覧取得 |
-| **Description** | 倉庫別の入庫予定を検索。商品コード、JANコード、商品名で検索可能。仮想倉庫に紐づく入庫予定も含む。 |
+| **Summary** | 入荷予定一覧取得 |
+| **Description** | 倉庫別の入荷予定を検索。商品コード、JANコード、商品名で検索可能。仮想倉庫に紐づく入荷予定も含む。 |
 | **認証** | `apiKey` + `sanctum`（Bearer トークン必須） |
 
 #### クエリパラメータ
@@ -254,7 +254,7 @@
 
 ##### 200 -- 成功
 
-`result.data` は入庫予定商品オブジェクトの配列です。
+`result.data` は入荷予定商品オブジェクトの配列です。
 
 **商品情報（data[] 直下）**
 
@@ -269,10 +269,10 @@
 | `temperature_type` | string | 温度帯 | `常温` |
 | `images` | string[] | 商品画像URL一覧 | -- |
 | `total_expected_quantity` | integer | 合計予定数量 | `100` |
-| `total_received_quantity` | integer | 合計入庫済数量 | `20` |
+| `total_received_quantity` | integer | 合計入荷済数量 | `20` |
 | `total_remaining_quantity` | integer | 合計残数量 | `80` |
 
-**倉庫別入庫予定（data[].warehouses[]）**
+**倉庫別入荷予定（data[].warehouses[]）**
 
 | フィールド | 型 | 説明 |
 |---|---|---|
@@ -280,18 +280,18 @@
 | `warehouse_code` | string | 倉庫コード |
 | `warehouse_name` | string | 倉庫名 |
 | `expected_quantity` | integer | 予定数量 |
-| `received_quantity` | integer | 入庫済数量 |
+| `received_quantity` | integer | 入荷済数量 |
 | `remaining_quantity` | integer | 残数量 |
 
-**個別入庫予定（data[].schedules[]）**
+**個別入荷予定（data[].schedules[]）**
 
 | フィールド | 型 | 説明 |
 |---|---|---|
-| `id` | integer | 入庫予定ID |
+| `id` | integer | 入荷予定ID |
 | `warehouse_id` | integer | 倉庫ID |
 | `warehouse_name` | string | 倉庫名 |
 | `expected_quantity` | integer | 予定数量 |
-| `received_quantity` | integer | 入庫済数量 |
+| `received_quantity` | integer | 入荷済数量 |
 | `remaining_quantity` | integer | 残数量 |
 | `quantity_type` | string | 数量タイプ（`PIECE` / `CASE`） |
 | `expected_arrival_date` | string (date) | 入荷予定日 |
@@ -301,19 +301,19 @@
 
 ---
 
-### 3-2. GET `/api/incoming/schedules/{id}` -- 入庫予定詳細取得
+### 3-2. GET `/api/incoming/schedules/{id}` -- 入荷予定詳細取得
 
 | 項目 | 内容 |
 |---|---|
-| **Summary** | 入庫予定詳細取得 |
-| **Description** | 入庫予定の詳細情報を取得 |
+| **Summary** | 入荷予定詳細取得 |
+| **Description** | 入荷予定の詳細情報を取得 |
 | **認証** | `apiKey` + `sanctum`（Bearer トークン必須） |
 
 #### パスパラメータ
 
 | パラメータ名 | 型 | 必須/任意 | 説明 |
 |---|---|---|---|
-| `id` | integer | **必須** | 入庫予定ID |
+| `id` | integer | **必須** | 入荷予定ID |
 
 #### レスポンス
 
@@ -321,7 +321,7 @@
 
 | フィールド | 型 | 説明 |
 |---|---|---|
-| `result.data.id` | integer | 入庫予定ID |
+| `result.data.id` | integer | 入荷予定ID |
 | `result.data.warehouse_id` | integer | 倉庫ID |
 | `result.data.warehouse_code` | string | 倉庫コード |
 | `result.data.warehouse_name` | string | 倉庫名 |
@@ -331,13 +331,13 @@
 | `result.data.search_code` | string | 検索コード |
 | `result.data.jan_codes` | string[] | JANコード一覧 |
 | `result.data.expected_quantity` | integer | 予定数量 |
-| `result.data.received_quantity` | integer | 入庫済数量 |
+| `result.data.received_quantity` | integer | 入荷済数量 |
 | `result.data.remaining_quantity` | integer | 残数量 |
 | `result.data.quantity_type` | string | 数量タイプ |
 | `result.data.expected_arrival_date` | string (date) | 入荷予定日 |
 | `result.data.status` | string | ステータス |
 
-##### 404 -- 入庫予定が見つかりません
+##### 404 -- 入荷予定が見つかりません
 
 ---
 
@@ -373,14 +373,14 @@
 | 項目 | 内容 |
 |---|---|
 | **Summary** | 入荷作業開始 |
-| **Description** | 入庫予定に対する入荷作業を開始し、作業データを作成 |
+| **Description** | 入荷予定に対する入荷作業を開始し、作業データを作成 |
 | **認証** | `apiKey` + `sanctum`（Bearer トークン必須） |
 
 #### リクエストボディ (`application/json`)
 
 | フィールド名 | 型 | 必須/任意 | 説明 |
 |---|---|---|---|
-| `incoming_schedule_id` | integer | **必須** | 入庫予定ID |
+| `incoming_schedule_id` | integer | **必須** | 入荷予定ID |
 | `picker_id` | integer | **必須** | 作業者ID |
 | `warehouse_id` | integer | **必須** | 作業倉庫ID |
 
@@ -397,7 +397,7 @@
 
 ##### 400 -- 既に作業中 / 作業不可
 
-##### 404 -- 入庫予定が見つかりません
+##### 404 -- 入荷予定が見つかりません
 
 ##### 422 -- バリデーションエラー
 
@@ -424,7 +424,7 @@
 | `work_quantity` | integer | 任意 | 入荷数量 |
 | `work_arrival_date` | string (date) | 任意 | 入荷日 |
 | `work_expiration_date` | string (date) | 任意 | 賞味期限 |
-| `location_id` | integer | 任意 | 入庫ロケーションID |
+| `location_id` | integer | 任意 | 入荷ロケーションID |
 
 #### レスポンス
 
@@ -483,7 +483,7 @@
 | 項目 | 内容 |
 |---|---|
 | **Summary** | 入荷作業完了 |
-| **Description** | 入荷作業を完了し、入庫確定処理を実行。全量入庫または一部入庫を判定して処理。 |
+| **Description** | 入荷作業を完了し、入荷確定処理を実行。全量入荷または一部入荷を判定して処理。 |
 | **認証** | `apiKey` + `sanctum`（Bearer トークン必須） |
 
 #### パスパラメータ
@@ -505,13 +505,13 @@
 | `is_success` | boolean | 成功フラグ | `true` |
 | `code` | string | レスポンスコード | `SUCCESS` |
 | `result.data` | null | データなし | `null` |
-| `result.message` | string | メッセージ | `入庫を確定しました` |
+| `result.message` | string | メッセージ | `入荷を確定しました` |
 
-##### 400 -- 完了不可 / 入庫予定が見つかりません
+##### 400 -- 完了不可 / 入荷予定が見つかりません
 
 ##### 404 -- 作業データが見つかりません
 
-##### 500 -- 入庫確定に失敗
+##### 500 -- 入荷確定に失敗
 
 ---
 
@@ -559,10 +559,10 @@
 | フィールド | 型 | Nullable | 説明 |
 |---|---|---|---|
 | `id` | integer | No | 作業データID |
-| `incoming_schedule_id` | integer | No | 入庫予定ID |
+| `incoming_schedule_id` | integer | No | 入荷予定ID |
 | `picker_id` | integer | No | 作業者ID |
 | `warehouse_id` | integer | No | 倉庫ID |
-| `location_id` | integer | Yes | 入庫ロケーションID |
+| `location_id` | integer | Yes | 入荷ロケーションID |
 | `work_quantity` | integer | No | 作業数量 |
 | `work_arrival_date` | string (date) | No | 入荷日 |
 | `work_expiration_date` | string (date) | Yes | 賞味期限（デフォルト: 商品のdefault_expiration_daysから計算） |
@@ -584,14 +584,14 @@
 
 | フィールド | 型 | 説明 |
 |---|---|---|
-| `id` | integer | 入庫予定ID |
+| `id` | integer | 入荷予定ID |
 | `item_id` | integer | 商品ID |
 | `item_code` | string | 商品コード |
 | `item_name` | string | 商品名 |
 | `warehouse_id` | integer | 倉庫ID |
 | `warehouse_name` | string | 倉庫名 |
 | `expected_quantity` | integer | 予定数量 |
-| `received_quantity` | integer | 入庫済数量 |
+| `received_quantity` | integer | 入荷済数量 |
 | `remaining_quantity` | integer | 残数量 |
 | `quantity_type` | string | 数量タイプ |
 
@@ -905,8 +905,8 @@
 | 1-2 | POST | `/api/auth/logout` | ログアウト | Authentication |
 | 1-3 | GET | `/api/me` | 現在のピッカー情報取得 | Authentication |
 | 2-1 | GET | `/api/master/warehouses` | 倉庫マスタ一覧取得 | Master Data |
-| 3-1 | GET | `/api/incoming/schedules` | 入庫予定一覧取得 | Incoming |
-| 3-2 | GET | `/api/incoming/schedules/{id}` | 入庫予定詳細取得 | Incoming |
+| 3-1 | GET | `/api/incoming/schedules` | 入荷予定一覧取得 | Incoming |
+| 3-2 | GET | `/api/incoming/schedules/{id}` | 入荷予定詳細取得 | Incoming |
 | 3-3 | GET | `/api/incoming/work-items` | 作業データ一覧取得 | Incoming |
 | 3-4 | POST | `/api/incoming/work-items` | 入荷作業開始 | Incoming |
 | 3-5 | PUT | `/api/incoming/work-items/{id}` | 作業データ更新 | Incoming |
