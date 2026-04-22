@@ -28,7 +28,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "biz.smt_life.android.sakemaru_handy_denso"
+        applicationId = "com.smtlife.sakemaru.handy"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
