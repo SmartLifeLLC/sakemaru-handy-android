@@ -10,9 +10,8 @@ data class SettingsState(
 )
 
 object PresetUrls {
-    val list = listOf(
-        "https://wms.lw-hana.net",
-        "https://wms.sakemaru.click",
-        "http://10.0.2.2:8000"
-    )
+    val list: List<String> = BuildConfig.PRESET_URLS
+        .split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
 }

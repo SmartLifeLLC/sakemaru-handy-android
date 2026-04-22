@@ -16,6 +16,12 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
+val deployConfig = Properties()
+val deployConfigFile = rootProject.file("deploy-config.properties")
+if (deployConfigFile.exists()) {
+    deployConfig.load(FileInputStream(deployConfigFile))
+}
+
 android {
     namespace = "biz.smt_life.android.core.ui"
     compileSdk = 36
@@ -25,7 +31,9 @@ android {
     }
 
     buildTypes.forEach {
-        val apiHost = localProperties.getProperty("api.host") ?: "10.0.2.2"
+        val apiHost = localProperties.getProperty("api.host")
+            ?: deployConfig.getProperty("default.api.host")
+            ?: "10.0.2.2"
         it.buildConfigField("String", "API_HOST", "\"$apiHost\"")
     }
 
