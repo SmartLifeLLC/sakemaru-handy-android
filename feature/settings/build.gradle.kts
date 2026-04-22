@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import java.io.InputStreamReader
 import java.io.FileInputStream
 
 plugins {
@@ -13,7 +14,7 @@ plugins {
 val deployConfig = Properties()
 val deployConfigFile = rootProject.file("deploy-config.properties")
 if (deployConfigFile.exists()) {
-    deployConfig.load(FileInputStream(deployConfigFile))
+    deployConfig.load(InputStreamReader(FileInputStream(deployConfigFile), Charsets.UTF_8))
 }
 
 android {
