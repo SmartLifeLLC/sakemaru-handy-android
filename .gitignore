@@ -11,3 +11,5 @@ local.properties
 /docs
 /.claude
 /.kotlin
+keystore/
+keystore.properties
