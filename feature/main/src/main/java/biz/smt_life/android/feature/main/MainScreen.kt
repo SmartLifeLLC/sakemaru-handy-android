@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
@@ -89,7 +90,7 @@ fun MainRoute(
     onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
-    onNavigateToLocationSearch: () -> Unit,
+    onNavigateToStockDisposal: () -> Unit,
     onLogout: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
@@ -109,7 +110,7 @@ fun MainRoute(
         onNavigateToProxyShipment = onNavigateToProxyShipment,
         onNavigateToMove = onNavigateToMove,
         onNavigateToInventory = onNavigateToInventory,
-        onNavigateToLocationSearch = onNavigateToLocationSearch,
+        onNavigateToStockDisposal = onNavigateToStockDisposal,
         onLogoutClick = viewModel::logout,
         onRetry = viewModel::retry,
         onOpenWarehouseDialog = viewModel::openWarehouseDialog,
@@ -130,7 +131,7 @@ fun MainScreen(
     onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
-    onNavigateToLocationSearch: () -> Unit,
+    onNavigateToStockDisposal: () -> Unit,
     onLogoutClick: () -> Unit,
     onRetry: () -> Unit,
     onOpenWarehouseDialog: () -> Unit = {},
@@ -168,7 +169,7 @@ fun MainScreen(
             onNavigateToProxyShipment = onNavigateToProxyShipment,
             onNavigateToMove = onNavigateToMove,
             onNavigateToInventory = onNavigateToInventory,
-            onNavigateToLocationSearch = onNavigateToLocationSearch,
+            onNavigateToStockDisposal = onNavigateToStockDisposal,
             onLogoutClick = onLogoutClick,
             modifier = modifier
         )
@@ -217,7 +218,7 @@ private fun ReadyContent(
     onNavigateToProxyShipment: () -> Unit,
     onNavigateToMove: () -> Unit,
     onNavigateToInventory: () -> Unit,
-    onNavigateToLocationSearch: () -> Unit,
+    onNavigateToStockDisposal: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -554,12 +555,12 @@ private fun ReadyContent(
                     showIcon = false
                 )
                 MenuCard(
-                    label = "ロケ検索",
-                    bottomBorderColor = WmsColor.LocationBorder,
-                    circleBg = WmsColor.LocationCircleBg,
-                    iconColor = WmsColor.LocationIcon,
-                    icon = Icons.Default.LocationOn,
-                    onClick = onNavigateToLocationSearch,
+                    label = "在庫調節",
+                    bottomBorderColor = WmsColor.StockDisposalBorder,
+                    circleBg = WmsColor.StockDisposalCircleBg,
+                    iconColor = WmsColor.StockDisposalIcon,
+                    icon = Icons.Default.RemoveCircleOutline,
+                    onClick = onNavigateToStockDisposal,
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     showIcon = false
                 )
@@ -814,12 +815,12 @@ private fun ReadyContent(
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                         MenuCard(
-                            label = "ロケ検索",
-                            bottomBorderColor = WmsColor.LocationBorder,
-                            circleBg = WmsColor.LocationCircleBg,
-                            iconColor = WmsColor.LocationIcon,
-                            icon = Icons.Default.LocationOn,
-                            onClick = onNavigateToLocationSearch,
+                            label = "在庫調節",
+                            bottomBorderColor = WmsColor.StockDisposalBorder,
+                            circleBg = WmsColor.StockDisposalCircleBg,
+                            iconColor = WmsColor.StockDisposalIcon,
+                            icon = Icons.Default.RemoveCircleOutline,
+                            onClick = onNavigateToStockDisposal,
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                     }
@@ -974,7 +975,7 @@ private fun MainScreenLoadingPreview() {
             onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
-            onNavigateToLocationSearch = {},
+            onNavigateToStockDisposal = {},
             onLogoutClick = {},
             onRetry = {}
         )
@@ -1007,7 +1008,7 @@ private fun MainScreenReadyPreview() {
             onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
-            onNavigateToLocationSearch = {},
+            onNavigateToStockDisposal = {},
             onLogoutClick = {},
             onRetry = {}
         )
@@ -1031,7 +1032,7 @@ private fun MainScreenErrorPreview() {
             onNavigateToProxyShipment = {},
             onNavigateToMove = {},
             onNavigateToInventory = {},
-            onNavigateToLocationSearch = {},
+            onNavigateToStockDisposal = {},
             onLogoutClick = {},
             onRetry = {}
         )

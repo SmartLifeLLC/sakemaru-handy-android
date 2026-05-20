@@ -8,12 +8,14 @@ import biz.smt_life.android.core.domain.repository.OutboundCourseRepository
 import biz.smt_life.android.core.domain.repository.PickingTaskRepository
 import biz.smt_life.android.core.domain.repository.ProfileRepository
 import biz.smt_life.android.core.domain.repository.ProxyShipmentRepository
+import biz.smt_life.android.core.domain.repository.StockDisposalRepository
 import biz.smt_life.android.core.network.BuildConfig
 import biz.smt_life.android.core.network.api.AuthService
 import biz.smt_life.android.core.domain.repository.IncomingRepository
 import biz.smt_life.android.core.network.api.IncomingApi
 import biz.smt_life.android.core.network.api.PickingApi
 import biz.smt_life.android.core.network.api.ProxyShipmentApi
+import biz.smt_life.android.core.network.api.StockDisposalApi
 import biz.smt_life.android.core.network.repository.IncomingRepositoryImpl
 import biz.smt_life.android.core.network.fake.FakeInboundRepository
 import biz.smt_life.android.core.network.fake.FakeMainRepository
@@ -25,6 +27,7 @@ import biz.smt_life.android.core.network.interceptor.AuthInterceptor
 import biz.smt_life.android.core.network.repository.AuthRepositoryImpl
 import biz.smt_life.android.core.network.repository.PickingTaskRepositoryImpl
 import biz.smt_life.android.core.network.repository.ProxyShipmentRepositoryImpl
+import biz.smt_life.android.core.network.repository.StockDisposalRepositoryImpl
 import biz.smt_life.android.core.ui.HostPreferences
 import biz.smt_life.android.core.ui.TokenManager
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -143,6 +146,12 @@ object NetworkProviderModule {
 
     @Provides
     @Singleton
+    fun provideStockDisposalApi(retrofit: Retrofit): StockDisposalApi {
+        return retrofit.create(StockDisposalApi::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun provideErrorMapper(): biz.smt_life.android.core.network.ErrorMapper {
         return biz.smt_life.android.core.network.ErrorMapper
     }
@@ -205,4 +214,10 @@ abstract class NetworkBindingModule {
     abstract fun bindIncomingRepository(
         incomingRepositoryImpl: IncomingRepositoryImpl
     ): IncomingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindStockDisposalRepository(
+        stockDisposalRepositoryImpl: StockDisposalRepositoryImpl
+    ): StockDisposalRepository
 }

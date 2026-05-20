@@ -44,5 +44,5 @@ sealed class Routes(val route: String) {
         fun createRoute(allocationId: Int) = "proxy_shipment_result/$allocationId"
     }
     object Inventory : Routes("inventory")
-    object LocationSearch : Routes("location_search")
+    object StockDisposal : Routes("stock_disposal")
 }

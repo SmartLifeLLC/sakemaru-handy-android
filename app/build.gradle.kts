@@ -108,6 +108,7 @@ dependencies {
     implementation(project(":feature:outbound"))
     implementation(project(":feature:main"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:stockdisposal"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

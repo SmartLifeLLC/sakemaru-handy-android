@@ -106,8 +106,8 @@ fun HandyNavHost(
                 onNavigateToInventory = {
                     navController.navigate(Routes.Inventory.route)
                 },
-                onNavigateToLocationSearch = {
-                    navController.navigate(Routes.LocationSearch.route)
+                onNavigateToStockDisposal = {
+                    navController.navigate(Routes.StockDisposal.route)
                 },
                 onLogout = {
                     navController.navigate(Routes.Login.route) {
@@ -430,6 +430,12 @@ fun HandyNavHost(
                         popUpTo(Routes.ProxyShipmentList.route) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Routes.StockDisposal.route) {
+            biz.smt_life.android.feature.stockdisposal.StockDisposalRoute(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
